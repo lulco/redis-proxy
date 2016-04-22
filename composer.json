@@ -1,0 +1,28 @@
+{
+	"name": "lulco/redis-proxy",
+	"description": "Library for creating redis instance depends on application / server possibilities",
+	"keywords": ["PHP", "Redis", "Predis"],
+	"type": "library",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Michal Lulco",
+			"email": "michal.lulco@gmail.com"
+		}
+	],
+	"require": {
+		"php": ">= 5.6.0"
+	},
+	"require-dev": {
+		"predis/predis": "~1.0",
+		"squizlabs/php_codesniffer": "~2.0"
+	},
+	"suggest": {
+		"ext-redis": "Native PHP extension for Redis connectivity.",
+		"predis/predis": "Flexible and feature-complete PHP client library for Redis https://github.com/nrk/predis/wiki"
+	},
+	"minimum-stability": "stable",
+	"autoload": {
+		"classmap": ["src/"]
+	}
+}
