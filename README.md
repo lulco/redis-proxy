@@ -5,6 +5,7 @@ Library for creating redis instance depends on application / server possibilitie
 
 ### Composer
 The fastest way to install Redis proxy is to add it to your project using Composer (http://getcomposer.org/).
+
 1. Install Composer:
     ```
     curl -sS https://getcomposer.org/installer | php
@@ -26,5 +27,4 @@ $redis->hLen($hashKey);
 $redis->hGet($hashKey, $key);
 $redis->hGetAll($hashKey);
 ...
-
 ```

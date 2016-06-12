@@ -16,11 +16,14 @@ class RedisProxy
     
     private $database;
     
-    public function __construct($host, $port, $database)
+    private $timeout;
+    
+    public function __construct($host, $port, $database, $timeout = null)
     {
         $this->host = $host;
         $this->port = $port;
         $this->database = $database;
+        $this->timeout = $timeout;
     }
     
     private function init()
@@ -28,7 +31,7 @@ class RedisProxy
         $this->prepareDriver();
         
         if (!$this->driver->isConnected()) {
-            $this->driver->connect($this->host, $this->port);
+            $this->driver->connect($this->host, $this->port, $this->timeout);
             $this->driver->select($this->database);
         }
     }
