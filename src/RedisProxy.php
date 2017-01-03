@@ -3,64 +3,84 @@
 namespace RedisProxy;
 
 use Exception;
+use InvalidArgumentException;
 use Predis\Client;
 use Redis;
 
 class RedisProxy
 {
     private $driver;
-    
+
     private $host;
-    
+
     private $port;
-    
+
     private $database;
-    
+
     private $timeout;
-    
+
+    private $supportedDrivers = [
+        'redis',
+        'predis'
+    ];
+
+    private $driversOrder = [];
+
     public function __construct($host, $port, $database, $timeout = null)
     {
         $this->host = $host;
         $this->port = $port;
         $this->database = $database;
         $this->timeout = $timeout;
+        $this->driversOrder = $this->supportedDrivers;
     }
-    
+
+    public function setDriversOrder(array $driversOrder)
+    {
+        foreach ($driversOrder as $driver) {
+            if (!in_array($driver, $this->supportedDrivers)) {
+                throw new InvalidArgumentException('Driver "' . $driver . '" is not supported');
+            }
+        }
+        $this->driversOrder = $driversOrder;
+        return $this;
+    }
+
     private function init()
     {
         $this->prepareDriver();
-        
+
         if (!$this->driver->isConnected()) {
             $this->driver->connect($this->host, $this->port, $this->timeout);
             $this->driver->select($this->database);
         }
     }
-    
+
     private function prepareDriver()
     {
         if ($this->driver !== null) {
             return;
         }
-        
-        if (extension_loaded('redis')) {
-            $this->driver = new Redis();
-            return;
+
+        foreach ($this->driversOrder as $preferredDriver) {
+            if ($preferredDriver === 'redis' && extension_loaded('redis')) {
+                $this->driver = new Redis();
+                return;
+            }
+            if ($preferredDriver === 'predis' && class_exists('Predis\Client')) {
+                $this->driver = new Client();
+                return;
+            }
         }
-        
-        if (class_exists('Predis\Client')) {
-            $this->driver = new Client();
-            return;
-        }
-        
         throw new Exception('No redis library loaded (ext-redis or predis)');
     }
-    
+
     public function __call($name, $arguments)
     {
         $this->init();
         return call_user_func_array([$this->driver, $name], $arguments);
     }
-    
+
     public function scan(&$iterator, $pattern = null, $count = null)
     {
         $this->init();
@@ -71,7 +91,7 @@ class RedisProxy
         }
         return $this->driver->scan($iterator, $pattern, $count);
     }
-    
+
     public function hscan($key, &$iterator, $pattern = null, $count = null)
     {
         $this->init();
@@ -82,7 +102,7 @@ class RedisProxy
         }
         return $this->driver->hscan($key, $iterator, $pattern, $count);
     }
-    
+
     public function zscan($key, &$iterator, $pattern = null, $count = null)
     {
         $this->init();
@@ -102,6 +122,6 @@ class RedisProxy
             $iterator = $returned[0];
             return $returned[1];
         }
-        $this->driver->sscan($key, $iterator, $pattern, $count);
+        return $this->driver->sscan($key, $iterator, $pattern, $count);
     }
 }

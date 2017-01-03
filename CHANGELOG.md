@@ -4,8 +4,9 @@
 
 #### Added
 - timeout to redis connect
+- possibility to set drivers order
 
-### [0.1.0] - 2016/04/17
+### [0.1.0] - 2016-04-17
 - First tagged version
 - possible drivers: \Redis, \Predis\Client
 
