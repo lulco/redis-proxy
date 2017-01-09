@@ -15,14 +15,17 @@
 	},
 	"require-dev": {
 		"predis/predis": "~1.0",
-		"squizlabs/php_codesniffer": "~2.0"
+		"squizlabs/php_codesniffer": "~2.0",
+		"phpunit/phpunit": "^5.7"
 	},
 	"suggest": {
 		"ext-redis": "Native PHP extension for Redis connectivity.",
 		"predis/predis": "Flexible and feature-complete PHP client library for Redis https://github.com/nrk/predis/wiki"
 	},
-	"minimum-stability": "stable",
 	"autoload": {
 		"classmap": ["src/"]
+	},
+	"autoload-dev": {
+		"classmap": ["tests/"]
 	}
 }
