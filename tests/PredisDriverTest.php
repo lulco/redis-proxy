@@ -13,6 +13,6 @@ class PredisDriverTest extends BaseDriverTest
         }
         $this->redisProxy = new RedisProxy(getenv('REDIS_PROXY_REDIS_HOST'), getenv('REDIS_PROXY_REDIS_PORT'));
         $this->redisProxy->setDriversOrder([RedisProxy::DRIVER_PREDIS]);
-        $this->redisProxy->flushDB();
+        $this->redisProxy->flushAll();
     }
 }

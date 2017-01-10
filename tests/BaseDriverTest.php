@@ -31,6 +31,59 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         self::assertFalse($this->redisProxy->select(-1));
     }
 
+    public function testInfo()
+    {
+        // no data
+        $info = $this->redisProxy->info();
+        self::assertTrue(is_array($info));
+        self::assertArrayHasKey('server', $info);
+        self::assertArrayHasKey('clients', $info);
+        self::assertArrayHasKey('memory', $info);
+        self::assertArrayHasKey('persistence', $info);
+        self::assertArrayHasKey('stats', $info);
+        self::assertArrayHasKey('replication', $info);
+        self::assertArrayHasKey('cpu', $info);
+        self::assertArrayHasKey('keyspace', $info);
+        self::assertNotEmpty($info['keyspace']);
+
+        $keyspaceInfo = $this->redisProxy->info('keyspace');
+        self::assertNotEmpty($keyspaceInfo);
+        foreach ($keyspaceInfo as $db => $dbValues) {
+            self::assertStringStartsWith('db', $db);
+            self::assertArrayHasKey('keys', $dbValues);
+            self::assertEquals(0, $dbValues['keys']);
+            self::assertArrayHasKey('expires', $dbValues);
+            self::assertNull($dbValues['expires']);
+            self::assertArrayHasKey('avg_ttl', $dbValues);
+            self::assertNull($dbValues['avg_ttl']);
+        }
+
+        // insert some data
+        $this->redisProxy->select(0);
+        $this->redisProxy->set('first_key', 'first_value');
+
+        $this->redisProxy->select(1);
+        $this->redisProxy->set('second_key', 'second_value');
+        $this->redisProxy->set('third_key', 'third_value');
+
+        $keyspaceInfo = $this->redisProxy->info('keyspace');
+        self::assertNotEmpty($keyspaceInfo);
+        foreach ($keyspaceInfo as $db => $dbValues) {
+            self::assertStringStartsWith('db', $db);
+            self::assertArrayHasKey('keys', $dbValues);
+            self::assertArrayHasKey('expires', $dbValues);
+            self::assertArrayHasKey('avg_ttl', $dbValues);
+        }
+        self::assertArrayHasKey('db0', $keyspaceInfo);
+        self::assertEquals(1, $keyspaceInfo['db0']['keys']);
+        self::assertEquals(0, $keyspaceInfo['db0']['expires']);
+        self::assertEquals(0, $keyspaceInfo['db0']['avg_ttl']);
+        self::assertArrayHasKey('db1', $keyspaceInfo);
+        self::assertEquals(2, $keyspaceInfo['db1']['keys']);
+        self::assertEquals(0, $keyspaceInfo['db1']['expires']);
+        self::assertEquals(0, $keyspaceInfo['db1']['avg_ttl']);
+    }
+
     public function testSet()
     {
         self::assertFalse($this->redisProxy->get('my_key'));
