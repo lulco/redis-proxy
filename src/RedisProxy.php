@@ -9,18 +9,16 @@ use Redis;
 
 /**
  * @method mixed config(string $command, $argument = null)
+ * @method mixed dbsize() Return the number of keys in the selected database
  * @method boolean set(string $key, string $value) Set the string value of a key
+ * @method array keys(string $pattern) Find all keys matching the given pattern
  * @method array mget(array $keys) Multi get - Returns the values of all specified keys. For every key that does not hold a string value or does not exist, FALSE is returned.
  * @method integer hset(string $key, string $field, string $value) Set the string value of a hash field
+ * @method array hkeys(string $key) Get all fields in hash (without values)
  * @method array hgetall(string $key) Get all fields and values in hash
- * @method array hGetAll(string $key) Get all fields and values in hash
  * @method integer hlen(string $key) Get the number of fields in hash
- * @method integer hLen(string $key) Get the number of fields in hash
  * @method boolean flushall() Remove all keys from all databases
- * @method boolean flushAll() Remove all keys from all databases
  * @method boolean flushdb() Remove all keys from the current database
- * @method boolean flushDb() Remove all keys from the current database
- * @method boolean flushDB() Remove all keys from the current database
  */
 class RedisProxy
 {
@@ -105,7 +103,12 @@ class RedisProxy
     public function __call($name, $arguments)
     {
         $this->init();
-        $result = call_user_func_array([$this->driver, $name], $arguments);
+        $name = strtolower($name);
+        try {
+            $result = call_user_func_array([$this->driver, $name], $arguments);
+        } catch (Exception $e) {
+            throw new RedisProxyException("Error for command '$name', use getPrevious() for more info", 1484162284, $e);
+        }
         return $this->transformResult($result);
     }
 
@@ -155,6 +158,35 @@ class RedisProxy
             return $groupedResult[$section];
         }
         throw new RedisProxyException('Info section "' . $section . '" doesn\'t exist');
+    }
+
+    /**
+     * Set multiple values to multiple keys
+     * @param array $dictionary
+     * @return boolean true on success
+     * @throws RedisProxyException if number of arguments is wrong
+     */
+    public function mset(...$dictionary)
+    {
+        if (is_array($dictionary[0])) {
+            $result = $this->driver->mset(...$dictionary);
+            return $this->transformResult($result);
+        }
+
+        $keys = array_values(array_filter($dictionary, function ($key) {
+            return $key % 2 == 0;
+        }, ARRAY_FILTER_USE_KEY));
+        $values = array_values(array_filter($dictionary, function ($key) {
+            return $key % 2 == 1;
+        }, ARRAY_FILTER_USE_KEY));
+
+        if (count($keys) != count($values)) {
+            throw new RedisProxyException('Wrong number of arguments for mset');
+        }
+
+        $dictionary = array_combine($keys, $values);
+        $result = $this->driver->mset($dictionary);
+        return $this->transformResult($result);
     }
 
     /**
@@ -225,8 +257,8 @@ class RedisProxy
 
     /**
      * Delete one or more hash fields, returns number of deleted fields
-     * @param array ...$key
-     * @param array $fields
+     * @param array $key
+     * @param array ...$fields
      * @return integer
      */
     public function hdel($key, ...$fields)
@@ -234,9 +266,61 @@ class RedisProxy
         if (is_array($fields[0])) {
             $fields = $fields[0];
         }
-        $res = $this->driver->hdel($key, ...$fields);
+        return $this->driver->hdel($key, ...$fields);
+    }
 
-        return $res;
+    /**
+     * Increment the integer value of hash field by given number
+     * @param string $key
+     * @param string $field
+     * @param integer $increment
+     * @return integer
+     */
+    public function hincrby($key, $field, $increment = 1)
+    {
+        return $this->driver->hincrby($key, $field, (int)$increment);
+    }
+
+    /**
+     * Increment the float value of hash field by given amount
+     * @param string $key
+     * @param string $field
+     * @param float $increment
+     * @return float
+     */
+    public function hincrbyfloat($key, $field, $increment = 1)
+    {
+        return $this->driver->hincrbyfloat($key, $field, $increment);
+    }
+
+    /**
+     * Set multiple values to multiple hash fields
+     * @param string $key
+     * @param array $dictionary
+     * @return boolean true on success
+     * @throws RedisProxyException if number of arguments is wrong
+     */
+    public function hmset($key, ...$dictionary)
+    {
+        if (is_array($dictionary[0])) {
+            $result = $this->driver->hmset($key, ...$dictionary);
+            return $this->transformResult($result);
+        }
+
+        $fields = array_values(array_filter($dictionary, function ($dictionaryKey) {
+            return $dictionaryKey % 2 == 0;
+        }, ARRAY_FILTER_USE_KEY));
+        $values = array_values(array_filter($dictionary, function ($dictionaryKey) {
+            return $dictionaryKey % 2 == 1;
+        }, ARRAY_FILTER_USE_KEY));
+
+        if (count($fields) != count($values)) {
+            throw new RedisProxyException('Wrong number of arguments for hmset');
+        }
+
+        $dictionary = array_combine($fields, $values);
+        $result = $this->driver->hmset($key, $dictionary);
+        return $this->transformResult($result);
     }
 
     /**
