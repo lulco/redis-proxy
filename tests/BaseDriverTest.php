@@ -20,15 +20,19 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
      */
     abstract protected function initializeDriver();
 
-    /**
-     * @expectedException \RedisProxy\RedisProxyException
-     * @expectedExceptionMessage Invalid DB index
-     */
     public function testSelect()
     {
         self::assertTrue($this->redisProxy->select(1));
         self::assertTrue($this->redisProxy->select(0));
-        self::assertFalse($this->redisProxy->select(-1));
+    }
+
+    /**
+     * @expectedException \RedisProxy\RedisProxyException
+     * @expectedExceptionMessage Invalid DB index
+     */
+    public function testSelectInvalidDatabase()
+    {
+        $this->redisProxy->select(-1);
     }
 
     public function testInfo()
@@ -98,7 +102,7 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
 
     public function testSetGet()
     {
-        self::assertFalse($this->redisProxy->get('my_key'));
+        self::assertNull($this->redisProxy->get('my_key'));
         self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
         self::assertEquals('my_value', $this->redisProxy->get('my_key'));
         self::assertTrue($this->redisProxy->set('my_key', 'my_new_value'));
@@ -121,39 +125,39 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         self::assertEquals(0, $this->redisProxy->delete('my_key'));
         self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
         self::assertEquals(1, $this->redisProxy->delete('my_key'));
-        self::assertFalse($this->redisProxy->get('my_key'));
+        self::assertNull($this->redisProxy->get('my_key'));
 
         self::assertEquals(0, $this->redisProxy->del('my_key'));
         self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
         self::assertEquals(1, $this->redisProxy->del('my_key'));
-        self::assertFalse($this->redisProxy->get('my_key'));
+        self::assertNull($this->redisProxy->get('my_key'));
     }
 
     public function testMultipleDelete()
     {
         self::assertEquals(0, $this->redisProxy->delete('first_key', 'second_key', 'third_key'));
-        self::assertFalse($this->redisProxy->get('first_key'));
-        self::assertFalse($this->redisProxy->get('second_key'));
-        self::assertFalse($this->redisProxy->get('third_key'));
+        self::assertNull($this->redisProxy->get('first_key'));
+        self::assertNull($this->redisProxy->get('second_key'));
+        self::assertNull($this->redisProxy->get('third_key'));
 
         self::assertTrue($this->redisProxy->set('first_key', 'first_value'));
         self::assertTrue($this->redisProxy->set('second_key', 'second_value'));
         self::assertTrue($this->redisProxy->set('third_key', 'third_value'));
         self::assertEquals(3, $this->redisProxy->delete('first_key', 'second_key', 'third_key'));
-        self::assertFalse($this->redisProxy->get('first_key'));
-        self::assertFalse($this->redisProxy->get('second_key'));
-        self::assertFalse($this->redisProxy->get('third_key'));
+        self::assertNull($this->redisProxy->get('first_key'));
+        self::assertNull($this->redisProxy->get('second_key'));
+        self::assertNull($this->redisProxy->get('third_key'));
 
         self::assertTrue($this->redisProxy->set('second_key', 'second_value'));
         self::assertEquals(1, $this->redisProxy->delete(['first_key', 'second_key', 'third_key']));
-        self::assertFalse($this->redisProxy->get('first_key'));
-        self::assertFalse($this->redisProxy->get('second_key'));
-        self::assertFalse($this->redisProxy->get('third_key'));
+        self::assertNull($this->redisProxy->get('first_key'));
+        self::assertNull($this->redisProxy->get('second_key'));
+        self::assertNull($this->redisProxy->get('third_key'));
     }
 
     public function testHset()
     {
-        self::assertFalse($this->redisProxy->hget('my_hash_key', 'my_field'));
+        self::assertNull($this->redisProxy->hget('my_hash_key', 'my_field'));
         self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_field', 'my_value'));
         self::assertEquals('my_value', $this->redisProxy->hget('my_hash_key', 'my_field'));
         self::assertEquals(0, $this->redisProxy->hset('my_hash_key', 'my_field', 'my_new_value'));
@@ -224,5 +228,68 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         // each fields as array - only first argument is accepted
         self::assertEquals(1, $this->redisProxy->hdel('my_hash_key', ['my_first_field'], ['my_second_field']));
         self::assertEquals(1, $this->redisProxy->hlen('my_hash_key'));
+    }
+
+    public function testSadd()
+    {
+        // add one member
+        self::assertEquals(1, $this->redisProxy->sadd('my_set_key', 'member'));
+        self::assertEquals(1, $this->redisProxy->scard('my_set_key'));
+
+        // add three members
+        self::assertEquals(3, $this->redisProxy->sadd('my_set_key', 'member_2', 'member_3', 'member_4'));
+        self::assertEquals(4, $this->redisProxy->scard('my_set_key'));
+
+        // add members which are already in set
+        self::assertEquals(0, $this->redisProxy->sadd('my_set_key', 'member_2', 'member_3', 'member_4'));
+        self::assertEquals(4, $this->redisProxy->scard('my_set_key'));
+
+        // add some new members and some members which are already in set
+        self::assertEquals(2, $this->redisProxy->sadd('my_set_key', 'member_2', 'member_3', 'member_5', 'member_6'));
+        self::assertEquals(6, $this->redisProxy->scard('my_set_key'));
+
+        // add three members as array
+        self::assertEquals(3, $this->redisProxy->sadd('my_set_key', ['member_7', 'member_8', 'member_9']));
+        self::assertEquals(9, $this->redisProxy->scard('my_set_key'));
+    }
+
+    public function testSpop()
+    {
+        self::assertEquals(0, $this->redisProxy->scard('my_set_key'));
+        self::assertNull($this->redisProxy->spop('my_set_key'));
+        self::assertEquals(4, $this->redisProxy->sadd('my_set_key', 'member_1', 'member_2', 'member_3', 'member_4'));
+
+        // pop one member
+        $membersBefore = $this->redisProxy->smembers('my_set_key');
+        self::assertCount(4, $membersBefore);
+        $member = $this->redisProxy->spop('my_set_key');
+        $membersAfter = $this->redisProxy->smembers('my_set_key');
+        self::assertCount(3, $membersAfter);
+        self::assertEquals([$member], array_values(array_diff($membersBefore, $membersAfter)));
+        self::assertEquals(3, $this->redisProxy->scard('my_set_key'));
+
+        // pop more members
+        $membersBefore = $this->redisProxy->smembers('my_set_key');
+        self::assertCount(3, $membersBefore);
+        $members = $this->redisProxy->spop('my_set_key', 2);
+        $membersAfter = $this->redisProxy->smembers('my_set_key');
+        self::assertCount(1, $membersAfter);
+        sort($members);
+        $membersDiff = array_values(array_diff($membersBefore, $membersAfter));
+        sort($membersDiff);
+        self::assertEquals($members, $membersDiff);
+        self::assertEquals(1, $this->redisProxy->scard('my_set_key'));
+
+        // pop 3 members from set with one member
+        $membersBefore = $this->redisProxy->smembers('my_set_key');
+        self::assertCount(1, $membersBefore);
+        $members = $this->redisProxy->spop('my_set_key', 3);
+        $membersAfter = $this->redisProxy->smembers('my_set_key');
+        self::assertCount(0, $membersAfter);
+        sort($members);
+        $membersDiff = array_values(array_diff($membersBefore, $membersAfter));
+        sort($membersDiff);
+        self::assertEquals($members, $membersDiff);
+        self::assertEquals(0, $this->redisProxy->scard('my_set_key'));
     }
 }

@@ -20,6 +20,7 @@ use Redis;
  * @method boolean flushAll() Remove all keys from all databases
  * @method boolean flushdb() Remove all keys from the current database
  * @method boolean flushDb() Remove all keys from the current database
+ * @method boolean flushDB() Remove all keys from the current database
  */
 class RedisProxy
 {
@@ -105,10 +106,7 @@ class RedisProxy
     {
         $this->init();
         $result = call_user_func_array([$this->driver, $name], $arguments);
-        if ($this->driver instanceof Client && $result instanceof Status) {
-            $result = $result->getPayload() === 'OK';
-        }
-        return $result;
+        return $this->transformResult($result);
     }
 
     /**
@@ -127,9 +125,7 @@ class RedisProxy
         } catch (Exception $e) {
             throw new RedisProxyException('Invalid DB index');
         }
-        if ($this->driver instanceof Client) {
-            $result = $result->getPayload() === 'OK';
-        }
+        $result = $this->transformResult($result);
         if ($result === false) {
             throw new RedisProxyException('Invalid DB index');
         }
@@ -164,27 +160,34 @@ class RedisProxy
 
     /**
      * @param string $key
-     * @return string
+     * @return string|null null if hash field is not set
      */
     public function get($key)
     {
         $this->init();
         $result = $this->driver->get($key);
-        if ($this->driver instanceof Client) {
-            $result = $result === null ? false : $result;
-        }
-        return $result;
+        return $this->convertFalseToNull($result);
     }
 
-    public function del(...$key)
+    /**
+     * Delete a key(s)
+     * @param array ...$keys
+     * @return integer number of deleted keys
+     */
+    public function del(...$keys)
     {
         $this->init();
-        return $this->driver->del(...$key);
+        return $this->driver->del(...$keys);
     }
 
-    public function delete(...$key)
+    /**
+     * Delete a key(s)
+     * @param array ...$keys
+     * @return integer number of deleted keys
+     */
+    public function delete(...$keys)
     {
-        return $this->del(...$key);
+        return $this->del(...$keys);
     }
 
     public function scan(&$iterator, $pattern = null, $count = null)
@@ -202,21 +205,18 @@ class RedisProxy
      * Get the value of a hash field
      * @param string $key
      * @param string $field
-     * @return string|boolean false if hash field is not set
+     * @return string|null null if hash field is not set
      */
     public function hget($key, $field)
     {
         $this->init();
         $result = $this->driver->hget($key, $field);
-        if ($this->driver instanceof Client) {
-            $result = $result === null ? false : $result;
-        }
-        return $result;
+        return $this->convertFalseToNull($result);
     }
 
     /**
      * Delete one or more hash fields, returns number of deleted fields
-     * @param string $key
+     * @param array ...$key
      * @param array $fields
      * @return integer
      */
@@ -241,15 +241,42 @@ class RedisProxy
         return $this->driver->hscan($key, $iterator, $pattern, $count);
     }
 
-    public function zscan($key, &$iterator, $pattern = null, $count = null)
+    /**
+     * Add one or more members to a set
+     * @param string $key
+     * @param array ...$members
+     * @return integer number of new members added to set
+     */
+    public function sadd($key, ...$members)
     {
-        $this->init();
-        if ($this->driver instanceof Client) {
-            $returned = $this->driver->zscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
-            $iterator = $returned[0];
-            return $returned[1];
+        if (is_array($members[0])) {
+            $members = $members[0];
         }
-        return $this->driver->zscan($key, $iterator, $pattern, $count);
+        return $this->driver->sadd($key, ...$members);
+    }
+
+    /**
+     * Remove and return one or multiple random members from a set
+     * @param string $key
+     * @param integer $count number of members
+     * @return mixed string if $count is null or 1 and $key exists, array if $count > 1 and $key exists, null if $key doesn't exist
+     */
+    public function spop($key, $count = 1)
+    {
+        if ($count == 1 || $count === null) {
+            $result = $this->driver->spop($key);
+            return $this->convertFalseToNull($result);
+        }
+
+        $members = [];
+        for ($i = 0; $i < $count; ++$i) {
+            $member = $this->driver->spop($key);
+            if (!$member) {
+                break;
+            }
+            $members[] = $member;
+        }
+        return empty($members) ? null : $members;
     }
 
     public function sscan($key, &$iterator, $pattern = null, $count = null)
@@ -261,5 +288,29 @@ class RedisProxy
             return $returned[1];
         }
         return $this->driver->sscan($key, $iterator, $pattern, $count);
+    }
+
+    public function zscan($key, &$iterator, $pattern = null, $count = null)
+    {
+        $this->init();
+        if ($this->driver instanceof Client) {
+            $returned = $this->driver->zscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
+            $iterator = $returned[0];
+            return $returned[1];
+        }
+        return $this->driver->zscan($key, $iterator, $pattern, $count);
+    }
+
+    private function convertFalseToNull($result)
+    {
+        return $this->driver instanceof Redis && $result === false ? null : $result;
+    }
+
+    private function transformResult($result)
+    {
+        if ($this->driver instanceof Client && $result instanceof Status) {
+            $result = $result->getPayload() === 'OK';
+        }
+        return $result;
     }
 }
