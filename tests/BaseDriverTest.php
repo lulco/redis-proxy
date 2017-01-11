@@ -82,6 +82,18 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         self::assertEquals(2, $keyspaceInfo['db1']['keys']);
         self::assertEquals(0, $keyspaceInfo['db1']['expires']);
         self::assertEquals(0, $keyspaceInfo['db1']['avg_ttl']);
+
+        $serverInfo = $this->redisProxy->info('server');
+        self::assertNotEmpty($serverInfo);
+    }
+
+    /**
+     * @expectedException \RedisProxy\RedisProxyException
+     * @expectedExceptionMessage Info section "unknown" doesn't exist
+     */
+    public function testUnknownInfoSection()
+    {
+        $this->redisProxy->info('unknown');
     }
 
     public function testSetGet()

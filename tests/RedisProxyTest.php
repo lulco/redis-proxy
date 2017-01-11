@@ -8,7 +8,7 @@ use RedisProxy\RedisProxy;
 class RedisProxyTest extends PHPUnit_Framework_TestCase
 {
     /**
-     * @expectedException \InvalidArgumentException
+     * @expectedException \RedisProxy\RedisProxyException
      * @expectedExceptionMessage You need to set at least one driver
      */
     public function testEmptyDriversOrder()
@@ -18,7 +18,7 @@ class RedisProxyTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException \InvalidArgumentException
+     * @expectedException \RedisProxy\RedisProxyException
      * @expectedExceptionMessage Driver "unsupported_driver" is not supported
      */
     public function testUnsupportedDriverInDriversOrder()

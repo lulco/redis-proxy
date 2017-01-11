@@ -3,7 +3,6 @@
 namespace RedisProxy;
 
 use Exception;
-use InvalidArgumentException;
 use Predis\Client;
 use Predis\Response\Status;
 use Redis;
@@ -55,11 +54,11 @@ class RedisProxy
     public function setDriversOrder(array $driversOrder)
     {
         if (empty($driversOrder)) {
-            throw new InvalidArgumentException('You need to set at least one driver');
+            throw new RedisProxyException('You need to set at least one driver');
         }
         foreach ($driversOrder as $driver) {
             if (!in_array($driver, $this->supportedDrivers)) {
-                throw new InvalidArgumentException('Driver "' . $driver . '" is not supported');
+                throw new RedisProxyException('Driver "' . $driver . '" is not supported');
             }
         }
         $this->driversOrder = $driversOrder;
@@ -140,7 +139,6 @@ class RedisProxy
     /**
      * @param string|null $section
      * @return array
-     * @todo need refactoring
      */
     public function info($section = null)
     {
@@ -152,64 +150,15 @@ class RedisProxy
             $result = $this->driver->info($section);
         }
 
-        $groupedResult = [];
-        $groupedResult['keyspace'] = [];
-        for ($db = 0; $db < $this->config('get', 'databases')['databases']; ++$db) {
-            $groupedResult['keyspace']["db$db"] = [
-                'keys' => 0,
-                'expires' => null,
-                'avg_ttl' => null,
-            ];
+        $databases = $section === null || $section === 'keyspace' ? $this->config('get', 'databases')['databases'] : null;
+        $groupedResult = InfoHelper::createInfoArray($this->driver, $result, $databases);
+        if ($section === null) {
+            return $groupedResult;
         }
-        if ($this->driver instanceof Client) {
-            $result = array_change_key_case($result, CASE_LOWER);
-            $groupedResult['keyspace'] = array_merge($groupedResult['keyspace'], $result['keyspace']);
-            unset($result['keyspace']);
-            $groupedResult = array_merge($groupedResult, $result);
-        } else {
-            $keyStartToSectionMap = [
-                'redis_' => 'server',
-                'uptime_' => 'server',
-                'client_' => 'clients',
-                'used_memory' => 'memory',
-                'mem_' => 'memory',
-                'rdb_' => 'persistence',
-                'aof_' => 'persistence',
-                'total_' => 'stats',
-                'keyspace_' => 'stats',
-                'repl_backlog_' => 'replication',
-                'used_cpu_' => 'cpu',
-                'db' => 'keyspace',
-            ];
-            $keyToSectionMap = [
-                'connected_clients' => 'clients',
-            ];
-            foreach ($result as $key => $value) {
-                foreach ($keyStartToSectionMap as $keyStart => $targetSection) {
-                    if (strpos($key, $keyStart) === 0) {
-                        if ($keyStart === 'db') {
-                            $dbKeyspace = explode(',', $value);
-                            $info['keys'] = explode('=', $dbKeyspace[0])[1];
-                            $info['expires'] = explode('=', $dbKeyspace[1])[1];
-                            $info['avg_ttl'] = explode('=', $dbKeyspace[2])[1];
-                            $value = $info;
-                        }
-                        $groupedResult[$targetSection][$key] = $value;
-                        continue;
-                    }
-                }
-                if (isset($keyToSectionMap[$key])) {
-                    $groupedResult[$keyToSectionMap[$key]][$key] = $value;
-                }
-            }
+        if (isset($groupedResult[$section])) {
+            return $groupedResult[$section];
         }
-
-        if ($section !== null) {
-            if (isset($groupedResult[$section])) {
-                return $groupedResult[$section];
-            }
-        }
-        return $groupedResult;
+        throw new RedisProxyException('Info section "' . $section . '" doesn\'t exist');
     }
 
     /**
