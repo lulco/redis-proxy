@@ -214,7 +214,7 @@ class RedisProxy
      * @param mixed $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
      * @param string $pattern pattern for keys, use * as wild card
      * @param integer $count
-     * @return array|null list of found keys, returns null if $iterator is 0 or '0'
+     * @return array|boolean|null list of found keys, returns null if $iterator is 0 or '0'
      */
     public function scan(&$iterator, $pattern = null, $count = null)
     {
@@ -227,8 +227,7 @@ class RedisProxy
             $iterator = $returned[0];
             return $returned[1];
         }
-        $data = $this->driver->scan($iterator, $pattern, $count);
-        return $data === false ? null : $data;
+        return $this->driver->scan($iterator, $pattern, $count);
     }
 
     /**
@@ -306,7 +305,7 @@ class RedisProxy
      * @param mixed $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
      * @param string $pattern pattern for fields, use * as wild card
      * @param integer $count
-     * @return array|null list of found fields with associated values, returns null if $iterator is 0 or '0'
+     * @return array|boolean|null list of found fields with associated values, returns null if $iterator is 0 or '0'
      */
     public function hscan($key, &$iterator, $pattern = null, $count = null)
     {
@@ -319,8 +318,7 @@ class RedisProxy
             $iterator = $returned[0];
             return $returned[1];
         }
-        $data = $this->driver->hscan($key, $iterator, $pattern, $count);
-        return $data === false ? null : $data;
+        return $this->driver->hscan($key, $iterator, $pattern, $count);
     }
 
     /**
@@ -367,7 +365,7 @@ class RedisProxy
      * @param mixed $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
      * @param string $pattern pattern for member's values, use * as wild card
      * @param integer $count
-     * @return array|null list of found members, returns null if $iterator is 0 or '0'
+     * @return array|boolean|null list of found members, returns null if $iterator is 0 or '0'
      */
     public function sscan($key, &$iterator, $pattern = null, $count = null)
     {
@@ -380,8 +378,7 @@ class RedisProxy
             $iterator = $returned[0];
             return $returned[1];
         }
-        $data = $this->driver->sscan($key, $iterator, $pattern, $count);
-        return $data === false ? null : $data;
+        return $this->driver->sscan($key, $iterator, $pattern, $count);
     }
 
     /**
@@ -390,7 +387,7 @@ class RedisProxy
      * @param mixed $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
      * @param string $pattern pattern for element's values, use * as wild card
      * @param integer $count
-     * @return array|null list of found elements, returns null if $iterator is 0 or '0'
+     * @return array|boolean|null list of found elements, returns null if $iterator is 0 or '0'
      */
     public function zscan($key, &$iterator, $pattern = null, $count = null)
     {
@@ -403,8 +400,7 @@ class RedisProxy
             $iterator = $returned[0];
             return $returned[1];
         }
-        $data = $this->driver->zscan($key, $iterator, $pattern, $count);
-        return $data === false ? null : $data;
+        return $this->driver->zscan($key, $iterator, $pattern, $count);
     }
 
     private function convertFalseToNull($result)
