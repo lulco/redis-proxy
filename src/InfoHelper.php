@@ -101,11 +101,12 @@ class InfoHelper
 
             foreach (self::$keyStartToSectionMap as $keyStart => $targetSection) {
                 if (strpos($key, $keyStart) === 0 && $keyStart === 'db') {
-                    $dbKeyspace = explode(',', $value);
-                    $info['keys'] = explode('=', $dbKeyspace[0])[1];
-                    $info['expires'] = explode('=', $dbKeyspace[1])[1];
-                    $info['avg_ttl'] = explode('=', $dbKeyspace[2])[1];
-                    $value = $info;
+                    list($keys, $expires, $avgTtl) = explode(',', $value);
+                    $value = [
+                        'keys' => strpos($keys, '=') !== false ? explode('=', $keys)[1] : 0,
+                        'expires' => strpos($expires, '=') !== false ? explode('=', $expires)[1] : null,
+                        'avg_ttl' => strpos($avgTtl, '=') !== false ? explode('=', $avgTtl)[1] : null,
+                    ];
                 }
                 if (strpos($key, $keyStart) === 0) {
                     $groupedResult[$targetSection][$key] = $value;
