@@ -292,4 +292,50 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         self::assertEquals($members, $membersDiff);
         self::assertEquals(0, $this->redisProxy->scard('my_set_key'));
     }
+
+    public function testSscan()
+    {
+        self::assertEquals(0, $this->redisProxy->scard('my_set_key'));
+        $members = [];
+        for ($i = 0; $i < 1000; ++$i) {
+            $members[] = "member_$i";
+        }
+        self::assertEquals(1000, $this->redisProxy->sadd('my_set_key', $members));
+        self::assertEquals(1000, $this->redisProxy->scard('my_set_key'));
+
+        $count = 0;
+        $iterator = null;
+        while ($sscanMembers = $this->redisProxy->sscan('my_set_key', $iterator, null, 100)) {
+            $count += count($sscanMembers);
+            foreach ($sscanMembers as $sscanMember) {
+                self::assertTrue(strpos($sscanMember, 'member_') === 0);
+            }
+        }
+        self::assertEquals(1000, $count);
+        self::assertEquals(0, $iterator);
+
+        $count = 0;
+        $iterator = null;
+        while ($sscanMembers = $this->redisProxy->sscan('my_set_key', $iterator, 'member_1*', 100)) {
+            $count += count($sscanMembers);
+            foreach ($sscanMembers as $sscanMember) {
+                self::assertTrue(strpos($sscanMember, 'member_') === 0);
+            }
+        }
+        self::assertEquals(111, $count);
+        self::assertEquals(0, $iterator);
+
+        $count = 0;
+        $iterator = null;
+        $res = [];
+        while ($sscanMembers = $this->redisProxy->sscan('my_set_key', $iterator, '*1*', 100)) {
+            $res = array_merge($res, $sscanMembers);
+            $count += count($sscanMembers);
+            foreach ($sscanMembers as $sscanMember) {
+                self::assertTrue(strpos($sscanMember, 'member_') === 0);
+            }
+        }
+        self::assertEquals(271, $count);
+        self::assertEquals(0, $iterator);
+    }
 }

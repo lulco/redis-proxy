@@ -120,6 +120,9 @@ class RedisProxy
         if (!$this->isConnected()) {
             $this->connect($this->host, $this->port, $this->timeout);
         }
+        if ($database == $this->database) {
+            return true;
+        }
         try {
             $result = $this->driver->select($database);
         } catch (Exception $e) {
@@ -140,12 +143,8 @@ class RedisProxy
     public function info($section = null)
     {
         $this->init();
-        if ($section === null) {
-            $result = $this->driver->info();
-        } else {
-            $section = strtolower($section);
-            $result = $this->driver->info($section);
-        }
+        $section = $section ? strtolower($section) : $section;
+        $result = $section === null ? $this->driver->info() : $this->driver->info($section);
 
         $databases = $section === null || $section === 'keyspace' ? $this->config('get', 'databases')['databases'] : null;
         $groupedResult = InfoHelper::createInfoArray($this->driver, $result, $databases);
@@ -190,8 +189,18 @@ class RedisProxy
         return $this->del(...$keys);
     }
 
+    /**
+     * Incrementally iterate the keys space
+     * @param mixed $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
+     * @param string $pattern pattern for keys, use * as wild card
+     * @param integer $count
+     * @return array|null list of found keys, returns null if $iterator is 0 or '0'
+     */
     public function scan(&$iterator, $pattern = null, $count = null)
     {
+        if ((string)$iterator === '0') {
+            return null;
+        }
         $this->init();
         if ($this->driver instanceof Client) {
             $returned = $this->driver->scan($iterator, ['match' => $pattern, 'count' => $count]);
@@ -230,8 +239,19 @@ class RedisProxy
         return $res;
     }
 
+    /**
+     * Incrementally iterate hash fields and associated values
+     * @param string $key
+     * @param mixed $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
+     * @param string $pattern pattern for fields, use * as wild card
+     * @param integer $count
+     * @return array|null list of found fields with associated values, returns null if $iterator is 0 or '0'
+     */
     public function hscan($key, &$iterator, $pattern = null, $count = null)
     {
+        if ((string)$iterator === '0') {
+            return null;
+        }
         $this->init();
         if ($this->driver instanceof Client) {
             $returned = $this->driver->hscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
@@ -279,8 +299,19 @@ class RedisProxy
         return empty($members) ? null : $members;
     }
 
+    /**
+     * Incrementally iterate Set elements
+     * @param string $key
+     * @param mixed $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
+     * @param string $pattern pattern for member's values, use * as wild card
+     * @param integer $count
+     * @return array|null list of found members, returns null if $iterator is 0 or '0'
+     */
     public function sscan($key, &$iterator, $pattern = null, $count = null)
     {
+        if ((string)$iterator === '0') {
+            return null;
+        }
         $this->init();
         if ($this->driver instanceof Client) {
             $returned = $this->driver->sscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
@@ -290,8 +321,19 @@ class RedisProxy
         return $this->driver->sscan($key, $iterator, $pattern, $count);
     }
 
+    /**
+     * Incrementally iterate sorted sets elements and associated scores
+     * @param string $key
+     * @param mixed $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
+     * @param string $pattern pattern for element's values, use * as wild card
+     * @param integer $count
+     * @return array|null list of found elements, returns null if $iterator is 0 or '0'
+     */
     public function zscan($key, &$iterator, $pattern = null, $count = null)
     {
+        if ((string)$iterator === '0') {
+            return null;
+        }
         $this->init();
         if ($this->driver instanceof Client) {
             $returned = $this->driver->zscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
