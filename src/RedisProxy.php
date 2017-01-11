@@ -8,6 +8,7 @@ use Predis\Response\Status;
 use Redis;
 
 /**
+ * @method mixed config(string $command, $argument = null)
  * @method boolean set(string $key, string $value) Set the string value of a key
  * @method array mget(array $keys) Multi get - Returns the values of all specified keys. For every key that does not hold a string value or does not exist, FALSE is returned.
  * @method integer hset(string $key, string $field, string $value) Set the string value of a hash field

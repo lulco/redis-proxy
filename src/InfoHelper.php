@@ -101,12 +101,7 @@ class InfoHelper
 
             foreach (self::$keyStartToSectionMap as $keyStart => $targetSection) {
                 if (strpos($key, $keyStart) === 0 && $keyStart === 'db') {
-                    list($keys, $expires, $avgTtl) = explode(',', $value);
-                    $value = [
-                        'keys' => strpos($keys, '=') !== false ? explode('=', $keys)[1] : 0,
-                        'expires' => strpos($expires, '=') !== false ? explode('=', $expires)[1] : null,
-                        'avg_ttl' => strpos($avgTtl, '=') !== false ? explode('=', $avgTtl)[1] : null,
-                    ];
+                    $value = self::createKeyspaceInfo($value);
                 }
                 if (strpos($key, $keyStart) === 0) {
                     $groupedResult[$targetSection][$key] = $value;
@@ -115,5 +110,15 @@ class InfoHelper
             }
         }
         return $groupedResult;
+    }
+
+    private static function createKeyspaceInfo($keyspaceInfo)
+    {
+        list($keys, $expires, $avgTtl) = explode(',', $keyspaceInfo);
+        return [
+            'keys' => strpos($keys, '=') !== false ? explode('=', $keys)[1] : 0,
+            'expires' => strpos($expires, '=') !== false ? explode('=', $expires)[1] : null,
+            'avg_ttl' => strpos($avgTtl, '=') !== false ? explode('=', $avgTtl)[1] : null,
+        ];
     }
 }
