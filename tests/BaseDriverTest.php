@@ -84,7 +84,7 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         self::assertEquals(0, $keyspaceInfo['db1']['avg_ttl']);
     }
 
-    public function testSet()
+    public function testSetGet()
     {
         self::assertFalse($this->redisProxy->get('my_key'));
         self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
@@ -146,5 +146,71 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         self::assertEquals('my_value', $this->redisProxy->hget('my_hash_key', 'my_field'));
         self::assertEquals(0, $this->redisProxy->hset('my_hash_key', 'my_field', 'my_new_value'));
         self::assertEquals('my_new_value', $this->redisProxy->hget('my_hash_key', 'my_field'));
+    }
+
+    public function testHgetAll()
+    {
+        self::assertTrue(is_array($this->redisProxy->hgetall('my_hash_key')));
+        self::assertCount(0, $this->redisProxy->hgetall('my_hash_key'));
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_first_field', 'my_first_value'));
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_second_field', 'my_second_value'));
+        self::assertTrue(is_array($this->redisProxy->hgetall('my_hash_key')));
+        self::assertCount(2, $this->redisProxy->hgetall('my_hash_key'));
+        self::assertArrayHasKey('my_first_field', $this->redisProxy->hgetall('my_hash_key'));
+        self::assertArrayHasKey('my_second_field', $this->redisProxy->hGetAll('my_hash_key'));
+        self::assertArrayNotHasKey('my_third_field', $this->redisProxy->hgetall('my_hash_key'));
+    }
+
+    public function testHlen()
+    {
+        self::assertEquals(0, $this->redisProxy->hlen('my_hash_key'));
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_first_field', 'my_first_value'));
+        self::assertEquals(1, $this->redisProxy->hlen('my_hash_key'));
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_second_field', 'my_second_value'));
+        self::assertEquals(2, $this->redisProxy->hlen('my_hash_key'));
+        self::assertEquals(1, $this->redisProxy->hdel('my_hash_key', 'my_first_field'));
+        self::assertEquals(1, $this->redisProxy->hLen('my_hash_key'));
+    }
+
+    public function testHdel()
+    {
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_first_field', 'my_first_value'));
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_second_field', 'my_second_value'));
+        self::assertEquals(2, $this->redisProxy->hlen('my_hash_key'));
+        self::assertEquals(1, $this->redisProxy->del('my_hash_key'));
+        self::assertEquals(0, $this->redisProxy->hlen('my_hash_key'));
+
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_first_field', 'my_first_value'));
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_second_field', 'my_second_value'));
+        self::assertEquals(2, $this->redisProxy->hlen('my_hash_key'));
+        // field as string
+        self::assertEquals(1, $this->redisProxy->hdel('my_hash_key', 'my_first_field'));
+        self::assertEquals(1, $this->redisProxy->hlen('my_hash_key'));
+        // list of fields
+        self::assertEquals(1, $this->redisProxy->hdel('my_hash_key', 'my_first_field', 'my_second_field'));
+        self::assertEquals(0, $this->redisProxy->hlen('my_hash_key'));
+
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_first_field', 'my_first_value'));
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_second_field', 'my_second_value'));
+        self::assertEquals(2, $this->redisProxy->hlen('my_hash_key'));
+        self::assertEquals(2, $this->redisProxy->hdel('my_hash_key', 'my_first_field', 'my_second_field'));
+        self::assertEquals(0, $this->redisProxy->hlen('my_hash_key'));
+
+        // delete non existing fields
+        self::assertEquals(0, $this->redisProxy->hdel('my_hash_key', 'my_first_field', 'my_second_field'));
+
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_first_field', 'my_first_value'));
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_second_field', 'my_second_value'));
+        self::assertEquals(2, $this->redisProxy->hlen('my_hash_key'));
+        // fields as array
+        self::assertEquals(2, $this->redisProxy->hdel('my_hash_key', ['my_first_field', 'my_second_field']));
+        self::assertEquals(0, $this->redisProxy->hlen('my_hash_key'));
+
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_first_field', 'my_first_value'));
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_second_field', 'my_second_value'));
+        self::assertEquals(2, $this->redisProxy->hlen('my_hash_key'));
+        // each fields as array - only first argument is accepted
+        self::assertEquals(1, $this->redisProxy->hdel('my_hash_key', ['my_first_field'], ['my_second_field']));
+        self::assertEquals(1, $this->redisProxy->hlen('my_hash_key'));
     }
 }

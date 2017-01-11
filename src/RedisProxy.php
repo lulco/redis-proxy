@@ -11,7 +11,14 @@ use Redis;
 /**
  * @method boolean set(string $key, string $value) Set the string value of a key
  * @method array mget(array $keys) Multi get - Returns the values of all specified keys. For every key that does not hold a string value or does not exist, FALSE is returned.
+ * @method integer hset(string $key, string $field, string $value) Set the string value of a hash field
+ * @method array hgetall(string $key) Get all fields and values in hash
+ * @method array hGetAll(string $key) Get all fields and values in hash
+ * @method integer hlen(string $key) Get the number of fields in hash
+ * @method integer hLen(string $key) Get the number of fields in hash
+ * @method boolean flushall() Remove all keys from all databases
  * @method boolean flushAll() Remove all keys from all databases
+ * @method boolean flushdb() Remove all keys from the current database
  * @method boolean flushDb() Remove all keys from the current database
  */
 class RedisProxy
@@ -241,6 +248,12 @@ class RedisProxy
         return $this->driver->scan($iterator, $pattern, $count);
     }
 
+    /**
+     * Get the value of a hash field
+     * @param string $key
+     * @param string $field
+     * @return string|boolean false if hash field is not set
+     */
     public function hget($key, $field)
     {
         $this->init();
@@ -249,6 +262,22 @@ class RedisProxy
             $result = $result === null ? false : $result;
         }
         return $result;
+    }
+
+    /**
+     * Delete one or more hash fields, returns number of deleted fields
+     * @param string $key
+     * @param array $fields
+     * @return integer
+     */
+    public function hdel($key, ...$fields)
+    {
+        if (is_array($fields[0])) {
+            $fields = $fields[0];
+        }
+        $res = $this->driver->hdel($key, ...$fields);
+
+        return $res;
     }
 
     public function hscan($key, &$iterator, $pattern = null, $count = null)
