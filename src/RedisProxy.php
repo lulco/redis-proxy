@@ -172,19 +172,7 @@ class RedisProxy
             $result = $this->driver->mset(...$dictionary);
             return $this->transformResult($result);
         }
-
-        $keys = array_values(array_filter($dictionary, function ($key) {
-            return $key % 2 == 0;
-        }, ARRAY_FILTER_USE_KEY));
-        $values = array_values(array_filter($dictionary, function ($key) {
-            return $key % 2 == 1;
-        }, ARRAY_FILTER_USE_KEY));
-
-        if (count($keys) != count($values)) {
-            throw new RedisProxyException('Wrong number of arguments for mset');
-        }
-
-        $dictionary = array_combine($keys, $values);
+        $dictionary = $this->prepareKeyValue($dictionary, 'mset');
         $result = $this->driver->mset($dictionary);
         return $this->transformResult($result);
     }
@@ -239,7 +227,8 @@ class RedisProxy
             $iterator = $returned[0];
             return $returned[1];
         }
-        return $this->driver->scan($iterator, $pattern, $count);
+        $data = $this->driver->scan($iterator, $pattern, $count);
+        return $data === false ? null : $data;
     }
 
     /**
@@ -306,19 +295,7 @@ class RedisProxy
             $result = $this->driver->hmset($key, ...$dictionary);
             return $this->transformResult($result);
         }
-
-        $fields = array_values(array_filter($dictionary, function ($dictionaryKey) {
-            return $dictionaryKey % 2 == 0;
-        }, ARRAY_FILTER_USE_KEY));
-        $values = array_values(array_filter($dictionary, function ($dictionaryKey) {
-            return $dictionaryKey % 2 == 1;
-        }, ARRAY_FILTER_USE_KEY));
-
-        if (count($fields) != count($values)) {
-            throw new RedisProxyException('Wrong number of arguments for hmset');
-        }
-
-        $dictionary = array_combine($fields, $values);
+        $dictionary = $this->prepareKeyValue($dictionary, 'hmset');
         $result = $this->driver->hmset($key, $dictionary);
         return $this->transformResult($result);
     }
@@ -342,7 +319,8 @@ class RedisProxy
             $iterator = $returned[0];
             return $returned[1];
         }
-        return $this->driver->hscan($key, $iterator, $pattern, $count);
+        $data = $this->driver->hscan($key, $iterator, $pattern, $count);
+        return $data === false ? null : $data;
     }
 
     /**
@@ -402,7 +380,8 @@ class RedisProxy
             $iterator = $returned[0];
             return $returned[1];
         }
-        return $this->driver->sscan($key, $iterator, $pattern, $count);
+        $data = $this->driver->sscan($key, $iterator, $pattern, $count);
+        return $data === false ? null : $data;
     }
 
     /**
@@ -424,7 +403,8 @@ class RedisProxy
             $iterator = $returned[0];
             return $returned[1];
         }
-        return $this->driver->zscan($key, $iterator, $pattern, $count);
+        $data = $this->driver->zscan($key, $iterator, $pattern, $count);
+        return $data === false ? null : $data;
     }
 
     private function convertFalseToNull($result)
@@ -438,5 +418,27 @@ class RedisProxy
             $result = $result->getPayload() === 'OK';
         }
         return $result;
+    }
+
+    /**
+     * Create array from input array - odd keys are used as keys, even keys are used as values
+     * @param array $dictionary
+     * @param string $command
+     * @return array
+     * @throws RedisProxyException if number of keys is not the same as number of values
+     */
+    private function prepareKeyValue(array $dictionary, $command)
+    {
+        $keys = array_values(array_filter($dictionary, function ($key) {
+            return $key % 2 == 0;
+        }, ARRAY_FILTER_USE_KEY));
+        $values = array_values(array_filter($dictionary, function ($key) {
+            return $key % 2 == 1;
+        }, ARRAY_FILTER_USE_KEY));
+
+        if (count($keys) != count($values)) {
+            throw new RedisProxyException("Wrong number of arguments for $command");
+        }
+        return array_combine($keys, $values);
     }
 }
