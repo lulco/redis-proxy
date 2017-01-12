@@ -170,6 +170,7 @@ class RedisProxy
      */
     public function mset(...$dictionary)
     {
+        $this->init();
         if (is_array($dictionary[0])) {
             $result = $this->driver->mset(...$dictionary);
             return $this->transformResult($result);
@@ -253,6 +254,7 @@ class RedisProxy
      */
     public function hdel($key, ...$fields)
     {
+        $this->init();
         if (is_array($fields[0])) {
             $fields = $fields[0];
         }
@@ -268,6 +270,7 @@ class RedisProxy
      */
     public function hincrby($key, $field, $increment = 1)
     {
+        $this->init();
         return $this->driver->hincrby($key, $field, (int)$increment);
     }
 
@@ -280,6 +283,7 @@ class RedisProxy
      */
     public function hincrbyfloat($key, $field, $increment = 1)
     {
+        $this->init();
         return $this->driver->hincrbyfloat($key, $field, $increment);
     }
 
@@ -292,6 +296,7 @@ class RedisProxy
      */
     public function hmset($key, ...$dictionary)
     {
+        $this->init();
         if (is_array($dictionary[0])) {
             $result = $this->driver->hmset($key, ...$dictionary);
             return $this->transformResult($result);
@@ -331,6 +336,7 @@ class RedisProxy
      */
     public function sadd($key, ...$members)
     {
+        $this->init();
         if (is_array($members[0])) {
             $members = $members[0];
         }
@@ -345,6 +351,7 @@ class RedisProxy
      */
     public function spop($key, $count = 1)
     {
+        $this->init();
         if ($count == 1 || $count === null) {
             $result = $this->driver->spop($key);
             return $this->convertFalseToNull($result);
