@@ -193,7 +193,7 @@ class RedisProxy
 
     /**
      * Delete a key(s)
-     * @param array ...$keys
+     * @param array $keys
      * @return integer number of deleted keys
      */
     public function del(...$keys)
@@ -204,7 +204,7 @@ class RedisProxy
 
     /**
      * Delete a key(s)
-     * @param array ...$keys
+     * @param array $keys
      * @return integer number of deleted keys
      */
     public function delete(...$keys)
@@ -249,7 +249,7 @@ class RedisProxy
     /**
      * Delete one or more hash fields, returns number of deleted fields
      * @param array $key
-     * @param array ...$fields
+     * @param array $fields
      * @return integer
      */
     public function hdel($key, ...$fields)
@@ -331,7 +331,7 @@ class RedisProxy
     /**
      * Add one or more members to a set
      * @param string $key
-     * @param array ...$members
+     * @param array $members
      * @return integer number of new members added to set
      */
     public function sadd($key, ...$members)
