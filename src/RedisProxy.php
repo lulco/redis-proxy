@@ -381,28 +381,6 @@ class RedisProxy
         return $this->driver->sscan($key, $iterator, $pattern, $count);
     }
 
-    /**
-     * Incrementally iterate sorted sets elements and associated scores
-     * @param string $key
-     * @param mixed $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
-     * @param string $pattern pattern for element's values, use * as wild card
-     * @param integer $count
-     * @return array|boolean|null list of found elements, returns null if $iterator is 0 or '0'
-     */
-    public function zscan($key, &$iterator, $pattern = null, $count = null)
-    {
-        if ((string)$iterator === '0') {
-            return null;
-        }
-        $this->init();
-        if ($this->driver instanceof Client) {
-            $returned = $this->driver->zscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
-            $iterator = $returned[0];
-            return $returned[1];
-        }
-        return $this->driver->zscan($key, $iterator, $pattern, $count);
-    }
-
     private function convertFalseToNull($result)
     {
         return $this->driver instanceof Redis && $result === false ? null : $result;
