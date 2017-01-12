@@ -6,6 +6,7 @@
 - Removed parameter database from constructor - BC break (use command select )
 - Return values of some commands
 - Unified info command for both drivers (inspired by predis)
+- Return null instead of false on get and hget
 
 #### Added
 - Timeout to redis connect

@@ -9,17 +9,18 @@ use Redis;
 
 /**
  * @method mixed config(string $command, $argument = null)
+ * @method mixed dbsize() Return the number of keys in the selected database
  * @method boolean set(string $key, string $value) Set the string value of a key
+ * @method array keys(string $pattern) Find all keys matching the given pattern
  * @method array mget(array $keys) Multi get - Returns the values of all specified keys. For every key that does not hold a string value or does not exist, FALSE is returned.
  * @method integer hset(string $key, string $field, string $value) Set the string value of a hash field
- * @method array hgetall(string $key) Get all fields and values in hash
- * @method array hGetAll(string $key) Get all fields and values in hash
- * @method integer hlen(string $key) Get the number of fields in hash
- * @method integer hLen(string $key) Get the number of fields in hash
+ * @method array hkeys(string $key) Get all fields in a hash (without values)
+ * @method array hgetall(string $key) Get all fields and values in a hash
+ * @method integer hlen(string $key) Get the number of fields in a hash
+ * @method array smembers(string $key) Get all the members in a set
+ * @method integer scard(string $key) Get the number of members in a set
  * @method boolean flushall() Remove all keys from all databases
- * @method boolean flushAll() Remove all keys from all databases
  * @method boolean flushdb() Remove all keys from the current database
- * @method boolean flushDb() Remove all keys from the current database
  */
 class RedisProxy
 {
@@ -104,11 +105,13 @@ class RedisProxy
     public function __call($name, $arguments)
     {
         $this->init();
-        $result = call_user_func_array([$this->driver, $name], $arguments);
-        if ($this->driver instanceof Client && $result instanceof Status) {
-            $result = $result->getPayload() === 'OK';
+        $name = strtolower($name);
+        try {
+            $result = call_user_func_array([$this->driver, $name], $arguments);
+        } catch (Exception $e) {
+            throw new RedisProxyException("Error for command '$name', use getPrevious() for more info", 1484162284, $e);
         }
-        return $result;
+        return $this->transformResult($result);
     }
 
     /**
@@ -122,14 +125,15 @@ class RedisProxy
         if (!$this->isConnected()) {
             $this->connect($this->host, $this->port, $this->timeout);
         }
+        if ($database == $this->database) {
+            return true;
+        }
         try {
             $result = $this->driver->select($database);
         } catch (Exception $e) {
             throw new RedisProxyException('Invalid DB index');
         }
-        if ($this->driver instanceof Client) {
-            $result = $result->getPayload() === 'OK';
-        }
+        $result = $this->transformResult($result);
         if ($result === false) {
             throw new RedisProxyException('Invalid DB index');
         }
@@ -144,12 +148,8 @@ class RedisProxy
     public function info($section = null)
     {
         $this->init();
-        if ($section === null) {
-            $result = $this->driver->info();
-        } else {
-            $section = strtolower($section);
-            $result = $this->driver->info($section);
-        }
+        $section = $section ? strtolower($section) : $section;
+        $result = $section === null ? $this->driver->info() : $this->driver->info($section);
 
         $databases = $section === null || $section === 'keyspace' ? $this->config('get', 'databases')['databases'] : null;
         $groupedResult = InfoHelper::createInfoArray($this->driver, $result, $databases);
@@ -163,32 +163,67 @@ class RedisProxy
     }
 
     /**
+     * Set multiple values to multiple keys
+     * @param array $dictionary
+     * @return boolean true on success
+     * @throws RedisProxyException if number of arguments is wrong
+     */
+    public function mset(...$dictionary)
+    {
+        $this->init();
+        if (is_array($dictionary[0])) {
+            $result = $this->driver->mset(...$dictionary);
+            return $this->transformResult($result);
+        }
+        $dictionary = $this->prepareKeyValue($dictionary, 'mset');
+        $result = $this->driver->mset($dictionary);
+        return $this->transformResult($result);
+    }
+
+    /**
      * @param string $key
-     * @return string
+     * @return string|null null if hash field is not set
      */
     public function get($key)
     {
         $this->init();
         $result = $this->driver->get($key);
-        if ($this->driver instanceof Client) {
-            $result = $result === null ? false : $result;
-        }
-        return $result;
+        return $this->convertFalseToNull($result);
     }
 
-    public function del(...$key)
+    /**
+     * Delete a key(s)
+     * @param array $keys
+     * @return integer number of deleted keys
+     */
+    public function del(...$keys)
     {
         $this->init();
-        return $this->driver->del(...$key);
+        return $this->driver->del(...$keys);
     }
 
-    public function delete(...$key)
+    /**
+     * Delete a key(s)
+     * @param array $keys
+     * @return integer number of deleted keys
+     */
+    public function delete(...$keys)
     {
-        return $this->del(...$key);
+        return $this->del(...$keys);
     }
 
+    /**
+     * Incrementally iterate the keys space
+     * @param mixed $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
+     * @param string $pattern pattern for keys, use * as wild card
+     * @param integer $count
+     * @return array|boolean|null list of found keys, returns null if $iterator is 0 or '0'
+     */
     public function scan(&$iterator, $pattern = null, $count = null)
     {
+        if ((string)$iterator === '0') {
+            return null;
+        }
         $this->init();
         if ($this->driver instanceof Client) {
             $returned = $this->driver->scan($iterator, ['match' => $pattern, 'count' => $count]);
@@ -202,36 +237,88 @@ class RedisProxy
      * Get the value of a hash field
      * @param string $key
      * @param string $field
-     * @return string|boolean false if hash field is not set
+     * @return string|null null if hash field is not set
      */
     public function hget($key, $field)
     {
         $this->init();
         $result = $this->driver->hget($key, $field);
-        if ($this->driver instanceof Client) {
-            $result = $result === null ? false : $result;
-        }
-        return $result;
+        return $this->convertFalseToNull($result);
     }
 
     /**
      * Delete one or more hash fields, returns number of deleted fields
-     * @param string $key
+     * @param array $key
      * @param array $fields
      * @return integer
      */
     public function hdel($key, ...$fields)
     {
+        $this->init();
         if (is_array($fields[0])) {
             $fields = $fields[0];
         }
-        $res = $this->driver->hdel($key, ...$fields);
-
-        return $res;
+        return $this->driver->hdel($key, ...$fields);
     }
 
+    /**
+     * Increment the integer value of hash field by given number
+     * @param string $key
+     * @param string $field
+     * @param integer $increment
+     * @return integer
+     */
+    public function hincrby($key, $field, $increment = 1)
+    {
+        $this->init();
+        return $this->driver->hincrby($key, $field, (int)$increment);
+    }
+
+    /**
+     * Increment the float value of hash field by given amount
+     * @param string $key
+     * @param string $field
+     * @param float $increment
+     * @return float
+     */
+    public function hincrbyfloat($key, $field, $increment = 1)
+    {
+        $this->init();
+        return $this->driver->hincrbyfloat($key, $field, $increment);
+    }
+
+    /**
+     * Set multiple values to multiple hash fields
+     * @param string $key
+     * @param array $dictionary
+     * @return boolean true on success
+     * @throws RedisProxyException if number of arguments is wrong
+     */
+    public function hmset($key, ...$dictionary)
+    {
+        $this->init();
+        if (is_array($dictionary[0])) {
+            $result = $this->driver->hmset($key, ...$dictionary);
+            return $this->transformResult($result);
+        }
+        $dictionary = $this->prepareKeyValue($dictionary, 'hmset');
+        $result = $this->driver->hmset($key, $dictionary);
+        return $this->transformResult($result);
+    }
+
+    /**
+     * Incrementally iterate hash fields and associated values
+     * @param string $key
+     * @param mixed $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
+     * @param string $pattern pattern for fields, use * as wild card
+     * @param integer $count
+     * @return array|boolean|null list of found fields with associated values, returns null if $iterator is 0 or '0'
+     */
     public function hscan($key, &$iterator, $pattern = null, $count = null)
     {
+        if ((string)$iterator === '0') {
+            return null;
+        }
         $this->init();
         if ($this->driver instanceof Client) {
             $returned = $this->driver->hscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
@@ -241,19 +328,59 @@ class RedisProxy
         return $this->driver->hscan($key, $iterator, $pattern, $count);
     }
 
-    public function zscan($key, &$iterator, $pattern = null, $count = null)
+    /**
+     * Add one or more members to a set
+     * @param string $key
+     * @param array $members
+     * @return integer number of new members added to set
+     */
+    public function sadd($key, ...$members)
     {
         $this->init();
-        if ($this->driver instanceof Client) {
-            $returned = $this->driver->zscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
-            $iterator = $returned[0];
-            return $returned[1];
+        if (is_array($members[0])) {
+            $members = $members[0];
         }
-        return $this->driver->zscan($key, $iterator, $pattern, $count);
+        return $this->driver->sadd($key, ...$members);
     }
 
+    /**
+     * Remove and return one or multiple random members from a set
+     * @param string $key
+     * @param integer $count number of members
+     * @return mixed string if $count is null or 1 and $key exists, array if $count > 1 and $key exists, null if $key doesn't exist
+     */
+    public function spop($key, $count = 1)
+    {
+        $this->init();
+        if ($count == 1 || $count === null) {
+            $result = $this->driver->spop($key);
+            return $this->convertFalseToNull($result);
+        }
+
+        $members = [];
+        for ($i = 0; $i < $count; ++$i) {
+            $member = $this->driver->spop($key);
+            if (!$member) {
+                break;
+            }
+            $members[] = $member;
+        }
+        return empty($members) ? null : $members;
+    }
+
+    /**
+     * Incrementally iterate Set elements
+     * @param string $key
+     * @param mixed $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
+     * @param string $pattern pattern for member's values, use * as wild card
+     * @param integer $count
+     * @return array|boolean|null list of found members, returns null if $iterator is 0 or '0'
+     */
     public function sscan($key, &$iterator, $pattern = null, $count = null)
     {
+        if ((string)$iterator === '0') {
+            return null;
+        }
         $this->init();
         if ($this->driver instanceof Client) {
             $returned = $this->driver->sscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
@@ -261,5 +388,40 @@ class RedisProxy
             return $returned[1];
         }
         return $this->driver->sscan($key, $iterator, $pattern, $count);
+    }
+
+    private function convertFalseToNull($result)
+    {
+        return $this->driver instanceof Redis && $result === false ? null : $result;
+    }
+
+    private function transformResult($result)
+    {
+        if ($this->driver instanceof Client && $result instanceof Status) {
+            $result = $result->getPayload() === 'OK';
+        }
+        return $result;
+    }
+
+    /**
+     * Create array from input array - odd keys are used as keys, even keys are used as values
+     * @param array $dictionary
+     * @param string $command
+     * @return array
+     * @throws RedisProxyException if number of keys is not the same as number of values
+     */
+    private function prepareKeyValue(array $dictionary, $command)
+    {
+        $keys = array_values(array_filter($dictionary, function ($key) {
+            return $key % 2 == 0;
+        }, ARRAY_FILTER_USE_KEY));
+        $values = array_values(array_filter($dictionary, function ($key) {
+            return $key % 2 == 1;
+        }, ARRAY_FILTER_USE_KEY));
+
+        if (count($keys) != count($values)) {
+            throw new RedisProxyException("Wrong number of arguments for $command");
+        }
+        return array_combine($keys, $values);
     }
 }
