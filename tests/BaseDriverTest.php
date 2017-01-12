@@ -355,6 +355,8 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         self::assertEquals(6, $this->redisProxy->hget('my_hash_key', 'my_incr_field'));
         self::assertEquals(10, $this->redisProxy->hincrby('my_hash_key', 'my_incr_field', 4.1234));
         self::assertEquals(10, $this->redisProxy->hget('my_hash_key', 'my_incr_field'));
+        self::assertEquals(5, $this->redisProxy->hincrby('my_hash_key', 'my_incr_field', -5));
+        self::assertEquals(5, $this->redisProxy->hget('my_hash_key', 'my_incr_field'));
     }
 
     public function testHincrbyFloat()
@@ -366,6 +368,8 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         self::assertEquals(6, $this->redisProxy->hget('my_hash_key', 'my_incr_field'));
         self::assertEquals(10.1234, $this->redisProxy->hincrbyfloat('my_hash_key', 'my_incr_field', 4.1234));
         self::assertEquals(10.1234, $this->redisProxy->hget('my_hash_key', 'my_incr_field'));
+        self::assertEquals(9.1, $this->redisProxy->hincrbyfloat('my_hash_key', 'my_incr_field', -1.0234));
+        self::assertEquals(9.1, $this->redisProxy->hget('my_hash_key', 'my_incr_field'));
     }
 
     public function testHmset()

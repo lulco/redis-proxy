@@ -14,9 +14,11 @@ use Redis;
  * @method array keys(string $pattern) Find all keys matching the given pattern
  * @method array mget(array $keys) Multi get - Returns the values of all specified keys. For every key that does not hold a string value or does not exist, FALSE is returned.
  * @method integer hset(string $key, string $field, string $value) Set the string value of a hash field
- * @method array hkeys(string $key) Get all fields in hash (without values)
- * @method array hgetall(string $key) Get all fields and values in hash
- * @method integer hlen(string $key) Get the number of fields in hash
+ * @method array hkeys(string $key) Get all fields in a hash (without values)
+ * @method array hgetall(string $key) Get all fields and values in a hash
+ * @method integer hlen(string $key) Get the number of fields in a hash
+ * @method array smembers(string $key) Get all the members in a set
+ * @method integer scard(string $key) Get the number of members in a set
  * @method boolean flushall() Remove all keys from all databases
  * @method boolean flushdb() Remove all keys from the current database
  */
