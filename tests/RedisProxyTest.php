@@ -9,12 +9,13 @@ class RedisProxyTest extends PHPUnit_Framework_TestCase
 {
     /**
      * @expectedException \RedisProxy\RedisProxyException
-     * @expectedExceptionMessage You need to set at least one driver
+     * @expectedExceptionMessage No driver available
      */
-    public function testEmptyDriversOrder()
+    public function testNoDriverAvailable()
     {
         $redisProxy = new RedisProxy(getenv('REDIS_PROXY_REDIS_HOST'), getenv('REDIS_PROXY_REDIS_PORT'));
         $redisProxy->setDriversOrder([]);
+        $redisProxy->dbsize();
     }
 
     /**

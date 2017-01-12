@@ -53,11 +53,14 @@ class RedisProxy
         $this->driversOrder = $this->supportedDrivers;
     }
 
+    /**
+     * Set driver priorities - default is 1. redis, 2. predis
+     * @param array $driversOrder
+     * @return RedisProxy
+     * @throws RedisProxyException if some driver is not supported
+     */
     public function setDriversOrder(array $driversOrder)
     {
-        if (empty($driversOrder)) {
-            throw new RedisProxyException('You need to set at least one driver');
-        }
         foreach ($driversOrder as $driver) {
             if (!in_array($driver, $this->supportedDrivers)) {
                 throw new RedisProxyException('Driver "' . $driver . '" is not supported');
@@ -89,7 +92,7 @@ class RedisProxy
                 return;
             }
         }
-        throw new RedisProxyException('No redis library loaded (ext-redis or predis)');
+        throw new RedisProxyException('No driver available');
     }
 
     private function connect($host, $port, $timeout = null)
