@@ -5,6 +5,8 @@ Library for creating redis instance depends on application / server possibilitie
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/lulco/redis-proxy/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/lulco/redis-proxy/?branch=master)
 [![Code Coverage](https://scrutinizer-ci.com/g/lulco/redis-proxy/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/lulco/redis-proxy/?branch=master)
 [![SensioLabsInsight](https://insight.sensiolabs.com/projects/614109c1-261a-432a-9a32-50d7138b00c4/mini.png)](https://insight.sensiolabs.com/projects/614109c1-261a-432a-9a32-50d7138b00c4)
+[![Latest Stable Version](https://img.shields.io/packagist/v/lulco/redis-proxy.svg)](https://packagist.org/packages/lulco/redis-proxy)
+[![Total Downloads](https://img.shields.io/packagist/dt/lulco/redis-proxy.svg?style=flat-square)](https://packagist.org/packages/lulco/redis-proxy)
 [![PHP 7 ready](http://php7ready.timesplinter.ch/lulco/redis-proxy/master/badge.svg)](https://travis-ci.org/lulco/redis-proxy)
 
 ## Installation
@@ -27,10 +29,11 @@ The fastest way to install Redis proxy is to add it to your project using Compos
 
 ## Usage
 ```
-$redis = new \RedisProxy\RedisProxy($host, $port, $database);
-$redis->hSet($hashKey, $key, $value);
-$redis->hLen($hashKey);
-$redis->hGet($hashKey, $key);
-$redis->hGetAll($hashKey);
+$redis = new \RedisProxy\RedisProxy($host, $port);
+$redis->select($database);
+$redis->hset($key, $field, $value);
+$redis->hlen($key);
+$redis->hget($key, $field);
+$redis->hgetall($key);
 ...
 ```
