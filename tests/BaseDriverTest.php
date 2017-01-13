@@ -8,11 +8,12 @@ use RedisProxy\RedisProxy;
 abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
 {
     /** @var RedisProxy */
-    protected $redisProxy;
+    private $redisProxy;
 
     protected function setUp()
     {
-        $this->initializeDriver();
+        $this->redisProxy = $this->initializeDriver();
+        $this->redisProxy->flushall();
     }
 
     /**
@@ -22,8 +23,8 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
 
     public function testSelect()
     {
-        self::assertTrue($this->redisProxy->select(1));
-        self::assertTrue($this->redisProxy->select(0));
+        self::assertTrue($this->redisProxy->select(getenv('REDIS_PROXY_REDIS_DATABASE')));
+        self::assertTrue($this->redisProxy->select(getenv('REDIS_PROXY_REDIS_DATABASE_2')));
     }
 
     /**
@@ -63,10 +64,10 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         }
 
         // insert some data
-        $this->redisProxy->select(0);
+        $this->redisProxy->select(getenv('REDIS_PROXY_REDIS_DATABASE'));
         $this->redisProxy->set('first_key', 'first_value');
 
-        $this->redisProxy->select(1);
+        $this->redisProxy->select(getenv('REDIS_PROXY_REDIS_DATABASE_2'));
         $this->redisProxy->set('second_key', 'second_value');
         $this->redisProxy->set('third_key', 'third_value');
 

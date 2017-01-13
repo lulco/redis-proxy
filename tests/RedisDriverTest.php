@@ -11,8 +11,8 @@ class RedisDriverTest extends BaseDriverTest
         if (!extension_loaded('redis')) {
             self::markTestSkipped('redis extension is not loaded');
         }
-        $this->redisProxy = new RedisProxy(getenv('REDIS_PROXY_REDIS_HOST'), getenv('REDIS_PROXY_REDIS_PORT'));
-        $this->redisProxy->setDriversOrder([RedisProxy::DRIVER_REDIS]);
-        $this->redisProxy->flushall();
+        $redisProxy = new RedisProxy(getenv('REDIS_PROXY_REDIS_HOST'), getenv('REDIS_PROXY_REDIS_PORT'), getenv('REDIS_PROXY_REDIS_DATABASE'));
+        $redisProxy->setDriversOrder([RedisProxy::DRIVER_REDIS]);
+        return $redisProxy;
     }
 }

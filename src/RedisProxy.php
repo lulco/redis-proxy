@@ -45,10 +45,11 @@ class RedisProxy
 
     private $driversOrder = [];
 
-    public function __construct($host, $port, $timeout = null)
+    public function __construct($host, $port, $database = 0, $timeout = null)
     {
         $this->host = $host;
         $this->port = $port;
+        $this->database = $database;
         $this->timeout = $timeout;
         $this->driversOrder = $this->supportedDrivers;
     }
