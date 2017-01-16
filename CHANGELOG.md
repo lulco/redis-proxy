@@ -2,9 +2,10 @@
 
 ### [Unreleased][unreleased]
 
+### [0.2.0] - 2017-01-16
 #### Changed
 - Return values of some commands (e.g. return null instead of false on get and hget)
-- Unified info command for both drivers (inspired by predis)
+- Unified info command for both drivers (inspired by Predis)
 
 #### Added
 - Wrapper for \Predis\Client
@@ -17,5 +18,6 @@
 #### Added
 - Wrapper for \Redis
 
-[unreleased]: https://github.com/lulco/redis-proxy/compare/0.1.0...HEAD
+[unreleased]: https://github.com/lulco/redis-proxy/compare/0.2.0...HEAD
+[0.2.0]: https://github.com/lulco/redis-proxy/compare/0.1.0...0.2.0
 [0.1.0]: https://github.com/lulco/redis-proxy/compare/0.0.0...0.1.0
