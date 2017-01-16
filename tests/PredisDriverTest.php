@@ -11,8 +11,8 @@ class PredisDriverTest extends BaseDriverTest
         if (!class_exists('Predis\Client')) {
             self::markTestSkipped('Predis client is not installed');
         }
-        $this->redisProxy = new RedisProxy(getenv('REDIS_PROXY_REDIS_HOST'), getenv('REDIS_PROXY_REDIS_PORT'));
-        $this->redisProxy->setDriversOrder([RedisProxy::DRIVER_PREDIS]);
-        $this->redisProxy->flushall();
+        $redisProxy = new RedisProxy(getenv('REDIS_PROXY_REDIS_HOST'), getenv('REDIS_PROXY_REDIS_PORT'), getenv('REDIS_PROXY_REDIS_DATABASE'));
+        $redisProxy->setDriversOrder([RedisProxy::DRIVER_PREDIS]);
+        return $redisProxy;
     }
 }
