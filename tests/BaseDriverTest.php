@@ -51,8 +51,10 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         self::assertArrayHasKey('keyspace', $info);
         self::assertNotEmpty($info['keyspace']);
 
+        $numberOfDatabases = $this->redisProxy->config('get', 'databases')['databases'];
         $keyspaceInfo = $this->redisProxy->info('keyspace');
         self::assertNotEmpty($keyspaceInfo);
+        self::assertCount((int)$numberOfDatabases, $keyspaceInfo);
         foreach ($keyspaceInfo as $db => $dbValues) {
             self::assertStringStartsWith('db', $db);
             self::assertArrayHasKey('keys', $dbValues);
@@ -71,8 +73,10 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         $this->redisProxy->set('second_key', 'second_value');
         $this->redisProxy->set('third_key', 'third_value');
 
+        $numberOfDatabases = $this->redisProxy->config('get', 'databases')['databases'];
         $keyspaceInfo = $this->redisProxy->info('keyspace');
         self::assertNotEmpty($keyspaceInfo);
+        self::assertCount((int)$numberOfDatabases, $keyspaceInfo);
         foreach ($keyspaceInfo as $db => $dbValues) {
             self::assertStringStartsWith('db', $db);
             self::assertArrayHasKey('keys', $dbValues);

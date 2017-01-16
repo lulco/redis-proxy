@@ -3,16 +3,14 @@
 ### [Unreleased][unreleased]
 
 #### Changed
-- Removed parameter database from constructor - BC break (use command select )
-- Return values of some commands
+- Return values of some commands (e.g. return null instead of false on get and hget)
 - Unified info command for both drivers (inspired by predis)
-- Return null instead of false on get and hget
 
 #### Added
+- Wrapper for \Predis\Client
 - Timeout to redis connect
 - Possibility to set drivers order
 - RedisProxyException - common exception for all drivers
-- Predis commands
 
 ### [0.1.0] - 2016-04-17
 
