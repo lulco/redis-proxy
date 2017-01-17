@@ -56,9 +56,7 @@ class InfoHelper
      */
     public static function createInfoArray($driver, array $result, $databases = null)
     {
-        $groupedResult = [];
-        self::initializeKeyspace($groupedResult, $databases);
-
+        $groupedResult = self::initializeKeyspace($databases);
         if ($driver instanceof Client) {
             return self::createInfoForPredis($result, $groupedResult);
         }
@@ -66,10 +64,11 @@ class InfoHelper
         return self::createInfoForRedis($result, $groupedResult);
     }
 
-    private static function initializeKeyspace(&$groupedResult, $databases = null)
+    private static function initializeKeyspace($databases = null)
     {
+        $groupedResult = [];
         if ($databases === null) {
-            return;
+            return $groupedResult;
         }
         $groupedResult['keyspace'] = [];
         for ($db = 0; $db < $databases; ++$db) {
@@ -79,6 +78,7 @@ class InfoHelper
                 'avg_ttl' => null,
             ];
         }
+        return $groupedResult;
     }
 
     private static function createInfoForPredis(array $result, array $groupedResult)

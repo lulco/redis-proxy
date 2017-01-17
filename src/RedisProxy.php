@@ -9,7 +9,7 @@ use Redis;
 
 /**
  * @method mixed config(string $command, $argument = null)
- * @method mixed dbsize() Return the number of keys in the selected database
+ * @method integer dbsize() Return the number of keys in the selected database
  * @method boolean set(string $key, string $value) Set the string value of a key
  * @method array keys(string $pattern) Find all keys matching the given pattern
  * @method array mget(array $keys) Multi get - Returns the values of all specified keys. For every key that does not hold a string value or does not exist, FALSE is returned.
@@ -35,6 +35,8 @@ class RedisProxy
     private $port;
 
     private $database = 0;
+
+    private $selectedDatabase = 0;
 
     private $timeout;
 
@@ -96,6 +98,20 @@ class RedisProxy
         throw new RedisProxyException('No driver available');
     }
 
+    /**
+     * @return string|null
+     */
+    public function actualDriver()
+    {
+        if ($this->driver instanceof Redis) {
+            return self::DRIVER_REDIS;
+        }
+        if ($this->driver instanceof Client) {
+            return self::DRIVER_PREDIS;
+        }
+        return null;
+    }
+
     private function connect($host, $port, $timeout = null)
     {
         return $this->driver->connect($host, $port, $timeout);
@@ -129,7 +145,7 @@ class RedisProxy
         if (!$this->isConnected()) {
             $this->connect($this->host, $this->port, $this->timeout);
         }
-        if ($database == $this->database) {
+        if ($database == $this->selectedDatabase) {
             return true;
         }
         try {
@@ -142,6 +158,7 @@ class RedisProxy
             throw new RedisProxyException('Invalid DB index');
         }
         $this->database = $database;
+        $this->selectedDatabase = $database;
         return $result;
     }
 
@@ -229,7 +246,7 @@ class RedisProxy
             return null;
         }
         $this->init();
-        if ($this->driver instanceof Client) {
+        if ($this->actualDriver() === self::DRIVER_PREDIS) {
             $returned = $this->driver->scan($iterator, ['match' => $pattern, 'count' => $count]);
             $iterator = $returned[0];
             return $returned[1];
@@ -324,7 +341,7 @@ class RedisProxy
             return null;
         }
         $this->init();
-        if ($this->driver instanceof Client) {
+        if ($this->actualDriver() === self::DRIVER_PREDIS) {
             $returned = $this->driver->hscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
             $iterator = $returned[0];
             return $returned[1];
@@ -386,7 +403,7 @@ class RedisProxy
             return null;
         }
         $this->init();
-        if ($this->driver instanceof Client) {
+        if ($this->actualDriver() === self::DRIVER_PREDIS) {
             $returned = $this->driver->sscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
             $iterator = $returned[0];
             return $returned[1];
@@ -396,12 +413,12 @@ class RedisProxy
 
     private function convertFalseToNull($result)
     {
-        return $this->driver instanceof Redis && $result === false ? null : $result;
+        return $this->actualDriver() === self::DRIVER_REDIS && $result === false ? null : $result;
     }
 
     private function transformResult($result)
     {
-        if ($this->driver instanceof Client && $result instanceof Status) {
+        if ($this->actualDriver() === self::DRIVER_PREDIS && $result instanceof Status) {
             $result = $result->getPayload() === 'OK';
         }
         return $result;

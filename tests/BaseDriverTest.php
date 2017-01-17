@@ -119,6 +119,7 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
     /**
      * @expectedException \RedisProxy\RedisProxyException
      * @expectedExceptionMessage Error for command 'keys', use getPrevious() for more info
+     * @expectedExceptionCode 1484162284
      */
     public function testKeysWithoutPattern()
     {
