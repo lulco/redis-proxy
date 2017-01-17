@@ -2,6 +2,9 @@
 
 ### [Unreleased][unreleased]
 
+#### Fixed
+Fixed select command
+ 
 ### [0.2.0] - 2017-01-16
 #### Changed
 - Return values of some commands (e.g. return null instead of false on get and hget)
