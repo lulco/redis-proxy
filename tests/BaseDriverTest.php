@@ -168,7 +168,7 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
 
     /**
      * @expectedException \RedisProxy\RedisProxyException
-     * @expectedExceptionMessage Wrong number of arguments for mset
+     * @expectedExceptionMessage Wrong number of arguments for mset command
      */
     public function testWrongNumberOfArgumentsMset()
     {
@@ -270,6 +270,24 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         self::assertNull($this->redisProxy->get('first_key'));
         self::assertNull($this->redisProxy->get('second_key'));
         self::assertNull($this->redisProxy->get('third_key'));
+    }
+
+    /**
+     * @expectedException \RedisProxy\RedisProxyException
+     * @expectedExceptionMessage Wrong number of arguments for del command
+     */
+    public function testDelNoKeys()
+    {
+        $this->redisProxy->del();
+    }
+
+    /**
+     * @expectedException \RedisProxy\RedisProxyException
+     * @expectedExceptionMessage Wrong number of arguments for del command
+     */
+    public function testDeleteNoKeys()
+    {
+        $this->redisProxy->delete();
     }
 
     public function testScan()
@@ -448,7 +466,7 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
 
     /**
      * @expectedException \RedisProxy\RedisProxyException
-     * @expectedExceptionMessage Wrong number of arguments for hmset
+     * @expectedExceptionMessage Wrong number of arguments for hmset command
      */
     public function testWrongNumberOfArgumentsHmset()
     {

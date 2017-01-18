@@ -200,6 +200,7 @@ class RedisProxy
      */
     public function del(...$keys)
     {
+        $this->prepareArguments('del', ...$keys);
         $this->init();
         return $this->driver->del(...$keys);
     }
@@ -239,12 +240,8 @@ class RedisProxy
      */
     public function mget(...$keys)
     {
+        $keys = array_unique($this->prepareArguments('mget', ...$keys));
         $this->init();
-        if (is_array($keys[0])) {
-            $keys = $keys[0];
-        }
-
-        $keys = array_unique($keys);
         $values = [];
         foreach ($this->driver->mget($keys) as $value) {
             $values[] = $this->convertFalseToNull($value);
@@ -294,10 +291,8 @@ class RedisProxy
      */
     public function hdel($key, ...$fields)
     {
+        $fields = $this->prepareArguments('hdel', ...$fields);
         $this->init();
-        if (is_array($fields[0])) {
-            $fields = $fields[0];
-        }
         return $this->driver->hdel($key, ...$fields);
     }
 
@@ -354,12 +349,8 @@ class RedisProxy
      */
     public function hmget($key, ...$fields)
     {
+        $fields = array_unique($this->prepareArguments('hmget', ...$fields));
         $this->init();
-        if (is_array($fields[0])) {
-            $fields = $fields[0];
-        }
-
-        $fields = array_unique($fields);
         $values = [];
         foreach ($this->driver->hmget($key, $fields) as $value) {
             $values[] = $this->convertFalseToNull($value);
@@ -397,10 +388,8 @@ class RedisProxy
      */
     public function sadd($key, ...$members)
     {
+        $members = $this->prepareArguments('sadd', ...$members);
         $this->init();
-        if (is_array($members[0])) {
-            $members = $members[0];
-        }
         return $this->driver->sadd($key, ...$members);
     }
 
@@ -481,8 +470,19 @@ class RedisProxy
         }, ARRAY_FILTER_USE_KEY));
 
         if (count($keys) != count($values)) {
-            throw new RedisProxyException("Wrong number of arguments for $command");
+            throw new RedisProxyException("Wrong number of arguments for $command command");
         }
         return array_combine($keys, $values);
+    }
+
+    private function prepareArguments($command, ...$params)
+    {
+        if (!isset($params[0])) {
+            throw new RedisProxyException("Wrong number of arguments for $command command");
+        }
+        if (is_array($params[0])) {
+            $params = $params[0];
+        }
+        return $params;
     }
 }
