@@ -2,9 +2,6 @@
 
 namespace RedisProxy;
 
-use Predis\Client;
-use Redis;
-
 class InfoHelper
 {
     private static $keyStartToSectionMap = [
