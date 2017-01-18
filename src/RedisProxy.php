@@ -172,7 +172,7 @@ class RedisProxy
         $result = $section === null ? $this->driver->info() : $this->driver->info($section);
 
         $databases = $section === null || $section === 'keyspace' ? $this->config('get', 'databases')['databases'] : null;
-        $groupedResult = InfoHelper::createInfoArray($this->driver, $result, $databases);
+        $groupedResult = InfoHelper::createInfoArray($this, $result, $databases);
         if ($section === null) {
             return $groupedResult;
         }

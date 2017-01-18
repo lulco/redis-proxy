@@ -49,15 +49,15 @@ class InfoHelper
     ];
 
     /**
-     * @param Client|Redis $driver
+     * @param RedisProxy $redisProxy
      * @param array $result
      * @param integer|null $databases
      * @return array
      */
-    public static function createInfoArray($driver, array $result, $databases = null)
+    public static function createInfoArray(RedisProxy $redisProxy, array $result, $databases = null)
     {
         $groupedResult = self::initializeKeyspace($databases);
-        if ($driver instanceof Client) {
+        if ($redisProxy->actualDriver() === RedisProxy::DRIVER_PREDIS) {
             return self::createInfoForPredis($result, $groupedResult);
         }
 
