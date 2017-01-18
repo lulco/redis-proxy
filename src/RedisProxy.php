@@ -12,7 +12,6 @@ use Redis;
  * @method integer dbsize() Return the number of keys in the selected database
  * @method boolean set(string $key, string $value) Set the string value of a key
  * @method array keys(string $pattern) Find all keys matching the given pattern
- * @method array mget(array $keys) Multi get - Returns the values of all specified keys. For every key that does not hold a string value or does not exist, FALSE is returned.
  * @method integer hset(string $key, string $field, string $value) Set the string value of a hash field
  * @method array hkeys(string $key) Get all fields in a hash (without values)
  * @method array hgetall(string $key) Get all fields and values in a hash
@@ -184,24 +183,6 @@ class RedisProxy
     }
 
     /**
-     * Set multiple values to multiple keys
-     * @param array $dictionary
-     * @return boolean true on success
-     * @throws RedisProxyException if number of arguments is wrong
-     */
-    public function mset(...$dictionary)
-    {
-        $this->init();
-        if (is_array($dictionary[0])) {
-            $result = $this->driver->mset(...$dictionary);
-            return $this->transformResult($result);
-        }
-        $dictionary = $this->prepareKeyValue($dictionary, 'mset');
-        $result = $this->driver->mset($dictionary);
-        return $this->transformResult($result);
-    }
-
-    /**
      * @param string $key
      * @return string|null null if hash field is not set
      */
@@ -231,6 +212,44 @@ class RedisProxy
     public function delete(...$keys)
     {
         return $this->del(...$keys);
+    }
+
+    /**
+     * Set multiple values to multiple keys
+     * @param array $dictionary
+     * @return boolean true on success
+     * @throws RedisProxyException if number of arguments is wrong
+     */
+    public function mset(...$dictionary)
+    {
+        $this->init();
+        if (is_array($dictionary[0])) {
+            $result = $this->driver->mset(...$dictionary);
+            return $this->transformResult($result);
+        }
+        $dictionary = $this->prepareKeyValue($dictionary, 'mset');
+        $result = $this->driver->mset($dictionary);
+        return $this->transformResult($result);
+    }
+
+    /**
+     * Multi get
+     * @param array $keys
+     * @return array Returns the values for all specified keys. For every key that does not hold a string value or does not exist, null is returned
+     */
+    public function mget(...$keys)
+    {
+        $this->init();
+        if (is_array($keys[0])) {
+            $keys = $keys[0];
+        }
+
+        $keys = array_unique($keys);
+        $values = [];
+        foreach ($this->driver->mget($keys) as $value) {
+            $values[] = $this->convertFalseToNull($value);
+        }
+        return array_combine($keys, $values);
     }
 
     /**
@@ -325,6 +344,27 @@ class RedisProxy
         $dictionary = $this->prepareKeyValue($dictionary, 'hmset');
         $result = $this->driver->hmset($key, $dictionary);
         return $this->transformResult($result);
+    }
+
+    /**
+     * Multi hash get
+     * @param string $key
+     * @param array $fields
+     * @return array Returns the values for all specified fields. For every field that does not hold a string value or does not exist, null is returned
+     */
+    public function hmget($key, ...$fields)
+    {
+        $this->init();
+        if (is_array($fields[0])) {
+            $fields = $fields[0];
+        }
+
+        $fields = array_unique($fields);
+        $values = [];
+        foreach ($this->driver->hmget($key, $fields) as $value) {
+            $values[] = $this->convertFalseToNull($value);
+        }
+        return array_combine($fields, $values);
     }
 
     /**

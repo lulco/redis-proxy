@@ -177,13 +177,64 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
 
     public function testMget()
     {
-        self::assertEquals([false, false], $this->redisProxy->mget(['first_key', 'second_key']));
+        // all non existing keys
+        $mget = $this->redisProxy->mget(['first_key', 'second_key']);
+        self::assertCount(2, $mget);
+        self::assertArrayHasKey('first_key', $mget);
+        self::assertNull($mget['first_key']);
+        self::assertArrayHasKey('second_key', $mget);
+        self::assertNull($mget['second_key']);
+
+        // all existing keys
         self::assertTrue($this->redisProxy->set('first_key', 'first_value'));
         self::assertTrue($this->redisProxy->set('second_key', 'second_value'));
-        self::assertEquals(['first_value', 'second_value'], $this->redisProxy->mget(['first_key', 'second_key']));
-        self::assertEquals(['first_value', 'second_value', false], $this->redisProxy->mget(['first_key', 'second_key', 'third_key']));
+        $mget = $this->redisProxy->mget(['first_key', 'second_key']);
+        self::assertCount(2, $mget);
+        self::assertArrayHasKey('first_key', $mget);
+        self::assertEquals('first_value', $mget['first_key']);
+        self::assertArrayHasKey('second_key', $mget);
+        self::assertEquals('second_value', $mget['second_key']);
+
+        // some existing and some non existing keys
+        $mget = $this->redisProxy->mget(['first_key', 'second_key', 'third_key']);
+        self::assertCount(3, $mget);
+        self::assertArrayHasKey('first_key', $mget);
+        self::assertEquals('first_value', $mget['first_key']);
+        self::assertArrayHasKey('second_key', $mget);
+        self::assertEquals('second_value', $mget['second_key']);
+        self::assertArrayHasKey('third_key', $mget);
+        self::assertNull($mget['third_key']);
+
+        // all existing keys
         self::assertTrue($this->redisProxy->set('third_key', 'third_value'));
-        self::assertEquals(['first_value', 'second_value', 'third_value'], $this->redisProxy->mget(['first_key', 'second_key', 'third_key']));
+        $mget = $this->redisProxy->mget(['first_key', 'second_key', 'third_key']);
+        self::assertCount(3, $mget);
+        self::assertArrayHasKey('first_key', $mget);
+        self::assertEquals('first_value', $mget['first_key']);
+        self::assertArrayHasKey('second_key', $mget);
+        self::assertEquals('second_value', $mget['second_key']);
+        self::assertArrayHasKey('third_key', $mget);
+        self::assertEquals('third_value', $mget['third_key']);
+
+        // duplicate key in mget
+        $mget = $this->redisProxy->mget(['first_key', 'first_key', 'second_key', 'third_key']);
+        self::assertCount(3, $mget);
+        self::assertArrayHasKey('first_key', $mget);
+        self::assertEquals('first_value', $mget['first_key']);
+        self::assertArrayHasKey('second_key', $mget);
+        self::assertEquals('second_value', $mget['second_key']);
+        self::assertArrayHasKey('third_key', $mget);
+        self::assertEquals('third_value', $mget['third_key']);
+
+        // argument not array
+        $mget = $this->redisProxy->mget('first_key', 'second_key', 'third_key');
+        self::assertCount(3, $mget);
+        self::assertArrayHasKey('first_key', $mget);
+        self::assertEquals('first_value', $mget['first_key']);
+        self::assertArrayHasKey('second_key', $mget);
+        self::assertEquals('second_value', $mget['second_key']);
+        self::assertArrayHasKey('third_key', $mget);
+        self::assertEquals('third_value', $mget['third_key']);
     }
 
     public function testDelete()
@@ -402,6 +453,68 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
     public function testWrongNumberOfArgumentsHmset()
     {
         $this->redisProxy->hmset('my_hash_key', 'my_field_1', 'my_value_1', 'my_field_2', 'my_value_2', 'xxx');
+    }
+
+    public function testHmget()
+    {
+        // all non existing keys
+        $hmget = $this->redisProxy->hmget('my_hash_key', ['first_field', 'second_field']);
+        self::assertCount(2, $hmget);
+        self::assertArrayHasKey('first_field', $hmget);
+        self::assertNull($hmget['first_field']);
+        self::assertArrayHasKey('second_field', $hmget);
+        self::assertNull($hmget['second_field']);
+
+        // all existing keys
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'first_field', 'first_value'));
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'second_field', 'second_value'));
+        $hmget = $this->redisProxy->hmget('my_hash_key', ['first_field', 'second_field']);
+        self::assertCount(2, $hmget);
+        self::assertArrayHasKey('first_field', $hmget);
+        self::assertEquals('first_value', $hmget['first_field']);
+        self::assertArrayHasKey('second_field', $hmget);
+        self::assertEquals('second_value', $hmget['second_field']);
+
+        // some existing and some non existing keys
+        $hmget = $this->redisProxy->hmget('my_hash_key', ['first_field', 'second_field', 'third_field']);
+        self::assertCount(3, $hmget);
+        self::assertArrayHasKey('first_field', $hmget);
+        self::assertEquals('first_value', $hmget['first_field']);
+        self::assertArrayHasKey('second_field', $hmget);
+        self::assertEquals('second_value', $hmget['second_field']);
+        self::assertArrayHasKey('third_field', $hmget);
+        self::assertNull($hmget['third_field']);
+
+        // all existing keys
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'third_field', 'third_value'));
+        $hmget = $this->redisProxy->hmget('my_hash_key', ['first_field', 'second_field', 'third_field']);
+        self::assertCount(3, $hmget);
+        self::assertArrayHasKey('first_field', $hmget);
+        self::assertEquals('first_value', $hmget['first_field']);
+        self::assertArrayHasKey('second_field', $hmget);
+        self::assertEquals('second_value', $hmget['second_field']);
+        self::assertArrayHasKey('third_field', $hmget);
+        self::assertEquals('third_value', $hmget['third_field']);
+
+        // duplicate key in mget
+        $hmget = $this->redisProxy->hmget('my_hash_key', ['first_field', 'first_field', 'second_field', 'third_field']);
+        self::assertCount(3, $hmget);
+        self::assertArrayHasKey('first_field', $hmget);
+        self::assertEquals('first_value', $hmget['first_field']);
+        self::assertArrayHasKey('second_field', $hmget);
+        self::assertEquals('second_value', $hmget['second_field']);
+        self::assertArrayHasKey('third_field', $hmget);
+        self::assertEquals('third_value', $hmget['third_field']);
+
+        // argument not array
+        $hmget = $this->redisProxy->hmget('my_hash_key', 'first_field', 'second_field', 'third_field');
+        self::assertCount(3, $hmget);
+        self::assertArrayHasKey('first_field', $hmget);
+        self::assertEquals('first_value', $hmget['first_field']);
+        self::assertArrayHasKey('second_field', $hmget);
+        self::assertEquals('second_value', $hmget['second_field']);
+        self::assertArrayHasKey('third_field', $hmget);
+        self::assertEquals('third_value', $hmget['third_field']);
     }
 
     public function testHscan()

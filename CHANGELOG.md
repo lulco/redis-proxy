@@ -3,7 +3,8 @@
 ### [Unreleased][unreleased]
 
 #### Fixed
-Fixed select command
+- Fixed select command
+- Fixed mget and hmget commands
  
 ### [0.2.0] - 2017-01-16
 #### Changed
