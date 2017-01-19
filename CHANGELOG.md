@@ -2,9 +2,9 @@
 
 ### [Unreleased][unreleased]
 
+### [0.2.1] - 2017-01-19
 #### Fixed
-- Fixed select command
-- Fixed mget and hmget commands
+- Fixed commands select, mget and hmget
  
 ### [0.2.0] - 2017-01-16
 #### Changed
@@ -22,6 +22,7 @@
 #### Added
 - Wrapper for \Redis
 
-[unreleased]: https://github.com/lulco/redis-proxy/compare/0.2.0...HEAD
+[unreleased]: https://github.com/lulco/redis-proxy/compare/0.2.1...HEAD
+[0.2.1]: https://github.com/lulco/redis-proxy/compare/0.2.0...0.2.1
 [0.2.0]: https://github.com/lulco/redis-proxy/compare/0.1.0...0.2.0
 [0.1.0]: https://github.com/lulco/redis-proxy/compare/0.0.0...0.1.0
