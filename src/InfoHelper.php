@@ -2,9 +2,6 @@
 
 namespace RedisProxy;
 
-use Predis\Client;
-use Redis;
-
 class InfoHelper
 {
     private static $keyStartToSectionMap = [
@@ -49,27 +46,26 @@ class InfoHelper
     ];
 
     /**
-     * @param Client|Redis $driver
+     * @param RedisProxy $redisProxy
      * @param array $result
      * @param integer|null $databases
      * @return array
      */
-    public static function createInfoArray($driver, array $result, $databases = null)
+    public static function createInfoArray(RedisProxy $redisProxy, array $result, $databases = null)
     {
-        $groupedResult = [];
-        self::initializeKeyspace($groupedResult, $databases);
-
-        if ($driver instanceof Client) {
+        $groupedResult = self::initializeKeyspace($databases);
+        if ($redisProxy->actualDriver() === RedisProxy::DRIVER_PREDIS) {
             return self::createInfoForPredis($result, $groupedResult);
         }
 
         return self::createInfoForRedis($result, $groupedResult);
     }
 
-    private static function initializeKeyspace(&$groupedResult, $databases = null)
+    private static function initializeKeyspace($databases = null)
     {
+        $groupedResult = [];
         if ($databases === null) {
-            return;
+            return $groupedResult;
         }
         $groupedResult['keyspace'] = [];
         for ($db = 0; $db < $databases; ++$db) {
@@ -79,6 +75,7 @@ class InfoHelper
                 'avg_ttl' => null,
             ];
         }
+        return $groupedResult;
     }
 
     private static function createInfoForPredis(array $result, array $groupedResult)

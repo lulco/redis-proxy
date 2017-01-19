@@ -9,10 +9,9 @@ use Redis;
 
 /**
  * @method mixed config(string $command, $argument = null)
- * @method mixed dbsize() Return the number of keys in the selected database
+ * @method integer dbsize() Return the number of keys in the selected database
  * @method boolean set(string $key, string $value) Set the string value of a key
  * @method array keys(string $pattern) Find all keys matching the given pattern
- * @method array mget(array $keys) Multi get - Returns the values of all specified keys. For every key that does not hold a string value or does not exist, FALSE is returned.
  * @method integer hset(string $key, string $field, string $value) Set the string value of a hash field
  * @method array hkeys(string $key) Get all fields in a hash (without values)
  * @method array hgetall(string $key) Get all fields and values in a hash
@@ -35,6 +34,8 @@ class RedisProxy
     private $port;
 
     private $database = 0;
+
+    private $selectedDatabase = 0;
 
     private $timeout;
 
@@ -96,6 +97,20 @@ class RedisProxy
         throw new RedisProxyException('No driver available');
     }
 
+    /**
+     * @return string|null
+     */
+    public function actualDriver()
+    {
+        if ($this->driver instanceof Redis) {
+            return self::DRIVER_REDIS;
+        }
+        if ($this->driver instanceof Client) {
+            return self::DRIVER_PREDIS;
+        }
+        return null;
+    }
+
     private function connect($host, $port, $timeout = null)
     {
         return $this->driver->connect($host, $port, $timeout);
@@ -129,7 +144,7 @@ class RedisProxy
         if (!$this->isConnected()) {
             $this->connect($this->host, $this->port, $this->timeout);
         }
-        if ($database == $this->database) {
+        if ($database == $this->selectedDatabase) {
             return true;
         }
         try {
@@ -142,6 +157,7 @@ class RedisProxy
             throw new RedisProxyException('Invalid DB index');
         }
         $this->database = $database;
+        $this->selectedDatabase = $database;
         return $result;
     }
 
@@ -156,7 +172,7 @@ class RedisProxy
         $result = $section === null ? $this->driver->info() : $this->driver->info($section);
 
         $databases = $section === null || $section === 'keyspace' ? $this->config('get', 'databases')['databases'] : null;
-        $groupedResult = InfoHelper::createInfoArray($this->driver, $result, $databases);
+        $groupedResult = InfoHelper::createInfoArray($this, $result, $databases);
         if ($section === null) {
             return $groupedResult;
         }
@@ -164,6 +180,39 @@ class RedisProxy
             return $groupedResult[$section];
         }
         throw new RedisProxyException('Info section "' . $section . '" doesn\'t exist');
+    }
+
+    /**
+     * @param string $key
+     * @return string|null null if hash field is not set
+     */
+    public function get($key)
+    {
+        $this->init();
+        $result = $this->driver->get($key);
+        return $this->convertFalseToNull($result);
+    }
+
+    /**
+     * Delete a key(s)
+     * @param array $keys
+     * @return integer number of deleted keys
+     */
+    public function del(...$keys)
+    {
+        $this->prepareArguments('del', ...$keys);
+        $this->init();
+        return $this->driver->del(...$keys);
+    }
+
+    /**
+     * Delete a key(s)
+     * @param array $keys
+     * @return integer number of deleted keys
+     */
+    public function delete(...$keys)
+    {
+        return $this->del(...$keys);
     }
 
     /**
@@ -185,35 +234,19 @@ class RedisProxy
     }
 
     /**
-     * @param string $key
-     * @return string|null null if hash field is not set
-     */
-    public function get($key)
-    {
-        $this->init();
-        $result = $this->driver->get($key);
-        return $this->convertFalseToNull($result);
-    }
-
-    /**
-     * Delete a key(s)
+     * Multi get
      * @param array $keys
-     * @return integer number of deleted keys
+     * @return array Returns the values for all specified keys. For every key that does not hold a string value or does not exist, null is returned
      */
-    public function del(...$keys)
+    public function mget(...$keys)
     {
+        $keys = array_unique($this->prepareArguments('mget', ...$keys));
         $this->init();
-        return $this->driver->del(...$keys);
-    }
-
-    /**
-     * Delete a key(s)
-     * @param array $keys
-     * @return integer number of deleted keys
-     */
-    public function delete(...$keys)
-    {
-        return $this->del(...$keys);
+        $values = [];
+        foreach ($this->driver->mget($keys) as $value) {
+            $values[] = $this->convertFalseToNull($value);
+        }
+        return array_combine($keys, $values);
     }
 
     /**
@@ -229,7 +262,7 @@ class RedisProxy
             return null;
         }
         $this->init();
-        if ($this->driver instanceof Client) {
+        if ($this->actualDriver() === self::DRIVER_PREDIS) {
             $returned = $this->driver->scan($iterator, ['match' => $pattern, 'count' => $count]);
             $iterator = $returned[0];
             return $returned[1];
@@ -258,10 +291,8 @@ class RedisProxy
      */
     public function hdel($key, ...$fields)
     {
+        $fields = $this->prepareArguments('hdel', ...$fields);
         $this->init();
-        if (is_array($fields[0])) {
-            $fields = $fields[0];
-        }
         return $this->driver->hdel($key, ...$fields);
     }
 
@@ -311,6 +342,23 @@ class RedisProxy
     }
 
     /**
+     * Multi hash get
+     * @param string $key
+     * @param array $fields
+     * @return array Returns the values for all specified fields. For every field that does not hold a string value or does not exist, null is returned
+     */
+    public function hmget($key, ...$fields)
+    {
+        $fields = array_unique($this->prepareArguments('hmget', ...$fields));
+        $this->init();
+        $values = [];
+        foreach ($this->driver->hmget($key, $fields) as $value) {
+            $values[] = $this->convertFalseToNull($value);
+        }
+        return array_combine($fields, $values);
+    }
+
+    /**
      * Incrementally iterate hash fields and associated values
      * @param string $key
      * @param mixed $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
@@ -324,7 +372,7 @@ class RedisProxy
             return null;
         }
         $this->init();
-        if ($this->driver instanceof Client) {
+        if ($this->actualDriver() === self::DRIVER_PREDIS) {
             $returned = $this->driver->hscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
             $iterator = $returned[0];
             return $returned[1];
@@ -340,10 +388,8 @@ class RedisProxy
      */
     public function sadd($key, ...$members)
     {
+        $members = $this->prepareArguments('sadd', ...$members);
         $this->init();
-        if (is_array($members[0])) {
-            $members = $members[0];
-        }
         return $this->driver->sadd($key, ...$members);
     }
 
@@ -386,7 +432,7 @@ class RedisProxy
             return null;
         }
         $this->init();
-        if ($this->driver instanceof Client) {
+        if ($this->actualDriver() === self::DRIVER_PREDIS) {
             $returned = $this->driver->sscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
             $iterator = $returned[0];
             return $returned[1];
@@ -396,12 +442,12 @@ class RedisProxy
 
     private function convertFalseToNull($result)
     {
-        return $this->driver instanceof Redis && $result === false ? null : $result;
+        return $this->actualDriver() === self::DRIVER_REDIS && $result === false ? null : $result;
     }
 
     private function transformResult($result)
     {
-        if ($this->driver instanceof Client && $result instanceof Status) {
+        if ($this->actualDriver() === self::DRIVER_PREDIS && $result instanceof Status) {
             $result = $result->getPayload() === 'OK';
         }
         return $result;
@@ -424,8 +470,19 @@ class RedisProxy
         }, ARRAY_FILTER_USE_KEY));
 
         if (count($keys) != count($values)) {
-            throw new RedisProxyException("Wrong number of arguments for $command");
+            throw new RedisProxyException("Wrong number of arguments for $command command");
         }
         return array_combine($keys, $values);
+    }
+
+    private function prepareArguments($command, ...$params)
+    {
+        if (!isset($params[0])) {
+            throw new RedisProxyException("Wrong number of arguments for $command command");
+        }
+        if (is_array($params[0])) {
+            $params = $params[0];
+        }
+        return $params;
     }
 }
