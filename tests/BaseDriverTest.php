@@ -690,4 +690,157 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         self::assertEquals(271, $count);
         self::assertEquals(0, $iterator);
     }
+
+    public function testLlen()
+    {
+        self::assertEquals(0, $this->redisProxy->llen('my_list_key'));
+        self::assertEquals(1, $this->redisProxy->lpush('my_list_key', 'my_value'));
+        self::assertEquals(1, $this->redisProxy->llen('my_list_key'));
+    }
+
+    public function testLpush()
+    {
+        // add one element
+        self::assertEquals(1, $this->redisProxy->lpush('my_list_key', 'element'));
+        self::assertEquals(1, $this->redisProxy->llen('my_list_key'));
+
+        // add three elements
+        self::assertEquals(4, $this->redisProxy->lpush('my_list_key', 'element_2', 'element_3', 'element_4'));
+        self::assertEquals(4, $this->redisProxy->llen('my_list_key'));
+
+        // add elements which are already in list
+        self::assertEquals(7, $this->redisProxy->lpush('my_list_key', 'element_2', 'element_3', 'element_4'));
+        self::assertEquals(7, $this->redisProxy->llen('my_list_key'));
+
+        // add some new elements and some elements which are already in list
+        self::assertEquals(11, $this->redisProxy->lpush('my_list_key', 'element_2', 'element_3', 'element_5', 'element_6'));
+        self::assertEquals(11, $this->redisProxy->llen('my_list_key'));
+
+        // add three elements as array
+        self::assertEquals(14, $this->redisProxy->lpush('my_list_key', ['element_7', 'element_8', 'element_9']));
+        self::assertEquals(14, $this->redisProxy->llen('my_list_key'));
+    }
+
+    public function testRpush()
+    {
+        // add one element
+        self::assertEquals(1, $this->redisProxy->rpush('my_list_key', 'element'));
+        self::assertEquals(1, $this->redisProxy->llen('my_list_key'));
+
+        // add three elements
+        self::assertEquals(4, $this->redisProxy->rpush('my_list_key', 'element_2', 'element_3', 'element_4'));
+        self::assertEquals(4, $this->redisProxy->llen('my_list_key'));
+
+        // add elements which are already in list
+        self::assertEquals(7, $this->redisProxy->rpush('my_list_key', 'element_2', 'element_3', 'element_4'));
+        self::assertEquals(7, $this->redisProxy->llen('my_list_key'));
+
+        // add some new elements and some elements which are already in list
+        self::assertEquals(11, $this->redisProxy->rpush('my_list_key', 'element_2', 'element_3', 'element_5', 'element_6'));
+        self::assertEquals(11, $this->redisProxy->llen('my_list_key'));
+
+        // add three elements as array
+        self::assertEquals(14, $this->redisProxy->rpush('my_list_key', ['element_7', 'element_8', 'element_9']));
+        self::assertEquals(14, $this->redisProxy->llen('my_list_key'));
+    }
+
+    public function testLrange()
+    {
+        self::assertEquals(0, $this->redisProxy->llen('my_list_key'));
+        self::assertCount(0, $this->redisProxy->lrange('my_list_key', 0, -1));
+        self::assertCount(0, $this->redisProxy->lrange('my_list_key', 0, 2));
+
+        self::assertEquals(2, $this->redisProxy->lpush('my_list_key', 'element_1', 'element_2'));
+        self::assertEquals(2, $this->redisProxy->llen('my_list_key'));
+        self::assertCount(2, $this->redisProxy->lrange('my_list_key', 0, -1));
+        self::assertCount(2, $this->redisProxy->lrange('my_list_key', 0, 2));
+        self::assertEquals(['element_2', 'element_1'], $this->redisProxy->lrange('my_list_key', 0, -1));
+
+        self::assertEquals(4, $this->redisProxy->rpush('my_list_key', 'element_3', 'element_4'));
+        self::assertEquals(4, $this->redisProxy->llen('my_list_key'));
+        self::assertCount(4, $this->redisProxy->lrange('my_list_key', 0, -1));
+        self::assertCount(3, $this->redisProxy->lrange('my_list_key', 0, 2));
+        self::assertEquals(['element_2', 'element_1', 'element_3', 'element_4'], $this->redisProxy->lrange('my_list_key', 0, -1));
+    }
+
+    public function testLindex()
+    {
+        self::assertEquals(0, $this->redisProxy->llen('my_list_key'));
+        self::assertNull($this->redisProxy->lindex('my_list_key', 0));
+
+        self::assertEquals(2, $this->redisProxy->lpush('my_list_key', 'element_1', 'element_2'));
+        self::assertEquals(2, $this->redisProxy->llen('my_list_key'));
+        self::assertEquals('element_2', $this->redisProxy->lindex('my_list_key', 0));
+        self::assertEquals('element_1', $this->redisProxy->lindex('my_list_key', 1));
+        self::assertNull($this->redisProxy->lindex('my_list_key', 2));
+
+        self::assertEquals(4, $this->redisProxy->rpush('my_list_key', 'element_3', 'element_4'));
+        self::assertEquals(4, $this->redisProxy->llen('my_list_key'));
+        self::assertEquals('element_2', $this->redisProxy->lindex('my_list_key', 0));
+        self::assertEquals('element_1', $this->redisProxy->lindex('my_list_key', 1));
+        self::assertEquals('element_3', $this->redisProxy->lindex('my_list_key', 2));
+        self::assertEquals('element_4', $this->redisProxy->lindex('my_list_key', 3));
+        self::assertNull($this->redisProxy->lindex('my_list_key', 4));
+    }
+
+    public function testLpop()
+    {
+        self::assertEquals(0, $this->redisProxy->llen('my_list_key'));
+        self::assertNull($this->redisProxy->lindex('my_list_key', 0));
+        self::assertNull($this->redisProxy->lpop('my_list_key'));
+        self::assertEquals(2, $this->redisProxy->lpush('my_list_key', 'element_1', 'element_2'));
+        self::assertEquals(2, $this->redisProxy->llen('my_list_key'));
+        self::assertEquals('element_2', $this->redisProxy->lindex('my_list_key', 0));
+        self::assertEquals('element_1', $this->redisProxy->lindex('my_list_key', 1));
+        self::assertNull($this->redisProxy->lindex('my_list_key', 2));
+        self::assertEquals('element_2', $this->redisProxy->lpop('my_list_key'));
+        self::assertEquals(1, $this->redisProxy->llen('my_list_key'));
+        self::assertEquals('element_1', $this->redisProxy->lindex('my_list_key', 0));
+        self::assertNull($this->redisProxy->lindex('my_list_key', 1));
+        self::assertEquals('element_1', $this->redisProxy->lpop('my_list_key'));
+        self::assertEquals(0, $this->redisProxy->llen('my_list_key'));
+        self::assertNull($this->redisProxy->lindex('my_list_key', 0));
+    }
+
+    public function testRpop()
+    {
+        self::assertEquals(0, $this->redisProxy->llen('my_list_key'));
+        self::assertNull($this->redisProxy->lindex('my_list_key', 0));
+        self::assertNull($this->redisProxy->rpop('my_list_key'));
+        self::assertEquals(2, $this->redisProxy->lpush('my_list_key', 'element_1', 'element_2'));
+        self::assertEquals(2, $this->redisProxy->llen('my_list_key'));
+        self::assertEquals('element_2', $this->redisProxy->lindex('my_list_key', 0));
+        self::assertEquals('element_1', $this->redisProxy->lindex('my_list_key', 1));
+        self::assertNull($this->redisProxy->lindex('my_list_key', 2));
+        self::assertEquals('element_1', $this->redisProxy->rpop('my_list_key'));
+        self::assertEquals(1, $this->redisProxy->llen('my_list_key'));
+        self::assertEquals('element_2', $this->redisProxy->lindex('my_list_key', 0));
+        self::assertNull($this->redisProxy->lindex('my_list_key', 1));
+        self::assertEquals('element_2', $this->redisProxy->rpop('my_list_key'));
+        self::assertEquals(0, $this->redisProxy->llen('my_list_key'));
+        self::assertNull($this->redisProxy->lindex('my_list_key', 0));
+    }
+
+    public function testType()
+    {
+        self::assertNull($this->redisProxy->type('my_key'));
+        $this->redisProxy->set('my_key', 'my_value');
+        self::assertEquals(RedisProxy::TYPE_STRING, $this->redisProxy->type('my_key'));
+
+        self::assertNull($this->redisProxy->type('my_set_key'));
+        $this->redisProxy->sadd('my_set_key', 'my_member');
+        self::assertEquals(RedisProxy::TYPE_SET, $this->redisProxy->type('my_set_key'));
+
+        self::assertNull($this->redisProxy->type('my_hash_key'));
+        $this->redisProxy->hset('my_hash_key', 'my_key', 'my_value');
+        self::assertEquals(RedisProxy::TYPE_HASH, $this->redisProxy->type('my_hash_key'));
+
+        self::assertNull($this->redisProxy->type('my_list_key'));
+        $this->redisProxy->lpush('my_list_key', 'my_value');
+        self::assertEquals(RedisProxy::TYPE_LIST, $this->redisProxy->type('my_list_key'));
+
+        self::assertNull($this->redisProxy->type('my_sorted_set_key'));
+        $this->redisProxy->zadd('my_sorted_set_key', 1, 'my_value');
+        self::assertEquals(RedisProxy::TYPE_SORTED_SET, $this->redisProxy->type('my_sorted_set_key'));
+    }
 }

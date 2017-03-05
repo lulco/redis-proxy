@@ -9,15 +9,17 @@ use Redis;
 
 /**
  * @method mixed config(string $command, $argument = null)
- * @method integer dbsize() Return the number of keys in the selected database
+ * @method int dbsize() Return the number of keys in the selected database
  * @method boolean set(string $key, string $value) Set the string value of a key
  * @method array keys(string $pattern) Find all keys matching the given pattern
- * @method integer hset(string $key, string $field, string $value) Set the string value of a hash field
+ * @method int hset(string $key, string $field, string $value) Set the string value of a hash field
  * @method array hkeys(string $key) Get all fields in a hash (without values)
  * @method array hgetall(string $key) Get all fields and values in a hash
- * @method integer hlen(string $key) Get the number of fields in a hash
+ * @method int hlen(string $key) Get the number of fields in a hash
  * @method array smembers(string $key) Get all the members in a set
- * @method integer scard(string $key) Get the number of members in a set
+ * @method int scard(string $key) Get the number of members in a set
+ * @method int llen(string $key) Get the length of a list
+ * @method array lrange(string $key, int $start, int $stop) Get a range of elements from a list
  * @method boolean flushall() Remove all keys from all databases
  * @method boolean flushdb() Remove all keys from the current database
  */
@@ -26,6 +28,16 @@ class RedisProxy
     const DRIVER_REDIS = 'redis';
 
     const DRIVER_PREDIS = 'predis';
+
+    const TYPE_STRING = 'string';
+
+    const TYPE_SET = 'set';
+
+    const TYPE_HASH = 'hash';
+
+    const TYPE_LIST = 'list';
+
+    const TYPE_SORTED_SET = 'sorted_set';
 
     private $driver;
 
@@ -134,7 +146,7 @@ class RedisProxy
     }
 
     /**
-     * @param integer $database
+     * @param int $database
      * @return boolean true on success
      * @throws RedisProxyException on failure
      */
@@ -159,6 +171,43 @@ class RedisProxy
         $this->database = $database;
         $this->selectedDatabase = $database;
         return $result;
+    }
+
+    /**
+     * @param string $key
+     * @return string|null
+     */
+    public function type($key)
+    {
+        $this->init();
+        $result = $this->driver->type($key);
+        if ($this->actualDriver() === self::DRIVER_REDIS) {
+            if ($result === Redis::REDIS_STRING) {
+                return self::TYPE_STRING;
+            } elseif ($result === Redis::REDIS_SET) {
+                return self::TYPE_SET;
+            } elseif ($result === Redis::REDIS_HASH) {
+                return self::TYPE_HASH;
+            } elseif ($result === Redis::REDIS_LIST) {
+                return self::TYPE_LIST;
+            } elseif ($result === Redis::REDIS_ZSET) {
+                return self::TYPE_SORTED_SET;
+            }
+        } elseif ($this->actualDriver() === self::DRIVER_PREDIS && $result instanceof Status) {
+            $result = $result->getPayload();
+            if ($result === 'string') {
+                return self::TYPE_STRING;
+            } elseif ($result === 'set') {
+                return self::TYPE_SET;
+            } elseif ($result === 'hash') {
+                return self::TYPE_HASH;
+            } elseif ($result === 'list') {
+                return self::TYPE_LIST;
+            } elseif ($result === 'zset') {
+                return self::TYPE_SORTED_SET;
+            }
+        }
+        return null;
     }
 
     /**
@@ -196,7 +245,7 @@ class RedisProxy
     /**
      * Delete a key(s)
      * @param array $keys
-     * @return integer number of deleted keys
+     * @return int number of deleted keys
      */
     public function del(...$keys)
     {
@@ -208,7 +257,7 @@ class RedisProxy
     /**
      * Delete a key(s)
      * @param array $keys
-     * @return integer number of deleted keys
+     * @return int number of deleted keys
      */
     public function delete(...$keys)
     {
@@ -253,7 +302,7 @@ class RedisProxy
      * Incrementally iterate the keys space
      * @param mixed $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
      * @param string $pattern pattern for keys, use * as wild card
-     * @param integer $count
+     * @param int $count
      * @return array|boolean|null list of found keys, returns null if $iterator is 0 or '0'
      */
     public function scan(&$iterator, $pattern = null, $count = null)
@@ -287,7 +336,7 @@ class RedisProxy
      * Delete one or more hash fields, returns number of deleted fields
      * @param array $key
      * @param array $fields
-     * @return integer
+     * @return int
      */
     public function hdel($key, ...$fields)
     {
@@ -300,8 +349,8 @@ class RedisProxy
      * Increment the integer value of hash field by given number
      * @param string $key
      * @param string $field
-     * @param integer $increment
-     * @return integer
+     * @param int $increment
+     * @return int
      */
     public function hincrby($key, $field, $increment = 1)
     {
@@ -363,7 +412,7 @@ class RedisProxy
      * @param string $key
      * @param mixed $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
      * @param string $pattern pattern for fields, use * as wild card
-     * @param integer $count
+     * @param int $count
      * @return array|boolean|null list of found fields with associated values, returns null if $iterator is 0 or '0'
      */
     public function hscan($key, &$iterator, $pattern = null, $count = null)
@@ -384,7 +433,7 @@ class RedisProxy
      * Add one or more members to a set
      * @param string $key
      * @param array $members
-     * @return integer number of new members added to set
+     * @return int number of new members added to set
      */
     public function sadd($key, ...$members)
     {
@@ -396,7 +445,7 @@ class RedisProxy
     /**
      * Remove and return one or multiple random members from a set
      * @param string $key
-     * @param integer $count number of members
+     * @param int $count number of members
      * @return mixed string if $count is null or 1 and $key exists, array if $count > 1 and $key exists, null if $key doesn't exist
      */
     public function spop($key, $count = 1)
@@ -423,7 +472,7 @@ class RedisProxy
      * @param string $key
      * @param mixed $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
      * @param string $pattern pattern for member's values, use * as wild card
-     * @param integer $count
+     * @param int $count
      * @return array|boolean|null list of found members, returns null if $iterator is 0 or '0'
      */
     public function sscan($key, &$iterator, $pattern = null, $count = null)
@@ -440,11 +489,84 @@ class RedisProxy
         return $this->driver->sscan($key, $iterator, $pattern, $count);
     }
 
+    /**
+     * Prepend one or multiple values to a list
+     * @param string $key
+     * @param array $elements
+     * @return int the length of the list after the push operations
+     */
+    public function lpush($key, ...$elements)
+    {
+        $elements = $this->prepareArguments('lpush', ...$elements);
+        $this->init();
+        return $this->driver->lpush($key, ...$elements);
+    }
+
+    /**
+     * Append one or multiple values to a list
+     * @param string $key
+     * @param array $elements
+     * @return int the length of the list after the push operations
+     */
+    public function rpush($key, ...$elements)
+    {
+        $elements = $this->prepareArguments('rpush', ...$elements);
+        $this->init();
+        return $this->driver->rpush($key, ...$elements);
+    }
+
+    /**
+     * Remove and get the first element in a list
+     * @param string $key
+     * @return string|null
+     */
+    public function lpop($key)
+    {
+        $this->init();
+        $result = $this->driver->lpop($key);
+        return $this->convertFalseToNull($result);
+    }
+
+    /**
+     * Remove and get the last element in a list
+     * @param string $key
+     * @return string|null
+     */
+    public function rpop($key)
+    {
+        $this->init();
+        $result = $this->driver->rpop($key);
+        return $this->convertFalseToNull($result);
+    }
+
+    /**
+     * Get an element from a list by its index
+     * @param string $key
+     * @param int $index zero-based, so 0 means the first element, 1 the second element and so on. -1 means the last element, -2 means the penultimate and so forth
+     * @return string|null
+     */
+    public function lindex($key, $index)
+    {
+        $this->init();
+        $result = $this->driver->lindex($key, $index);
+        return $this->convertFalseToNull($result);
+    }
+
+    /**
+     * Returns null instead of false for Redis driver
+     * @param mixed $result
+     * @return mixed
+     */
     private function convertFalseToNull($result)
     {
         return $this->actualDriver() === self::DRIVER_REDIS && $result === false ? null : $result;
     }
 
+    /**
+     * Transforms Predis result Payload to boolean
+     * @param mixed $result
+     * @return mixed
+     */
     private function transformResult($result)
     {
         if ($this->actualDriver() === self::DRIVER_PREDIS && $result instanceof Status) {
