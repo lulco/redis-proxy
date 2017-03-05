@@ -265,6 +265,41 @@ class RedisProxy
     }
 
     /**
+     * Increment the integer value of a key by one
+     * @param string $key
+     * @return integer
+     */
+    public function incr($key)
+    {
+        $this->init();
+        return $this->driver->incr($key);
+    }
+
+    /**
+     * Increment the integer value of a key by the given amount
+     * @param string $key
+     * @param integer $increment
+     * @return integer
+     */
+    public function incrby($key, $increment = 1)
+    {
+        $this->init();
+        return $this->driver->incrby($key, (int)$increment);
+    }
+
+    /**
+     * Increment the float value of a key by the given amount
+     * @param string $key
+     * @param float $increment
+     * @return float
+     */
+    public function incrbyfloat($key, $increment = 1)
+    {
+        $this->init();
+        return $this->driver->incrbyfloat($key, $increment);
+    }
+
+    /**
      * Set multiple values to multiple keys
      * @param array $dictionary
      * @return boolean true on success
