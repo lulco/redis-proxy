@@ -58,6 +58,22 @@ class RedisProxy
 
     private $driversOrder = [];
 
+    private $redisTypeMap = [
+        Redis::REDIS_STRING => self::TYPE_STRING,
+        Redis::REDIS_SET => self::TYPE_SET,
+        Redis::REDIS_HASH => self::TYPE_HASH,
+        Redis::REDIS_LIST => self::TYPE_LIST,
+        Redis::REDIS_ZSET => self::TYPE_SORTED_SET,
+    ];
+
+    private $predisTypeMap = [
+        'string' => self::TYPE_STRING,
+        'set' => self::TYPE_SET,
+        'hash' => self::TYPE_HASH,
+        'list' => self::TYPE_LIST,
+        'zset' => self::TYPE_SORTED_SET,
+    ];
+
     public function __construct($host, $port, $database = 0, $timeout = null)
     {
         $this->host = $host;
@@ -182,29 +198,13 @@ class RedisProxy
         $this->init();
         $result = $this->driver->type($key);
         if ($this->actualDriver() === self::DRIVER_REDIS) {
-            if ($result === Redis::REDIS_STRING) {
-                return self::TYPE_STRING;
-            } elseif ($result === Redis::REDIS_SET) {
-                return self::TYPE_SET;
-            } elseif ($result === Redis::REDIS_HASH) {
-                return self::TYPE_HASH;
-            } elseif ($result === Redis::REDIS_LIST) {
-                return self::TYPE_LIST;
-            } elseif ($result === Redis::REDIS_ZSET) {
-                return self::TYPE_SORTED_SET;
+            if (isset($this->redisTypeMap[$result])) {
+                return $this->redisTypeMap[$result];
             }
         } elseif ($this->actualDriver() === self::DRIVER_PREDIS && $result instanceof Status) {
             $result = $result->getPayload();
-            if ($result === 'string') {
-                return self::TYPE_STRING;
-            } elseif ($result === 'set') {
-                return self::TYPE_SET;
-            } elseif ($result === 'hash') {
-                return self::TYPE_HASH;
-            } elseif ($result === 'list') {
-                return self::TYPE_LIST;
-            } elseif ($result === 'zset') {
-                return self::TYPE_SORTED_SET;
+            if (isset($this->predisTypeMap[$result])) {
+                return $this->predisTypeMap[$result];
             }
         }
         return null;
