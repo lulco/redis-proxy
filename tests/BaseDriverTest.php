@@ -909,6 +909,102 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         self::assertNull($this->redisProxy->lindex('my_list_key', 0));
     }
 
+    public function testZcard()
+    {
+        self::assertEquals(0, $this->redisProxy->zcard('my_sorted_set_key'));
+        self::assertEquals(1, $this->redisProxy->zadd('my_sorted_set_key', 1, 'my_member'));
+        self::assertEquals(1, $this->redisProxy->zcard('my_sorted_set_key'));
+    }
+
+    public function testZadd()
+    {
+        self::assertEquals(0, $this->redisProxy->zcard('my_sorted_set_key'));
+        self::assertEquals(1, $this->redisProxy->zadd('my_sorted_set_key', 1, 'my_member'));
+        self::assertEquals(1, $this->redisProxy->zcard('my_sorted_set_key'));
+
+        self::assertEquals(2, $this->redisProxy->zadd('my_sorted_set_key', 2, 'my_member_2', 3, 'my_member_3'));
+        self::assertEquals(3, $this->redisProxy->zcard('my_sorted_set_key'));
+
+        self::assertEquals(0, $this->redisProxy->zadd('my_sorted_set_key', 10, 'my_member'));
+        self::assertEquals(3, $this->redisProxy->zcard('my_sorted_set_key'));
+
+        self::assertEquals(1, $this->redisProxy->zadd('my_sorted_set_key', 2, 'my_member_2', 3, 'my_member_3', 4, 'my_member_4'));
+        self::assertEquals(4, $this->redisProxy->zcard('my_sorted_set_key'));
+
+        self::assertEquals(3, $this->redisProxy->zadd('my_sorted_set_key', ['my_member_5' => 5, 'my_member_6' => 4, 'my_member_7' => 3]));
+        self::assertEquals(7, $this->redisProxy->zcard('my_sorted_set_key'));
+    }
+
+    public function testZrange()
+    {
+        self::assertEquals(0, $this->redisProxy->zcard('my_sorted_set_key'));
+        self::assertCount(0, $this->redisProxy->zrange('my_sorted_set_key', 0, -1));
+        self::assertCount(0, $this->redisProxy->zrange('my_sorted_set_key', 0, 2));
+
+        self::assertEquals(2, $this->redisProxy->zadd('my_sorted_set_key', 1, 'element_1', 2, 'element_2'));
+        self::assertEquals(2, $this->redisProxy->zcard('my_sorted_set_key'));
+        self::assertCount(2, $this->redisProxy->zrange('my_sorted_set_key', 0, -1));
+        self::assertCount(2, $this->redisProxy->zrange('my_sorted_set_key', 0, 2));
+        self::assertEquals(['element_1', 'element_2'], $this->redisProxy->zrange('my_sorted_set_key', 0, -1));
+        self::assertEquals(['element_1' => 1, 'element_2' => 2], $this->redisProxy->zrange('my_sorted_set_key', 0, -1, true));
+
+        self::assertEquals(2, $this->redisProxy->zadd('my_sorted_set_key', 3, 'element_3', 4, 'element_4'));
+        self::assertEquals(4, $this->redisProxy->zcard('my_sorted_set_key'));
+        self::assertCount(4, $this->redisProxy->zrange('my_sorted_set_key', 0, -1));
+        self::assertCount(3, $this->redisProxy->zrange('my_sorted_set_key', 0, 2));
+        self::assertEquals(['element_1', 'element_2', 'element_3', 'element_4'], $this->redisProxy->zrange('my_sorted_set_key', 0, -1));
+        self::assertEquals(['element_1' => 1, 'element_2' => 2, 'element_3' => 3, 'element_4' => 4], $this->redisProxy->zrange('my_sorted_set_key', 0, -1, true));
+
+        self::assertEquals(2, $this->redisProxy->zadd('my_sorted_set_key', ['element_5' => -5, 'element_6' => -6]));
+        self::assertEquals(6, $this->redisProxy->zcard('my_sorted_set_key'));
+        self::assertCount(6, $this->redisProxy->zrange('my_sorted_set_key', 0, -1));
+        self::assertCount(3, $this->redisProxy->zrange('my_sorted_set_key', 0, 2));
+        self::assertEquals(['element_6', 'element_5', 'element_1', 'element_2', 'element_3', 'element_4'], $this->redisProxy->zrange('my_sorted_set_key', 0, -1));
+        self::assertEquals(['element_6' => -6, 'element_5' => -5, 'element_1' => 1, 'element_2' => 2, 'element_3' => 3, 'element_4' => 4], $this->redisProxy->zrange('my_sorted_set_key', 0, -1, true));
+
+        self::assertEquals(2, $this->redisProxy->zadd('my_sorted_set_key', ['element_7' => -5, 'element_8' => -6]));
+        self::assertEquals(8, $this->redisProxy->zcard('my_sorted_set_key'));
+        self::assertCount(8, $this->redisProxy->zrange('my_sorted_set_key', 0, -1));
+        self::assertCount(3, $this->redisProxy->zrange('my_sorted_set_key', 0, 2));
+        self::assertEquals(['element_6', 'element_8', 'element_5', 'element_7', 'element_1', 'element_2', 'element_3', 'element_4'], $this->redisProxy->zrange('my_sorted_set_key', 0, -1));
+        self::assertEquals(['element_6' => -6, 'element_8' => -6, 'element_5' => -5, 'element_7' => -5, 'element_1' => 1, 'element_2' => 2, 'element_3' => 3, 'element_4' => 4], $this->redisProxy->zrange('my_sorted_set_key', 0, -1, true));
+    }
+
+    public function testZrevrange()
+    {
+        self::assertEquals(0, $this->redisProxy->zcard('my_sorted_set_key'));
+        self::assertCount(0, $this->redisProxy->zrevrange('my_sorted_set_key', 0, -1));
+        self::assertCount(0, $this->redisProxy->zrevrange('my_sorted_set_key', 0, 2));
+
+        self::assertEquals(2, $this->redisProxy->zadd('my_sorted_set_key', 1, 'element_1', 2, 'element_2'));
+        self::assertEquals(2, $this->redisProxy->zcard('my_sorted_set_key'));
+        self::assertCount(2, $this->redisProxy->zrevrange('my_sorted_set_key', 0, -1));
+        self::assertCount(2, $this->redisProxy->zrevrange('my_sorted_set_key', 0, 2));
+        self::assertEquals(['element_2', 'element_1'], $this->redisProxy->zrevrange('my_sorted_set_key', 0, -1));
+        self::assertEquals(['element_2' => 2, 'element_1' => 1], $this->redisProxy->zrevrange('my_sorted_set_key', 0, -1, true));
+
+        self::assertEquals(2, $this->redisProxy->zadd('my_sorted_set_key', 3, 'element_3', 4, 'element_4'));
+        self::assertEquals(4, $this->redisProxy->zcard('my_sorted_set_key'));
+        self::assertCount(4, $this->redisProxy->zrevrange('my_sorted_set_key', 0, -1));
+        self::assertCount(3, $this->redisProxy->zrevrange('my_sorted_set_key', 0, 2));
+        self::assertEquals(['element_4', 'element_3', 'element_2', 'element_1'], $this->redisProxy->zrevrange('my_sorted_set_key', 0, -1));
+        self::assertEquals(['element_4' => 4, 'element_3' => 3, 'element_2' => 2, 'element_1' => 1], $this->redisProxy->zrevrange('my_sorted_set_key', 0, -1, true));
+
+        self::assertEquals(2, $this->redisProxy->zadd('my_sorted_set_key', ['element_5' => -5, 'element_6' => -6]));
+        self::assertEquals(6, $this->redisProxy->zcard('my_sorted_set_key'));
+        self::assertCount(6, $this->redisProxy->zrevrange('my_sorted_set_key', 0, -1));
+        self::assertCount(3, $this->redisProxy->zrevrange('my_sorted_set_key', 0, 2));
+        self::assertEquals(['element_4', 'element_3', 'element_2', 'element_1', 'element_5', 'element_6'], $this->redisProxy->zrevrange('my_sorted_set_key', 0, -1));
+        self::assertEquals(['element_4' => 4, 'element_3' => 3, 'element_2' => 2, 'element_1' => 1, 'element_5' => -5, 'element_6' => -6], $this->redisProxy->zrevrange('my_sorted_set_key', 0, -1, true));
+
+        self::assertEquals(2, $this->redisProxy->zadd('my_sorted_set_key', ['element_7' => -5, 'element_8' => -6]));
+        self::assertEquals(8, $this->redisProxy->zcard('my_sorted_set_key'));
+        self::assertCount(8, $this->redisProxy->zrevrange('my_sorted_set_key', 0, -1));
+        self::assertCount(3, $this->redisProxy->zrevrange('my_sorted_set_key', 0, 2));
+        self::assertEquals(['element_4', 'element_3', 'element_2', 'element_1', 'element_7', 'element_5', 'element_8', 'element_6'], $this->redisProxy->zrevrange('my_sorted_set_key', 0, -1));
+        self::assertEquals(['element_4' => 4, 'element_3' => 3, 'element_2' => 2, 'element_1' => 1, 'element_7' => -5, 'element_5' => -5, 'element_8' => -6, 'element_6' => -6], $this->redisProxy->zrevrange('my_sorted_set_key', 0, -1, true));
+    }
+
     public function testType()
     {
         self::assertNull($this->redisProxy->type('my_key'));
