@@ -300,6 +300,40 @@ class RedisProxy
     }
 
     /**
+     * Decrement the integer value of a key by one
+     * @param string $key
+     * @return integer
+     */
+    public function decr($key)
+    {
+        $this->init();
+        return $this->driver->decr($key);
+    }
+
+    /**
+     * Decrement the integer value of a key by the given number
+     * @param string $key
+     * @param integer $decrement
+     * @return integer
+     */
+    public function decrby($key, $decrement = 1)
+    {
+        $this->init();
+        return $this->driver->decrby($key, (int)$decrement);
+    }
+
+    /**
+     * Decrement the float value of a key by the given amount
+     * @param string $key
+     * @param float $decrement
+     * @return float
+     */
+    public function decrbyfloat($key, $decrement = 1)
+    {
+        return $this->incrbyfloat($key, (-1) * $decrement);
+    }
+
+    /**
      * Set multiple values to multiple keys
      * @param array $dictionary
      * @return boolean true on success
