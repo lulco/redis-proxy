@@ -12,7 +12,6 @@ use Redis;
  * @method int dbsize() Return the number of keys in the selected database
  * @method boolean set(string $key, string $value) Set the string value of a key
  * @method boolean setex(string $key, int $seconds, string $value) Set the value and expiration of a key
- * @method boolean psetex(string $key, int $miliseconds, string $value) Set the value and expiration in milliseconds of a key
  * @method int ttl(string $key) Get the time to live for a key, returns TTL in seconds, -2 if the key does not exist, -1 if the key exists but has no associated expire
  * @method int pttl(string $key) Get the time to live for a key in milliseconds, returns TTL in miliseconds, -2 if the key does not exist, -1 if the key exists but has no associated expire
  * @method array keys(string $pattern) Find all keys matching the given pattern
@@ -298,6 +297,23 @@ class RedisProxy
         $this->init();
         $result = $this->driver->pexpireat($key, $timestamp);
         return (bool)$result;
+    }
+
+    /**
+     * Set the value and expiration in milliseconds of a key
+     * @param string $key
+     * @param int $miliseconds
+     * @param string $value
+     * @return boolean
+     */
+    public function psetex($key, $miliseconds, $value)
+    {
+        $this->init();
+        $result = $this->driver->psetex($key, $miliseconds, $value);
+        if ($result == '+OK') {
+            return true;
+        }
+        return $this->transformResult($result);
     }
 
     /**
