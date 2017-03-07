@@ -105,6 +105,19 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         $this->redisProxy->info('unknown');
     }
 
+    public function testDbSize()
+    {
+        self::assertEquals(0, $this->redisProxy->dbsize());
+        self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
+        self::assertEquals(1, $this->redisProxy->dbsize());
+        for ($i = 0; $i < 9; ++$i) {
+            self::assertTrue($this->redisProxy->set("my_key_$i", "my_value$i"));
+        }
+        self::assertEquals(10, $this->redisProxy->dbsize());
+        $keys = $this->redisProxy->keys('*');
+        self::assertEquals(count($keys), $this->redisProxy->dbsize());
+    }
+
     public function testKeys()
     {
         $keys = $this->redisProxy->keys('*');
@@ -126,26 +139,76 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         $this->redisProxy->keys();
     }
 
-    public function testDbSize()
-    {
-        self::assertEquals(0, $this->redisProxy->dbsize());
-        self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
-        self::assertEquals(1, $this->redisProxy->dbsize());
-        for ($i = 0; $i < 9; ++$i) {
-            self::assertTrue($this->redisProxy->set("my_key_$i", "my_value$i"));
-        }
-        self::assertEquals(10, $this->redisProxy->dbsize());
-        $keys = $this->redisProxy->keys('*');
-        self::assertEquals(count($keys), $this->redisProxy->dbsize());
-    }
-
-    public function testSetGet()
+    public function testSetAndGet()
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
         self::assertEquals('my_value', $this->redisProxy->get('my_key'));
         self::assertTrue($this->redisProxy->set('my_key', 'my_new_value'));
         self::assertEquals('my_new_value', $this->redisProxy->get('my_key'));
+    }
+
+    public function testExpire()
+    {
+        self::assertNull($this->redisProxy->get('my_key'));
+        self::assertFalse($this->redisProxy->expire('my_key', 10));
+        self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
+        self::assertTrue($this->redisProxy->expire('my_key', 10));
+    }
+
+    public function testExpireat()
+    {
+
+    }
+
+    public function testTtl()
+    {
+        self::assertNull($this->redisProxy->get('my_key'));
+        self::assertEquals(-2, $this->redisProxy->ttl('my_key'));
+        self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
+        self::assertEquals(-1, $this->redisProxy->ttl('my_key'));
+        self::assertTrue($this->redisProxy->expire('my_key', 10));
+        self::assertGreaterThanOrEqual(0, $this->redisProxy->ttl('my_key'));
+        self::assertLessThanOrEqual(10, $this->redisProxy->ttl('my_key'));
+    }
+
+    public function testGetSet()
+    {
+        self::assertNull($this->redisProxy->get('my_key'));
+        self::assertNull($this->redisProxy->getset('my_key', 'my_value'));
+        self::assertEquals('my_value', $this->redisProxy->getset('my_key', 'my_new_value'));
+        self::assertEquals('my_new_value', $this->redisProxy->get('my_key'));
+    }
+
+    public function testSetnx()
+    {
+        self::assertNull($this->redisProxy->get('my_key'));
+        self::assertTrue($this->redisProxy->setnx('my_key', 'my_value'));
+        self::assertEquals('my_value', $this->redisProxy->get('my_key'));
+        self::assertFalse($this->redisProxy->setnx('my_key', 'my_new_value'));
+        self::assertEquals('my_value', $this->redisProxy->get('my_key'));
+    }
+
+    public function testSetex()
+    {
+        self::assertNull($this->redisProxy->get('my_key'));
+        self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
+        self::assertEquals(-1, $this->redisProxy->ttl('my_key'));
+        self::assertTrue($this->redisProxy->setex('my_key', 10, 'my_value'));
+        self::assertGreaterThanOrEqual(0, $this->redisProxy->ttl('my_key'));
+        self::assertLessThanOrEqual(10, $this->redisProxy->ttl('my_key'));
+    }
+
+    public function testPsetex()
+    {
+        self::assertNull($this->redisProxy->get('my_key'));
+        self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
+        self::assertEquals(-1, $this->redisProxy->ttl('my_key'));
+        self::assertTrue($this->redisProxy->psetex('my_key', 10000, 'my_value'));
+        self::assertGreaterThanOrEqual(0, $this->redisProxy->ttl('my_key'));
+        self::assertLessThanOrEqual(10, $this->redisProxy->ttl('my_key'));
+        self::assertGreaterThanOrEqual(0, $this->redisProxy->pttl('my_key'));
+        self::assertLessThanOrEqual(10000, $this->redisProxy->pttl('my_key'));
     }
 
     public function testMset()

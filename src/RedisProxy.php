@@ -11,6 +11,10 @@ use Redis;
  * @method mixed config(string $command, $argument = null)
  * @method int dbsize() Return the number of keys in the selected database
  * @method boolean set(string $key, string $value) Set the string value of a key
+ * @method boolean setex(string $key, int $seconds, string $value) Set the value and expiration of a key
+ * @method boolean psetex(string $key, int $miliseconds, string $value) Set the value and expiration in milliseconds of a key
+ * @method int ttl(string $key) Get the time to live for a key, returns TTL in seconds, -2 if the key does not exist, -1 if the key exists but has no associated expire
+ * @method int pttl(string $key) Get the time to live for a key in milliseconds, returns TTL in miliseconds, -2 if the key does not exist, -1 if the key exists but has no associated expire
  * @method array keys(string $pattern) Find all keys matching the given pattern
  * @method int hset(string $key, string $field, string $value) Set the string value of a hash field
  * @method array hkeys(string $key) Get all fields in a hash (without values)
@@ -233,14 +237,54 @@ class RedisProxy
     }
 
     /**
+     * Get the value of a key
      * @param string $key
-     * @return string|null null if hash field is not set
+     * @return string|null null if key not set
      */
     public function get($key)
     {
         $this->init();
         $result = $this->driver->get($key);
         return $this->convertFalseToNull($result);
+    }
+
+    /**
+     * Set the string value of a key and return its old value
+     * @param string $key
+     * @param string $value
+     * @return string|null null if key was not set before
+     */
+    public function getset($key, $value)
+    {
+        $this->init();
+        $result = $this->driver->getset($key, $value);
+        return $this->convertFalseToNull($result);
+    }
+
+    /**
+     * Set a key's time to live in seconds
+     * @param string $key
+     * @param int $seconds
+     * @return boolean true if the timeout was set, false if key does not exist or the timeout could not be set
+     */
+    public function expire($key, $seconds)
+    {
+        $this->init();
+        $result = $this->driver->expire($key, $seconds);
+        return (bool)$result;
+    }
+
+    /**
+     * Set the value of a key, only if the key does not exist
+     * @param string $key
+     * @param string $value
+     * @return boolean true if the key was set, false if the key was not set
+     */
+    public function setnx($key, $value)
+    {
+        $this->init();
+        $result = $this->driver->setnx($key, $value);
+        return (bool)$result;
     }
 
     /**
