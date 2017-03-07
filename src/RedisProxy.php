@@ -63,19 +63,20 @@ class RedisProxy
     private $driversOrder = [];
 
     private $redisTypeMap = [
-        Redis::REDIS_STRING => self::TYPE_STRING,
-        Redis::REDIS_SET => self::TYPE_SET,
-        Redis::REDIS_HASH => self::TYPE_HASH,
-        Redis::REDIS_LIST => self::TYPE_LIST,
-        Redis::REDIS_ZSET => self::TYPE_SORTED_SET,
-    ];
-
-    private $predisTypeMap = [
-        'string' => self::TYPE_STRING,
-        'set' => self::TYPE_SET,
-        'hash' => self::TYPE_HASH,
-        'list' => self::TYPE_LIST,
-        'zset' => self::TYPE_SORTED_SET,
+        self::DRIVER_REDIS => [
+            Redis::REDIS_STRING => self::TYPE_STRING,
+            Redis::REDIS_SET => self::TYPE_SET,
+            Redis::REDIS_HASH => self::TYPE_HASH,
+            Redis::REDIS_LIST => self::TYPE_LIST,
+            Redis::REDIS_ZSET => self::TYPE_SORTED_SET,
+        ],
+        self::DRIVER_PREDIS => [
+            'string' => self::TYPE_STRING,
+            'set' => self::TYPE_SET,
+            'hash' => self::TYPE_HASH,
+            'list' => self::TYPE_LIST,
+            'zset' => self::TYPE_SORTED_SET,
+        ],
     ];
 
     public function __construct($host, $port, $database = 0, $timeout = null)
@@ -201,17 +202,8 @@ class RedisProxy
     {
         $this->init();
         $result = $this->driver->type($key);
-        if ($this->actualDriver() === self::DRIVER_REDIS) {
-            if (isset($this->redisTypeMap[$result])) {
-                return $this->redisTypeMap[$result];
-            }
-        } elseif ($this->actualDriver() === self::DRIVER_PREDIS && $result instanceof Status) {
-            $result = $result->getPayload();
-            if (isset($this->predisTypeMap[$result])) {
-                return $this->predisTypeMap[$result];
-            }
-        }
-        return null;
+        $result = $this->actualDriver() === self::DRIVER_PREDIS && $result instanceof Status ? $result->getPayload() : $result;
+        return isset($this->redisTypeMap[$this->actualDriver()][$result]) ? $this->redisTypeMap[$this->actualDriver()][$result] : null;
     }
 
     /**
