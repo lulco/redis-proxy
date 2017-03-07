@@ -275,6 +275,32 @@ class RedisProxy
     }
 
     /**
+     * Set the expiration for a key as a UNIX timestamp
+     * @param string $key
+     * @param int $timestamp
+     * @return boolean true if the timeout was set, false if key does not exist or the timeout could not be set
+     */
+    public function expireat($key, $timestamp)
+    {
+        $this->init();
+        $result = $this->driver->expireat($key, $timestamp);
+        return (bool)$result;
+    }
+
+    /**
+     * Set the expiration for a key as a UNIX timestamp specified in milliseconds
+     * @param string $key
+     * @param int $timestamp
+     * @return boolean true if the timeout was set, false if key does not exist or the timeout could not be set
+     */
+    public function pexpireat($key, $timestamp)
+    {
+        $this->init();
+        $result = $this->driver->pexpireat($key, $timestamp);
+        return (bool)$result;
+    }
+
+    /**
      * Set the value of a key, only if the key does not exist
      * @param string $key
      * @param string $value

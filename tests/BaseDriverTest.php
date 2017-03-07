@@ -156,11 +156,6 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         self::assertTrue($this->redisProxy->expire('my_key', 10));
     }
 
-    public function testExpireat()
-    {
-
-    }
-
     public function testTtl()
     {
         self::assertNull($this->redisProxy->get('my_key'));
@@ -170,6 +165,28 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         self::assertTrue($this->redisProxy->expire('my_key', 10));
         self::assertGreaterThanOrEqual(0, $this->redisProxy->ttl('my_key'));
         self::assertLessThanOrEqual(10, $this->redisProxy->ttl('my_key'));
+    }
+
+    public function testExpireat()
+    {
+        self::assertNull($this->redisProxy->get('my_key'));
+        self::assertFalse($this->redisProxy->expireat('my_key', time() + 10));
+        self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
+        self::assertTrue($this->redisProxy->expireat('my_key', time() + 10));
+        self::assertGreaterThanOrEqual(0, $this->redisProxy->ttl('my_key'));
+        self::assertLessThanOrEqual(10, $this->redisProxy->ttl('my_key'));
+    }
+
+    public function testPexpireat()
+    {
+        self::assertNull($this->redisProxy->get('my_key'));
+        self::assertFalse($this->redisProxy->pexpireat('my_key', (time() + 10) * 1000));
+        self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
+        self::assertTrue($this->redisProxy->pexpireat('my_key', (time() + 10) * 1000));
+        self::assertGreaterThanOrEqual(0, $this->redisProxy->ttl('my_key'));
+        self::assertLessThanOrEqual(10, $this->redisProxy->ttl('my_key'));
+        self::assertGreaterThanOrEqual(0, $this->redisProxy->pttl('my_key'));
+        self::assertLessThanOrEqual(10000, $this->redisProxy->pttl('my_key'));
     }
 
     public function testGetSet()
