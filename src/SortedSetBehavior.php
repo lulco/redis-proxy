@@ -7,11 +7,7 @@ namespace RedisProxy;
  */
 trait SortedSetBehavior
 {
-    private $driver;
-
-    abstract protected function init();
-
-    abstract public function actualDriver();
+    use AbstractCommonBehavior;
 
     /**
      * Add one or more members to a sorted set, or update its score if it already exists

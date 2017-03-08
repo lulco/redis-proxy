@@ -8,11 +8,7 @@ namespace RedisProxy;
  */
 trait ListBehavior
 {
-    private $driver;
-
-    abstract protected function init();
-
-    abstract public function actualDriver();
+    use AbstractCommonBehavior;
 
     /**
      * Prepend one or multiple values to a list
