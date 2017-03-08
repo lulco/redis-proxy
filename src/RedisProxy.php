@@ -22,16 +22,15 @@ use Redis;
  * @method int hlen(string $key) Get the number of fields in a hash
  * @method array smembers(string $key) Get all the members in a set
  * @method int scard(string $key) Get the number of members in a set
- * @method int llen(string $key) Get the length of a list
- * @method array lrange(string $key, int $start, int $stop) Get a range of elements from a list
- * @method int zcard(string $key) Get the number of members in a sorted set
  * @method boolean flushall() Remove all keys from all databases
  * @method boolean flushdb() Remove all keys from the current database
  */
 class RedisProxy
 {
     use SortedSetBehavior;
-    
+
+    use ListBehavior;
+
     const DRIVER_REDIS = 'redis';
 
     const DRIVER_PREDIS = 'predis';
@@ -108,7 +107,7 @@ class RedisProxy
         return $this;
     }
 
-    private function init()
+    protected function init()
     {
         $this->prepareDriver();
         $this->select($this->database);
@@ -687,69 +686,6 @@ class RedisProxy
             return $returned[1];
         }
         return $this->driver->sscan($key, $iterator, $pattern, $count);
-    }
-
-    /**
-     * Prepend one or multiple values to a list
-     * @param string $key
-     * @param array $elements
-     * @return int the length of the list after the push operations
-     */
-    public function lpush($key, ...$elements)
-    {
-        $elements = $this->prepareArguments('lpush', ...$elements);
-        $this->init();
-        return $this->driver->lpush($key, ...$elements);
-    }
-
-    /**
-     * Append one or multiple values to a list
-     * @param string $key
-     * @param array $elements
-     * @return int the length of the list after the push operations
-     */
-    public function rpush($key, ...$elements)
-    {
-        $elements = $this->prepareArguments('rpush', ...$elements);
-        $this->init();
-        return $this->driver->rpush($key, ...$elements);
-    }
-
-    /**
-     * Remove and get the first element in a list
-     * @param string $key
-     * @return string|null
-     */
-    public function lpop($key)
-    {
-        $this->init();
-        $result = $this->driver->lpop($key);
-        return $this->convertFalseToNull($result);
-    }
-
-    /**
-     * Remove and get the last element in a list
-     * @param string $key
-     * @return string|null
-     */
-    public function rpop($key)
-    {
-        $this->init();
-        $result = $this->driver->rpop($key);
-        return $this->convertFalseToNull($result);
-    }
-
-    /**
-     * Get an element from a list by its index
-     * @param string $key
-     * @param int $index zero-based, so 0 means the first element, 1 the second element and so on. -1 means the last element, -2 means the penultimate and so forth
-     * @return string|null
-     */
-    public function lindex($key, $index)
-    {
-        $this->init();
-        $result = $this->driver->lindex($key, $index);
-        return $this->convertFalseToNull($result);
     }
 
     /**

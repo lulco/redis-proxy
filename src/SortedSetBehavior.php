@@ -2,8 +2,17 @@
 
 namespace RedisProxy;
 
+/**
+ * @method int zcard(string $key) Get the number of members in a sorted set
+ */
 trait SortedSetBehavior
 {
+    private $driver;
+
+    abstract protected function init();
+
+    abstract public function actualDriver();
+
     /**
      * Add one or more members to a sorted set, or update its score if it already exists
      * @param string $key
