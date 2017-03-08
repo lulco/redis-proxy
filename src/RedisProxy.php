@@ -10,6 +10,7 @@ use Redis;
 /**
  * @method mixed config(string $command, $argument = null)
  * @method int dbsize() Return the number of keys in the selected database
+ * @method boolean restore(string $key, int $ttl, string $serializedValue) Create a key using the provided serialized value, previously obtained using DUMP. If ttl is 0 the key is created without any expire, otherwise the specified expire time (in milliseconds) is set
  * @method boolean set(string $key, string $value) Set the string value of a key
  * @method boolean setex(string $key, int $seconds, string $value) Set the value and expiration of a key
  * @method int ttl(string $key) Get the time to live for a key, returns TTL in seconds, -2 if the key does not exist, -1 if the key exists but has no associated expire
@@ -195,18 +196,6 @@ class RedisProxy
     }
 
     /**
-     * @param string $key
-     * @return string|null
-     */
-    public function type($key)
-    {
-        $this->init();
-        $result = $this->driver->type($key);
-        $result = $this->actualDriver() === self::DRIVER_PREDIS && $result instanceof Status ? $result->getPayload() : $result;
-        return isset($this->redisTypeMap[$this->actualDriver()][$result]) ? $this->redisTypeMap[$this->actualDriver()][$result] : null;
-    }
-
-    /**
      * @param string|null $section
      * @return array
      */
@@ -225,6 +214,30 @@ class RedisProxy
             return $groupedResult[$section];
         }
         throw new RedisProxyException('Info section "' . $section . '" doesn\'t exist');
+    }
+
+    /**
+     * Determine if a key exists
+     * @param string $key
+     * @return boolean
+     */
+    public function exists($key)
+    {
+        $this->init();
+        $result = $this->driver->exists($key);
+        return (bool)$result;
+    }
+
+    /**
+     * @param string $key
+     * @return string|null
+     */
+    public function type($key)
+    {
+        $this->init();
+        $result = $this->driver->type($key);
+        $result = $this->actualDriver() === self::DRIVER_PREDIS && $result instanceof Status ? $result->getPayload() : $result;
+        return isset($this->redisTypeMap[$this->actualDriver()][$result]) ? $this->redisTypeMap[$this->actualDriver()][$result] : null;
     }
 
     /**
@@ -266,6 +279,19 @@ class RedisProxy
     }
 
     /**
+     * Set a key's time to live in milliseconds
+     * @param string $key
+     * @param int $miliseconds
+     * @return boolean true if the timeout was set, false if key does not exist or the timeout could not be set
+     */
+    public function pexpire($key, $miliseconds)
+    {
+        $this->init();
+        $result = $this->driver->pexpire($key, $miliseconds);
+        return (bool)$result;
+    }
+
+    /**
      * Set the expiration for a key as a UNIX timestamp
      * @param string $key
      * @param int $timestamp
@@ -281,13 +307,13 @@ class RedisProxy
     /**
      * Set the expiration for a key as a UNIX timestamp specified in milliseconds
      * @param string $key
-     * @param int $timestamp
+     * @param int $milisecondsTimestamp
      * @return boolean true if the timeout was set, false if key does not exist or the timeout could not be set
      */
-    public function pexpireat($key, $timestamp)
+    public function pexpireat($key, $milisecondsTimestamp)
     {
         $this->init();
-        $result = $this->driver->pexpireat($key, $timestamp);
+        $result = $this->driver->pexpireat($key, $milisecondsTimestamp);
         return (bool)$result;
     }
 
@@ -306,6 +332,18 @@ class RedisProxy
             return true;
         }
         return $this->transformResult($result);
+    }
+
+    /**
+     * Remove the expiration from a key
+     * @param string $key
+     * @return boolean
+     */
+    public function persist($key)
+    {
+        $this->init();
+        $result = $this->driver->persist($key);
+        return (bool)$result;
     }
 
     /**
@@ -410,6 +448,18 @@ class RedisProxy
     public function decrbyfloat($key, $decrement = 1)
     {
         return $this->incrbyfloat($key, (-1) * $decrement);
+    }
+
+    /**
+     * Return a serialized version of the value stored at the specified key
+     * @param string $key
+     * @return string|null serialized value, null if key doesn't exist
+     */
+    public function dump($key)
+    {
+        $this->init();
+        $result = $this->driver->dump($key);
+        return $this->convertFalseToNull($result);
     }
 
     /**

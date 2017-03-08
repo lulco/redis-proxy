@@ -148,12 +148,50 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         self::assertEquals('my_new_value', $this->redisProxy->get('my_key'));
     }
 
+    public function testExists()
+    {
+        self::assertNull($this->redisProxy->get('my_key'));
+        self::assertFalse($this->redisProxy->exists('my_key'));
+        self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
+        self::assertEquals('my_value', $this->redisProxy->get('my_key'));
+        self::assertTrue($this->redisProxy->exists('my_key'));
+    }
+
+    public function testDumpAndRestore()
+    {
+        self::assertNull($this->redisProxy->get('my_key_1'));
+        self::assertNull($this->redisProxy->get('my_key_2'));
+        self::assertNull($this->redisProxy->dump('my_key_1'));
+        self::assertNull($this->redisProxy->dump('my_key_2'));
+        self::assertTrue($this->redisProxy->set('my_key_1', 'my_value_1'));
+        self::assertTrue($this->redisProxy->set('my_key_2', 'my_value_2'));
+        self::assertEquals('my_value_1', $this->redisProxy->get('my_key_1'));
+        self::assertEquals('my_value_2', $this->redisProxy->get('my_key_2'));
+        $value1 = $this->redisProxy->dump('my_key_1');
+        $value2 = $this->redisProxy->dump('my_key_2');
+        self::assertEquals(2, $this->redisProxy->del('my_key_1', 'my_key_2'));
+        self::assertNull($this->redisProxy->get('my_key_1'));
+        self::assertNull($this->redisProxy->get('my_key_2'));
+        self::assertTrue($this->redisProxy->restore('my_key_1', 0, $value2));
+        self::assertTrue($this->redisProxy->restore('my_key_2', 0, $value1));
+        self::assertEquals('my_value_2', $this->redisProxy->get('my_key_1'));
+        self::assertEquals('my_value_1', $this->redisProxy->get('my_key_2'));
+    }
+
     public function testExpire()
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertFalse($this->redisProxy->expire('my_key', 10));
         self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
         self::assertTrue($this->redisProxy->expire('my_key', 10));
+    }
+
+    public function testPexpire()
+    {
+        self::assertNull($this->redisProxy->get('my_key'));
+        self::assertFalse($this->redisProxy->pexpire('my_key', 10000));
+        self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
+        self::assertTrue($this->redisProxy->pexpire('my_key', 10000));
     }
 
     public function testTtl()
@@ -165,6 +203,14 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         self::assertTrue($this->redisProxy->expire('my_key', 10));
         self::assertGreaterThanOrEqual(0, $this->redisProxy->ttl('my_key'));
         self::assertLessThanOrEqual(10, $this->redisProxy->ttl('my_key'));
+
+        self::assertNull($this->redisProxy->get('my_key_2'));
+        self::assertEquals(-2, $this->redisProxy->ttl('my_key_2'));
+        self::assertTrue($this->redisProxy->set('my_key_2', 'my_value'));
+        self::assertEquals(-1, $this->redisProxy->ttl('my_key_2'));
+        self::assertTrue($this->redisProxy->pexpire('my_key_2', 10000));
+        self::assertGreaterThanOrEqual(0, $this->redisProxy->ttl('my_key_2'));
+        self::assertLessThanOrEqual(10, $this->redisProxy->ttl('my_key_2'));
     }
 
     public function testExpireat()
@@ -187,6 +233,20 @@ abstract class BaseDriverTest extends PHPUnit_Framework_TestCase
         self::assertLessThanOrEqual(10, $this->redisProxy->ttl('my_key'));
         self::assertGreaterThanOrEqual(0, $this->redisProxy->pttl('my_key'));
         self::assertLessThanOrEqual(10000, $this->redisProxy->pttl('my_key'));
+    }
+
+    public function testPersist()
+    {
+        self::assertNull($this->redisProxy->get('my_key'));
+        self::assertFalse($this->redisProxy->persist('my_key'));
+        self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
+        self::assertFalse($this->redisProxy->persist('my_key'));
+        self::assertEquals(-1, $this->redisProxy->ttl('my_key'));
+        self::assertTrue($this->redisProxy->expire('my_key', 10));
+        self::assertGreaterThanOrEqual(0, $this->redisProxy->ttl('my_key'));
+        self::assertLessThanOrEqual(10, $this->redisProxy->ttl('my_key'));
+        self::assertTrue($this->redisProxy->persist('my_key'));
+        self::assertEquals(-1, $this->redisProxy->ttl('my_key'));
     }
 
     public function testGetSet()
