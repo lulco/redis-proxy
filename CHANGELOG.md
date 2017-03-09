@@ -2,6 +2,13 @@
 
 ### [Unreleased][unreleased]
 
+#### Added
+- Added commands:
+-- exists, type, dump, restore, setex, psetex, expire, pexpire, expireat, pexpireat, ttl, pttl, persist
+-- getset, setnx, incr, incrby, incrbyfloat, decr, decrby, decrbyfloat
+-- llen, lrange, lpush, rpush, lpop, rpop, lindex
+-- zadd, zcard, zrange, zrevrange
+
 ### [0.2.1] - 2017-01-19
 #### Fixed
 - Fixed commands select, mget and hmget
