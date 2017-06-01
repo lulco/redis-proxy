@@ -9,6 +9,9 @@
 -- llen, lrange, lpush, rpush, lpop, rpop, lindex
 -- zadd, zcard, zrange, zrevrange
 
+#### Fixed
+- Fixed connect to not-default host / port with Predis\Client
+
 ### [0.2.1] - 2017-01-19
 #### Fixed
 - Fixed commands select, mget and hmget
