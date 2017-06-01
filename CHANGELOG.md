@@ -2,6 +2,9 @@
 
 ### [Unreleased][unreleased]
 
+#### Fixed
+- Replaced Redis constants to integers
+
 ### [0.3.0] - 2017-06-01
 #### Added
 - Added commands:
