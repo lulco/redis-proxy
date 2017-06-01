@@ -65,18 +65,18 @@ class RedisProxy
 
     private $redisTypeMap = [
         self::DRIVER_REDIS => [
-            Redis::REDIS_STRING => self::TYPE_STRING,
-            Redis::REDIS_SET => self::TYPE_SET,
-            Redis::REDIS_HASH => self::TYPE_HASH,
-            Redis::REDIS_LIST => self::TYPE_LIST,
-            Redis::REDIS_ZSET => self::TYPE_SORTED_SET,
+            1 => self::TYPE_STRING,
+            2 => self::TYPE_SET,
+            3 => self::TYPE_LIST,
+            4 => self::TYPE_SORTED_SET,
+            5 => self::TYPE_HASH,
         ],
         self::DRIVER_PREDIS => [
             'string' => self::TYPE_STRING,
             'set' => self::TYPE_SET,
-            'hash' => self::TYPE_HASH,
             'list' => self::TYPE_LIST,
             'zset' => self::TYPE_SORTED_SET,
+            'hash' => self::TYPE_HASH,
         ],
     ];
 
