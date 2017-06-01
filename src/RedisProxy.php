@@ -124,7 +124,7 @@ class RedisProxy
                 return;
             }
             if ($preferredDriver === self::DRIVER_PREDIS && class_exists('Predis\Client')) {
-				$this->driver = new Client([
+                $this->driver = new Client([
                     'host' => $this->host,
                     'port' => $this->port,
                 ]);
