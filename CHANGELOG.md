@@ -2,6 +2,7 @@
 
 ### [Unreleased][unreleased]
 
+### [0.3.0] - 2017-06-01
 #### Added
 - Added commands:
 -- exists, type, dump, restore, setex, psetex, expire, pexpire, expireat, pexpireat, ttl, pttl, persist
@@ -32,7 +33,8 @@
 #### Added
 - Wrapper for \Redis
 
-[unreleased]: https://github.com/lulco/redis-proxy/compare/0.2.1...HEAD
+[unreleased]: https://github.com/lulco/redis-proxy/compare/0.3.0...HEAD
+[0.3.0]: https://github.com/lulco/redis-proxy/compare/0.2.1...0.3.0
 [0.2.1]: https://github.com/lulco/redis-proxy/compare/0.2.0...0.2.1
 [0.2.0]: https://github.com/lulco/redis-proxy/compare/0.1.0...0.2.0
 [0.1.0]: https://github.com/lulco/redis-proxy/compare/0.0.0...0.1.0
