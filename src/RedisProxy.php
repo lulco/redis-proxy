@@ -23,7 +23,9 @@ use Redis;
  * @method array smembers(string $key) Get all the members in a set
  * @method int scard(string $key) Get the number of members in a set
  * @method int llen(string $key) Get the length of a list
+ * @method bool lset(string $key, string $index, string $value) Sets the list element at index to value
  * @method array lrange(string $key, int $start, int $stop) Get a range of elements from a list
+ * @method int lrem(string $key, string $value) Removes the first count occurrences of elements equal to value from the list stored at key.
  * @method int zcard(string $key) Get the number of members in a sorted set
  * @method boolean flushall() Remove all keys from all databases
  * @method boolean flushdb() Remove all keys from the current database
