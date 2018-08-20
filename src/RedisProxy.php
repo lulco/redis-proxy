@@ -793,6 +793,28 @@ class RedisProxy
     }
 
     /**
+     * Incrementally iterate Sorted set elements
+     * @param string $key
+     * @param mixed $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
+     * @param string $pattern pattern for member's values, use * as wild card
+     * @param int $count
+     * @return array|boolean|null list of found members with their values, returns null if $iterator is 0 or '0'
+     */
+    public function zscan($key, &$iterator, $pattern = null, $count = null)
+    {
+        if ((string)$iterator === '0') {
+            return null;
+        }
+        $this->init();
+        if ($this->actualDriver() === self::DRIVER_PREDIS) {
+            $returned = $this->driver->zscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
+            $iterator = $returned[0];
+            return $returned[1];
+        }
+        return $this->driver->zscan($key, $iterator, $pattern, $count);
+    }
+
+    /**
      * Return a range of members in a sorted set, by index, with scores ordered from high to low
      * @param string $key
      * @param int $start
