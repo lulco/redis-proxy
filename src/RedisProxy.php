@@ -834,6 +834,32 @@ class RedisProxy
     }
 
     /**
+     * Returns the rank of member in the sorted set stored at key, with the scores ordered from low to high. The rank (or index) is 0-based, which means that the member with the lowest score has rank 0
+     * @param string $key
+     * @param string $member
+     * @return int|null Returns null if member does not exist in the sorted set or key does not exist
+     */
+    public function zrank($key, $member)
+    {
+        $this->init();
+        $result = $this->driver->zrank($key, $member);
+        return $this->convertFalseToNull($result);
+    }
+
+    /**
+     * Returns the rank of member in the sorted set stored at key, with the scores ordered from high to low. The rank (or index) is 0-based, which means that the member with the highest score has rank 0
+     * @param string $key
+     * @param string $member
+     * @return int|null Returns null if member does not exist in the sorted set or key does not exist
+     */
+    public function zrevrank($key, $member)
+    {
+        $this->init();
+        $result = $this->driver->zrevrank($key, $member);
+        return $this->convertFalseToNull($result);
+    }
+
+    /**
      * Returns null instead of false for Redis driver
      * @param mixed $result
      * @return mixed

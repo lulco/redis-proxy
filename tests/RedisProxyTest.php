@@ -2,10 +2,10 @@
 
 namespace RedisProxy\Tests;
 
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 use RedisProxy\RedisProxy;
 
-class RedisProxyTest extends PHPUnit_Framework_TestCase
+class RedisProxyTest extends TestCase
 {
     public function testRedisDriver()
     {

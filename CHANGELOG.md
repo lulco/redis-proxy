@@ -2,6 +2,12 @@
 
 ### [Unreleased][unreleased]
 
+#### Changed
+- Dropped support for PHP 5.6 and 7.0 [BC break]
+
+#### Added
+- Added commands: lset, lrem, zscan, zrem, zrank, zrevrank
+
 ### [0.3.1] - 2017-06-01
 #### Fixed
 - Replaced Redis constants to integers
