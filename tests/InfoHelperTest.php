@@ -2,11 +2,11 @@
 
 namespace RedisProxy\Tests;
 
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 use RedisProxy\InfoHelper;
 use RedisProxy\RedisProxy;
 
-class InfoHelperTest extends PHPUnit_Framework_TestCase
+class InfoHelperTest extends TestCase
 {
     public function testCreateEmptyInfoArrayForRedis()
     {
