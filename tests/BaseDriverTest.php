@@ -907,9 +907,7 @@ abstract class BaseDriverTest extends TestCase
 
         $count = 0;
         $iterator = null;
-        $res = [];
         while ($sscanMembers = $this->redisProxy->sscan('my_set_key', $iterator, '*1*', 100)) {
-            $res = array_merge($res, $sscanMembers);
             $count += count($sscanMembers);
             foreach ($sscanMembers as $sscanMember) {
                 self::assertTrue(strpos($sscanMember, '1') !== false);
@@ -1143,6 +1141,88 @@ abstract class BaseDriverTest extends TestCase
         self::assertCount(3, $this->redisProxy->zrevrange('my_sorted_set_key', 0, 2));
         self::assertEquals(['element_4', 'element_3', 'element_2', 'element_1', 'element_7', 'element_5', 'element_8', 'element_6'], $this->redisProxy->zrevrange('my_sorted_set_key', 0, -1));
         self::assertEquals(['element_4' => 4, 'element_3' => 3, 'element_2' => 2, 'element_1' => 1, 'element_7' => -5, 'element_5' => -5, 'element_8' => -6, 'element_6' => -6], $this->redisProxy->zrevrange('my_sorted_set_key', 0, -1, true));
+    }
+
+    public function testZscan()
+    {
+        self::assertEquals(0, $this->redisProxy->zcard('my_sorted_set_key'));
+
+        $members = [];
+        for ($i = 0; $i < 1000; ++$i) {
+            $members["member_$i"] = mt_rand(0, 1000);
+        }
+        self::assertEquals(1000, $this->redisProxy->zadd('my_sorted_set_key', $members));
+        self::assertEquals(1000, $this->redisProxy->zcard('my_sorted_set_key'));
+
+        $count = 0;
+        $iterator = null;
+        while ($zscanMembers = $this->redisProxy->zscan('my_sorted_set_key', $iterator, null, 100)) {
+            $count += count($zscanMembers);
+            foreach ($zscanMembers as $zscanMember => $score) {
+                self::assertTrue(strpos($zscanMember, 'member_') === 0);
+            }
+        }
+        self::assertEquals(1000, $count);
+        self::assertEquals(0, $iterator);
+
+        $count = 0;
+        $iterator = null;
+        while ($zscanMembers = $this->redisProxy->zscan('my_sorted_set_key', $iterator, 'member_1*', 100)) {
+            $count += count($zscanMembers);
+            foreach ($zscanMembers as $zscanMember => $score) {
+                self::assertTrue(strpos($zscanMember, 'member_1') === 0);
+            }
+        }
+        self::assertEquals(111, $count);
+        self::assertEquals(0, $iterator);
+
+        $count = 0;
+        $iterator = null;
+        $maxScore = 0;
+        while ($zscanMembers = $this->redisProxy->zscan('my_sorted_set_key', $iterator, '*1*', 100)) {
+            $count += count($zscanMembers);
+            foreach ($zscanMembers as $zscanMember => $score) {
+                self::assertTrue(strpos($zscanMember, '1') !== false);
+            }
+        }
+        self::assertEquals(271, $count);
+        self::assertEquals(0, $iterator);
+    }
+
+    public function testZrankAndZrevrank()
+    {
+        self::assertEquals(0, $this->redisProxy->zcard('my_sorted_set_key'));
+
+        self::assertNull($this->redisProxy->zrank('my_sorted_set_key', 'something'));
+        self::assertNull($this->redisProxy->zrevrank('my_sorted_set_key', 'something'));
+
+        self::assertEquals(1, $this->redisProxy->zadd('my_sorted_set_key', 100, 'first'));
+        self::assertEquals(1, $this->redisProxy->zadd('my_sorted_set_key', 200, 'second'));
+        self::assertEquals(1, $this->redisProxy->zadd('my_sorted_set_key', 30, 'third'));
+
+        self::assertEquals(0, $this->redisProxy->zrank('my_sorted_set_key', 'third'));
+        self::assertEquals(2, $this->redisProxy->zrevrank('my_sorted_set_key', 'third'));
+
+        self::assertNull($this->redisProxy->zrank('my_sorted_set_key', 'something'));
+        self::assertNull($this->redisProxy->zrevrank('my_sorted_set_key', 'something'));
+    }
+
+    public function testZrem()
+    {
+        self::assertEquals(0, $this->redisProxy->zcard('my_sorted_set_key'));
+        self::assertNull($this->redisProxy->zrank('my_sorted_set_key', 'first'));
+        self::assertNull($this->redisProxy->zrank('my_sorted_set_key', 'second'));
+
+        self::assertEquals(1, $this->redisProxy->zadd('my_sorted_set_key', 100, 'first'));
+        self::assertEquals(1, $this->redisProxy->zadd('my_sorted_set_key', 200, 'second'));
+
+        self::assertEquals(0, $this->redisProxy->zrank('my_sorted_set_key', 'first'));
+        self::assertEquals(1, $this->redisProxy->zrank('my_sorted_set_key', 'second'));
+
+        self::assertEquals(1, $this->redisProxy->zrem('my_sorted_set_key', 'first'));
+
+        self::assertNull($this->redisProxy->zrank('my_sorted_set_key', 'first'));
+        self::assertEquals(0, $this->redisProxy->zrank('my_sorted_set_key', 'second'));
     }
 
     public function testType()
