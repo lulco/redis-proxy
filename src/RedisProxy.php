@@ -539,7 +539,7 @@ class RedisProxy
 
     /**
      * Delete one or more hash fields, returns number of deleted fields
-     * @param array $key
+     * @param string $key
      * @param array $fields
      * @return int
      */
