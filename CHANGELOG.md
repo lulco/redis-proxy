@@ -2,6 +2,10 @@
 
 ### [Unreleased][unreleased]
 
+### [0.4.1] - 2019-05-02
+#### Fixed
+- Fixed typehint for hdel $key
+
 ### [0.4.0] - 2018-08-21
 #### Changed
 - Dropped support for PHP 5.6 and 7.0 [BC break]
@@ -44,7 +48,8 @@
 #### Added
 - Wrapper for \Redis
 
-[unreleased]: https://github.com/lulco/redis-proxy/compare/0.4.0...HEAD
+[unreleased]: https://github.com/lulco/redis-proxy/compare/0.4.1...HEAD
+[0.4.1]: https://github.com/lulco/redis-proxy/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/lulco/redis-proxy/compare/0.3.1...0.4.0
 [0.3.1]: https://github.com/lulco/redis-proxy/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/lulco/redis-proxy/compare/0.2.1...0.3.0
