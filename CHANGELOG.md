@@ -2,6 +2,7 @@
 
 ### [Unreleased][unreleased]
 
+### [0.4.2] - 2020-06-25
 #### Fixed
 - Fixed zrem for multiple members
 
@@ -51,7 +52,8 @@
 #### Added
 - Wrapper for \Redis
 
-[unreleased]: https://github.com/lulco/redis-proxy/compare/0.4.1...HEAD
+[unreleased]: https://github.com/lulco/redis-proxy/compare/0.4.2...HEAD
+[0.4.2]: https://github.com/lulco/redis-proxy/compare/0.4.1...0.4.2
 [0.4.1]: https://github.com/lulco/redis-proxy/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/lulco/redis-proxy/compare/0.3.1...0.4.0
 [0.3.1]: https://github.com/lulco/redis-proxy/compare/0.3.0...0.3.1
