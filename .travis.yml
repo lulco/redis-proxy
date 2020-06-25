@@ -7,6 +7,7 @@ php:
     - 7.1
     - 7.2
     - 7.3
+    - 7.4
 
 sudo: false
 
@@ -17,8 +18,8 @@ before_script:
 
 script:
     - mkdir -p build/logs
-    - php vendor/bin/phpcs src tests --standard=PSR2 -n
-    - php vendor/bin/phpunit --coverage-text --coverage-clover=coverage.clover
+    - vendor/bin/phpcs src tests --standard=PSR2 -n
+    - vendor/bin/phpunit --coverage-text --coverage-clover=coverage.clover
 
 after_script:
     - wget https://scrutinizer-ci.com/ocular.phar

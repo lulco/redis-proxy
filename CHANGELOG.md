@@ -2,6 +2,9 @@
 
 ### [Unreleased][unreleased]
 
+#### Fixed
+- Fixed zrem for multiple members
+
 ### [0.4.1] - 2019-05-02
 #### Fixed
 - Fixed typehint for hdel $key

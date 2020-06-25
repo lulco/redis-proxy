@@ -388,6 +388,13 @@ abstract class BaseDriverTest extends TestCase
         self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
         self::assertEquals(1, $this->redisProxy->del('my_key'));
         self::assertNull($this->redisProxy->get('my_key'));
+
+        self::assertEquals(0, $this->redisProxy->del(['my_key']));
+        self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
+        self::assertTrue($this->redisProxy->set('my_key_2', 'my_value_2'));
+        self::assertEquals(2, $this->redisProxy->del(['my_key', 'my_key_2']));
+        self::assertNull($this->redisProxy->get('my_key'));
+        self::assertNull($this->redisProxy->get('my_key_2'));
     }
 
     public function testMultipleDelete()
@@ -1223,6 +1230,15 @@ abstract class BaseDriverTest extends TestCase
 
         self::assertNull($this->redisProxy->zrank('my_sorted_set_key', 'first'));
         self::assertEquals(0, $this->redisProxy->zrank('my_sorted_set_key', 'second'));
+        self::assertEquals(1, $this->redisProxy->zrem('my_sorted_set_key', 'second'));
+
+        self::assertEquals(1, $this->redisProxy->zadd('my_sorted_set_key', 100, 'first'));
+        self::assertEquals(1, $this->redisProxy->zadd('my_sorted_set_key', 200, 'second'));
+        self::assertEquals(2, $this->redisProxy->zrem('my_sorted_set_key', 'first', 'second'));
+
+        self::assertEquals(1, $this->redisProxy->zadd('my_sorted_set_key', 100, 'first'));
+        self::assertEquals(1, $this->redisProxy->zadd('my_sorted_set_key', 200, 'second'));
+        self::assertEquals(2, $this->redisProxy->zrem('my_sorted_set_key', ['first', 'second']));
     }
 
     public function testType()
