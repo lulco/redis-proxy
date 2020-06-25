@@ -28,7 +28,6 @@ use Redis;
  * @method int lrem(string $key, string $value) Removes the first count occurrences of elements equal to value from the list stored at key
  * @method int zcard(string $key) Get the number of members in a sorted set
  * @method int zscore(string $key, string $member) Returns the score of member in the sorted set at key
- * @method int zrem(string $key, string $member) Removes the specified members from the sorted set stored at key. Non existing members are ignored
  * @method boolean flushall() Remove all keys from all databases
  * @method boolean flushdb() Remove all keys from the current database
  */
@@ -373,7 +372,7 @@ class RedisProxy
      */
     public function del(...$keys)
     {
-        $this->prepareArguments('del', ...$keys);
+        $keys = $this->prepareArguments('del', ...$keys);
         $this->init();
         return $this->driver->del(...$keys);
     }
@@ -778,6 +777,18 @@ class RedisProxy
     }
 
     /**
+     * Removes the specified members from the sorted set stored at key. Non existing members are ignored
+     * @param string $key
+     * @param mixed $members
+     * @return int
+     */
+    public function zrem($key, ...$members)
+    {
+        $members = $this->prepareArguments('zrem', ...$members);
+        return $this->driver->zrem($key, ...$members);
+    }
+
+    /**
      * Return a range of members in a sorted set, by index
      * @param string $key
      * @param int $start
@@ -904,6 +915,12 @@ class RedisProxy
         return array_combine($keys, $values);
     }
 
+    /**
+     * @param string $command
+     * @param mixed ...$params
+     * @return array|mixed
+     * @throws RedisProxyException
+     */
     private function prepareArguments($command, ...$params)
     {
         if (!isset($params[0])) {
