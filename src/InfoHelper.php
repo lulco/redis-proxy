@@ -24,7 +24,7 @@ class InfoHelper
     private static array $keyToSectionMap = [
         'os' => 'server',
         'arch_bits' => 'server',
-        'multiplexing_api'  => 'server',
+        'multiplexing_api' => 'server',
         'gcc_version' => 'server',
         'process_id' => 'server',
         'run_id' => 'server',

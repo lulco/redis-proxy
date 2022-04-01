@@ -84,12 +84,12 @@ class RedisProxy
         ],
     ];
 
-    public function __construct(string $host, int $port, int $database = 0, ?float $timeout = null)
+    public function __construct(string $host, int $port, int $database = 0, float $timeout = 0.0)
     {
         $this->host = $host;
         $this->port = $port;
         $this->database = $database;
-        $this->timeout = $timeout ?? 0.0;
+        $this->timeout = $timeout;
         $this->driversOrder = $this->supportedDrivers;
     }
 
@@ -155,9 +155,9 @@ class RedisProxy
         return null;
     }
 
-    private function connect(string $host, int $port, ?float $timeout = null): void
+    private function connect(string $host, int $port, float $timeout = 0.0): void
     {
-        $this->driver->connect($host, $port, $timeout ?? 0.0);
+        $this->driver->connect($host, $port, $timeout);
     }
 
     private function isConnected(): bool
@@ -217,8 +217,10 @@ class RedisProxy
         $section = $section ? strtolower($section) : $section;
         $result = $section === null ? $this->driver->info() : $this->driver->info($section);
 
-        $databases = $section === null || $section === 'keyspace' ? $this->config('get',
-            'databases')['databases'] : null;
+        $databases = $section === null || $section === 'keyspace' ? $this->config(
+            'get',
+            'databases'
+        )['databases'] : null;
         $groupedResult = InfoHelper::createInfoArray($this, $result, $databases);
         if ($section === null) {
             return $groupedResult;
