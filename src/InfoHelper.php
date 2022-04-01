@@ -4,7 +4,7 @@ namespace RedisProxy;
 
 class InfoHelper
 {
-    private static $keyStartToSectionMap = [
+    private static array $keyStartToSectionMap = [
         'redis_' => 'server',
         'uptime_' => 'server',
         'client_' => 'clients',
@@ -21,7 +21,7 @@ class InfoHelper
         'db' => 'keyspace',
     ];
 
-    private static $keyToSectionMap = [
+    private static array $keyToSectionMap = [
         'os' => 'server',
         'arch_bits' => 'server',
         'multiplexing_api'  => 'server',
@@ -51,7 +51,7 @@ class InfoHelper
      * @param integer|null $databases
      * @return array
      */
-    public static function createInfoArray(RedisProxy $redisProxy, array $result, $databases = null)
+    public static function createInfoArray(RedisProxy $redisProxy, array $result, ?int $databases = null): array
     {
         $groupedResult = self::initializeKeyspace($databases);
         if ($redisProxy->actualDriver() === RedisProxy::DRIVER_PREDIS) {
@@ -61,7 +61,7 @@ class InfoHelper
         return self::createInfoForRedis($result, $groupedResult);
     }
 
-    private static function initializeKeyspace($databases = null)
+    private static function initializeKeyspace(?int $databases = null): array
     {
         $groupedResult = [];
         if ($databases === null) {
@@ -78,7 +78,7 @@ class InfoHelper
         return $groupedResult;
     }
 
-    private static function createInfoForPredis(array $result, array $groupedResult)
+    private static function createInfoForPredis(array $result, array $groupedResult): array
     {
         $result = array_change_key_case($result, CASE_LOWER);
         if (isset($groupedResult['keyspace']) && isset($result['keyspace'])) {
@@ -88,7 +88,7 @@ class InfoHelper
         return array_merge($groupedResult, $result);
     }
 
-    private static function createInfoForRedis(array $result, array $groupedResult)
+    private static function createInfoForRedis(array $result, array $groupedResult): array
     {
         foreach ($result as $key => $value) {
             if (isset(self::$keyToSectionMap[$key])) {
@@ -109,9 +109,9 @@ class InfoHelper
         return $groupedResult;
     }
 
-    private static function createKeyspaceInfo($keyspaceInfo)
+    private static function createKeyspaceInfo($keyspaceInfo): array
     {
-        list($keys, $expires, $avgTtl) = explode(',', $keyspaceInfo);
+        [$keys, $expires, $avgTtl] = explode(',', $keyspaceInfo);
         return [
             'keys' => strpos($keys, '=') !== false ? explode('=', $keys)[1] : 0,
             'expires' => strpos($expires, '=') !== false ? explode('=', $expires)[1] : null,
