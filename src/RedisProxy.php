@@ -269,11 +269,11 @@ class RedisProxy
     /**
      * Set the string value of a key and return its old value
      * @param string $key
-     * @param mixed  $value
+     * @param string $value
      * @return string|null
      * @throws RedisProxyException
      */
-    public function getset(string $key, $value): ?string
+    public function getset(string $key, string $value): ?string
     {
         $this->init();
         $result = $this->driver->getset($key, $value);
@@ -297,14 +297,14 @@ class RedisProxy
     /**
      * Set a key's time to live in milliseconds
      * @param string $key
-     * @param int    $miliseconds
+     * @param int    $milliseconds
      * @return boolean true if the timeout was set, false if key does not exist or the timeout could not be set
      * @throws RedisProxyException
      */
-    public function pexpire(string $key, int $miliseconds): bool
+    public function pexpire(string $key, int $milliseconds): bool
     {
         $this->init();
-        $result = $this->driver->pexpire($key, $miliseconds);
+        $result = $this->driver->pexpire($key, $milliseconds);
         return (bool)$result;
     }
 
@@ -325,14 +325,14 @@ class RedisProxy
     /**
      * Set the expiration for a key as a UNIX timestamp specified in milliseconds
      * @param string $key
-     * @param int    $milisecondsTimestamp
+     * @param int    $millisecondsTimestamp
      * @return boolean true if the timeout was set, false if key does not exist or the timeout could not be set
      * @throws RedisProxyException
      */
-    public function pexpireat(string $key, int $milisecondsTimestamp): bool
+    public function pexpireat(string $key, int $millisecondsTimestamp): bool
     {
         $this->init();
-        $result = $this->driver->pexpireat($key, $milisecondsTimestamp);
+        $result = $this->driver->pexpireat($key, $millisecondsTimestamp);
         return (bool)$result;
     }
 
@@ -340,11 +340,11 @@ class RedisProxy
      * Set the value and expiration in milliseconds of a key
      * @param string $key
      * @param int    $milliseconds
-     * @param mixed  $value
+     * @param string $value
      * @return bool
      * @throws RedisProxyException
      */
-    public function psetex(string $key, int $milliseconds, $value): bool
+    public function psetex(string $key, int $milliseconds, string $value): bool
     {
         $this->init();
         $result = $this->driver->psetex($key, $milliseconds, $value);
@@ -370,11 +370,11 @@ class RedisProxy
     /**
      * Set the value of a key, only if the key does not exist
      * @param string $key
-     * @param mixed  $value
+     * @param string $value
      * @return boolean true if the key was set, false if the key was not set
      * @throws RedisProxyException
      */
-    public function setnx(string $key, $value): bool
+    public function setnx(string $key, string $value): bool
     {
         $this->init();
         $result = $this->driver->setnx($key, $value);
@@ -723,11 +723,11 @@ class RedisProxy
     /**
      * Prepend one or multiple values to a list
      * @param string $key
-     * @param array  $elements
+     * @param string ...$elements
      * @return int the length of the list after the push operations
      * @throws RedisProxyException
      */
-    public function lpush(string $key, ...$elements): int
+    public function lpush(string $key, string ...$elements): int
     {
         $elements = $this->prepareArguments('lpush', ...$elements);
         $this->init();
@@ -737,13 +737,13 @@ class RedisProxy
     /**
      * Append one or multiple values to a list
      * @param string $key
-     * @param array  $elements
+     * @param string ...$elements
      * @return int the length of the list after the push operations
      * @throws RedisProxyException
      * @throws RedisProxyException
      * @throws RedisProxyException
      */
-    public function rpush(string $key, ...$elements): int
+    public function rpush(string $key, string ...$elements): int
     {
         $elements = $this->prepareArguments('rpush', ...$elements);
         $this->init();
@@ -812,11 +812,11 @@ class RedisProxy
     /**
      * Removes the specified members from the sorted set stored at key. Non-existing members are ignored
      * @param string $key
-     * @param mixed  $members
+     * @param string ...$members
      * @return int
      * @throws RedisProxyException
      */
-    public function zrem(string $key, ...$members): int
+    public function zrem(string $key, string ...$members): int
     {
         $members = $this->prepareArguments('zrem', ...$members);
         return (int)$this->driver->zrem($key, ...$members);
