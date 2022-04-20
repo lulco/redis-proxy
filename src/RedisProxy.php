@@ -47,7 +47,7 @@ class RedisProxy
 
     public const TYPE_SORTED_SET = 'sorted_set';
 
-    /** @var Redis|Client */
+    /** @var Redis|Client|null */
     private $driver;
 
     private string $host;
@@ -157,7 +157,12 @@ class RedisProxy
 
     private function connect(string $host, int $port, float $timeout = 0.0): void
     {
-        $this->driver->connect($host, $port, $timeout);
+        $driver = $this->driver;
+        if ($driver instanceof Redis) {
+            $driver->connect($host, $port, $timeout);
+        } elseif ($driver instanceof Client) {
+            $driver->connect();
+        }
     }
 
     private function isConnected(): bool
@@ -542,12 +547,15 @@ class RedisProxy
             return null;
         }
         $this->init();
-        if ($this->actualDriver() === self::DRIVER_PREDIS) {
-            $returned = $this->driver->scan($iterator, ['match' => $pattern, 'count' => $count]);
+        $driver = $this->driver;
+        if ($driver instanceof Client) {
+            $returned = $driver->scan($iterator, ['match' => $pattern, 'count' => $count]);
             $iterator = $returned[0];
             return $returned[1];
         }
-        return $this->driver->scan($iterator, $pattern, $count);
+
+        /** @var Redis $driver */
+        return $driver->scan($iterator, $pattern, $count);
     }
 
     /**
@@ -649,12 +657,15 @@ class RedisProxy
             return null;
         }
         $this->init();
-        if ($this->actualDriver() === self::DRIVER_PREDIS) {
+        $driver = $this->driver;
+        if ($driver instanceof Client) {
             $returned = $this->driver->hscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
             $iterator = $returned[0];
             return $returned[1];
         }
-        return $this->driver->hscan($key, $iterator, $pattern, $count);
+
+        /** @var Redis $driver */
+        return $driver->hscan($key, $iterator, $pattern, $count);
     }
 
     /**
@@ -713,12 +724,15 @@ class RedisProxy
             return null;
         }
         $this->init();
-        if ($this->actualDriver() === self::DRIVER_PREDIS) {
-            $returned = $this->driver->sscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
+        $driver = $this->driver;
+        if ($driver instanceof Client) {
+            $returned = $driver->sscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
             $iterator = $returned[0];
             return $returned[1];
         }
-        return $this->driver->sscan($key, $iterator, $pattern, $count);
+
+        /** @var Redis $driver */
+        return $driver->sscan($key, $iterator, $pattern, $count);
     }
 
     /**
@@ -851,7 +865,8 @@ class RedisProxy
             return null;
         }
         $this->init();
-        if ($this->actualDriver() === self::DRIVER_PREDIS) {
+        $driver = $this->driver;
+        if ($driver instanceof Client) {
             $returned = $this->driver->zscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
             $iterator = $returned[0];
             return $returned[1];

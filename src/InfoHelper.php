@@ -4,6 +4,7 @@ namespace RedisProxy;
 
 class InfoHelper
 {
+    /** @var array<string, string> */
     private static array $keyStartToSectionMap = [
         'redis_' => 'server',
         'uptime_' => 'server',
@@ -21,6 +22,7 @@ class InfoHelper
         'db' => 'keyspace',
     ];
 
+    /** @var array<string, string> */
     private static array $keyToSectionMap = [
         'os' => 'server',
         'arch_bits' => 'server',
