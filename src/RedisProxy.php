@@ -6,6 +6,7 @@ use Exception;
 use Predis\Client;
 use Predis\Response\Status;
 use Redis;
+use Throwable;
 
 /**
  * @method mixed config(string $command, $argument = null)
@@ -179,7 +180,7 @@ class RedisProxy
         $name = strtolower($name);
         try {
             $result = call_user_func_array([$this->driver, $name], $arguments);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             throw new RedisProxyException("Error for command '$name', use getPrevious() for more info", 1484162284, $e);
         }
         return $this->transformResult($result);
@@ -867,11 +868,13 @@ class RedisProxy
         $this->init();
         $driver = $this->driver;
         if ($driver instanceof Client) {
-            $returned = $this->driver->zscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
+            $returned = $driver->zscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
             $iterator = $returned[0];
             return $returned[1];
         }
-        return $this->driver->zscan($key, $iterator, $pattern, $count);
+
+        /** @var Redis $driver */
+        return $driver->zscan($key, $iterator, $pattern, $count);
     }
 
     /**
