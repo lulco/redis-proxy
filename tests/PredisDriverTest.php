@@ -6,7 +6,7 @@ use RedisProxy\RedisProxy;
 
 class PredisDriverTest extends BaseDriverTest
 {
-    protected function initializeDriver()
+    protected function initializeDriver(): RedisProxy
     {
         if (!class_exists('Predis\Client')) {
             self::markTestSkipped('Predis client is not installed');

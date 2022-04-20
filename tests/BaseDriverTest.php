@@ -4,22 +4,19 @@ namespace RedisProxy\Tests;
 
 use PHPUnit\Framework\TestCase;
 use RedisProxy\RedisProxy;
+use RedisProxy\RedisProxyException;
 
 abstract class BaseDriverTest extends TestCase
 {
-    /** @var RedisProxy */
-    private $redisProxy;
+    private RedisProxy $redisProxy;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->redisProxy = $this->initializeDriver();
         $this->redisProxy->flushall();
     }
 
-    /**
-     * @return RedisProxy
-     */
-    abstract protected function initializeDriver();
+    abstract protected function initializeDriver(): RedisProxy;
 
     public function testSelect()
     {
@@ -27,12 +24,10 @@ abstract class BaseDriverTest extends TestCase
         self::assertTrue($this->redisProxy->select(getenv('REDIS_PROXY_REDIS_DATABASE_2')));
     }
 
-    /**
-     * @expectedException \RedisProxy\RedisProxyException
-     * @expectedExceptionMessage Invalid DB index
-     */
     public function testSelectInvalidDatabase()
     {
+        $this->expectExceptionMessage("Invalid DB index");
+        $this->expectException(RedisProxyException::class);
         $this->redisProxy->select(-1);
     }
 
@@ -96,12 +91,10 @@ abstract class BaseDriverTest extends TestCase
         self::assertNotEmpty($serverInfo);
     }
 
-    /**
-     * @expectedException \RedisProxy\RedisProxyException
-     * @expectedExceptionMessage Info section "unknown" doesn't exist
-     */
     public function testUnknownInfoSection()
     {
+        $this->expectExceptionMessage("Info section \"unknown\" doesn't exist");
+        $this->expectException(RedisProxyException::class);
         $this->redisProxy->info('unknown');
     }
 
@@ -129,13 +122,11 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(['my_key'], $keys);
     }
 
-    /**
-     * @expectedException \RedisProxy\RedisProxyException
-     * @expectedExceptionMessage Error for command 'keys', use getPrevious() for more info
-     * @expectedExceptionCode 1484162284
-     */
     public function testKeysWithoutPattern()
     {
+        $this->expectExceptionCode(1484162284);
+        $this->expectExceptionMessage("Error for command 'keys', use getPrevious() for more info");
+        $this->expectException(RedisProxyException::class);
         $this->redisProxy->keys();
     }
 
@@ -306,12 +297,10 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(0, $this->redisProxy->dbsize());
     }
 
-    /**
-     * @expectedException \RedisProxy\RedisProxyException
-     * @expectedExceptionMessage Wrong number of arguments for mset command
-     */
     public function testWrongNumberOfArgumentsMset()
     {
+        $this->expectExceptionMessage("Wrong number of arguments for mset command");
+        $this->expectException(RedisProxyException::class);
         $this->redisProxy->mset('my_key_1', 'my_value_1', 'my_key_2', 'my_value_2', 'xxx');
     }
 
@@ -419,21 +408,17 @@ abstract class BaseDriverTest extends TestCase
         self::assertNull($this->redisProxy->get('third_key'));
     }
 
-    /**
-     * @expectedException \RedisProxy\RedisProxyException
-     * @expectedExceptionMessage Wrong number of arguments for del command
-     */
     public function testDelNoKeys()
     {
+        $this->expectExceptionMessage("Wrong number of arguments for del command");
+        $this->expectException(RedisProxyException::class);
         $this->redisProxy->del();
     }
 
-    /**
-     * @expectedException \RedisProxy\RedisProxyException
-     * @expectedExceptionMessage Wrong number of arguments for del command
-     */
     public function testDeleteNoKeys()
     {
+        $this->expectExceptionMessage("Wrong number of arguments for del command");
+        $this->expectException(RedisProxyException::class);
         $this->redisProxy->delete();
     }
 
@@ -699,12 +684,10 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(1, $this->redisProxy->del('my_hash_key'));
     }
 
-    /**
-     * @expectedException \RedisProxy\RedisProxyException
-     * @expectedExceptionMessage Wrong number of arguments for hmset command
-     */
     public function testWrongNumberOfArgumentsHmset()
     {
+        $this->expectExceptionMessage("Wrong number of arguments for hmset command");
+        $this->expectException(RedisProxyException::class);
         $this->redisProxy->hmset('my_hash_key', 'my_field_1', 'my_value_1', 'my_field_2', 'my_value_2', 'xxx');
     }
 

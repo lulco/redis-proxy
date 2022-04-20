@@ -6,7 +6,7 @@ use RedisProxy\RedisProxy;
 
 class RedisDriverTest extends BaseDriverTest
 {
-    protected function initializeDriver()
+    protected function initializeDriver(): RedisProxy
     {
         if (!extension_loaded('redis')) {
             self::markTestSkipped('redis extension is not loaded');

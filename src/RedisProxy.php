@@ -383,11 +383,11 @@ class RedisProxy
 
     /**
      * Delete a key(s)
-     * @param string ...$keys
+     * @param string|string[] ...$keys
      * @return int number of deleted keys
      * @throws RedisProxyException
      */
-    public function del(string ...$keys): int
+    public function del(...$keys): int
     {
         $keys = $this->prepareArguments('del', ...$keys);
         $this->init();
@@ -396,11 +396,11 @@ class RedisProxy
 
     /**
      * Delete a key(s)
-     * @param string ...$keys
+     * @param string|string[] ...$keys
      * @return int number of deleted keys
      * @throws RedisProxyException
      */
-    public function delete(string ...$keys): int
+    public function delete(...$keys): int
     {
         return $this->del(...$keys);
     }
@@ -513,11 +513,11 @@ class RedisProxy
 
     /**
      * Multi get
-     * @param string ...$keys
+     * @param string|string[] ...$keys
      * @return array Returns the values for all specified keys. For every key that does not hold a string value or does not exist, null is returned
      * @throws RedisProxyException
      */
-    public function mget(string ...$keys): array
+    public function mget(...$keys): array
     {
         $keys = array_unique($this->prepareArguments('mget', ...$keys));
         $this->init();
@@ -567,9 +567,10 @@ class RedisProxy
 
     /**
      * Delete one or more hash fields, returns number of deleted fields
+     * @param string|string[] ...$fields
      * @throws RedisProxyException
      */
-    public function hdel(string $key, string ...$fields): int
+    public function hdel(string $key, ...$fields): int
     {
         $fields = $this->prepareArguments('hdel', ...$fields);
         $this->init();
@@ -618,13 +619,13 @@ class RedisProxy
     /**
      * Multi hash get
      * @param string $key
-     * @param string ...$fields
+     * @param string|string[] ...$fields
      * @return array Returns the values for all specified fields. For every field that does not hold a string value or does not exist, null is returned
      * @throws RedisProxyException
      * @throws RedisProxyException
      * @throws RedisProxyException
      */
-    public function hmget(string $key, string ...$fields): array
+    public function hmget(string $key, ...$fields): array
     {
         $fields = array_unique($this->prepareArguments('hmget', ...$fields));
         $this->init();
@@ -723,11 +724,11 @@ class RedisProxy
     /**
      * Prepend one or multiple values to a list
      * @param string $key
-     * @param string ...$elements
+     * @param string|string[] ...$elements
      * @return int the length of the list after the push operations
      * @throws RedisProxyException
      */
-    public function lpush(string $key, string ...$elements): int
+    public function lpush(string $key, ...$elements): int
     {
         $elements = $this->prepareArguments('lpush', ...$elements);
         $this->init();
@@ -737,13 +738,13 @@ class RedisProxy
     /**
      * Append one or multiple values to a list
      * @param string $key
-     * @param string ...$elements
+     * @param string|string[] ...$elements
      * @return int the length of the list after the push operations
      * @throws RedisProxyException
      * @throws RedisProxyException
      * @throws RedisProxyException
      */
-    public function rpush(string $key, string ...$elements): int
+    public function rpush(string $key, ...$elements): int
     {
         $elements = $this->prepareArguments('rpush', ...$elements);
         $this->init();
@@ -812,11 +813,11 @@ class RedisProxy
     /**
      * Removes the specified members from the sorted set stored at key. Non-existing members are ignored
      * @param string $key
-     * @param string ...$members
+     * @param string|array ...$members
      * @return int
      * @throws RedisProxyException
      */
-    public function zrem(string $key, string ...$members): int
+    public function zrem(string $key, ...$members): int
     {
         $members = $this->prepareArguments('zrem', ...$members);
         return (int)$this->driver->zrem($key, ...$members);
