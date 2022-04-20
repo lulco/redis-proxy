@@ -1,6 +1,6 @@
 {
 	"name": "lulco/redis-proxy",
-	"description": "Library for creating redis instance depends on application / server possibilities",
+	"description": "Library for Redis driver abstraction",
 	"keywords": ["PHP", "Redis", "Predis"],
 	"type": "library",
 	"license": "MIT",
