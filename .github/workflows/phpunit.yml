@@ -20,7 +20,7 @@ jobs:
       redis:
         image: redis
         ports:
-          - 6379
+          - 6379:6379
 
     steps:
       - name: Checkout code
@@ -35,4 +35,4 @@ jobs:
         run: composer update --no-progress --no-interaction
 
       - name: PHPunit
-        run: REDIS_PROXY_REDIS_HOST=redis vendor/bin/phpunit --coverage-text
+        run: vendor/bin/phpunit --coverage-text
