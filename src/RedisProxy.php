@@ -652,7 +652,7 @@ class RedisProxy
      * @return array|boolean|null list of found fields with associated values, returns null if $iterator is 0 or '0'
      * @throws RedisProxyException
      */
-    public function hscan(string $key, &$iterator, ?string $pattern = null, ?int $count = null)
+    public function hscan(string $key, &$iterator, ?string $pattern = null, int $count = 0)
     {
         if ((string)$iterator === '0') {
             return null;
