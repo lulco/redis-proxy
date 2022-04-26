@@ -916,6 +916,12 @@ class RedisProxy
         return $this->convertFalseToNull($result);
     }
 
+    public function zrangebyscore(string $key, int $start, int $end, array $options = []): array
+    {
+        $this->init();
+        return $this->driver->zrangebyscore($key, $start, $end, $options);
+    }
+
     /**
      * Returns null instead of false for Redis driver
      * @param mixed $result
