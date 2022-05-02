@@ -852,6 +852,55 @@ class RedisProxy
     }
 
     /**
+     * Returns all the elements in the sorted set at key with a score between min and max (including elements with score equal to min or max). The elements are considered to be ordered from low to high scores
+     *
+     * @param string $key
+     * @param int|string $start - you can use -inf / inf
+     * @param int|string $stop - you can use -inf / inf
+     * @param bool $withscores
+     * @return array
+     * @throws RedisProxyException
+     */
+    public function zrangebyscore(string $key, $start, $stop, bool $withscores = false): array
+    {
+        $this->init();
+        if ($this->actualDriver() === self::DRIVER_PREDIS) {
+            return $this->driver->zrangebyscore($key, $start, $stop, ['WITHSCORES' => $withscores]);
+        }
+        return $this->driver->zrangebyscore($key, $start, $stop, ['WITHSCORES' => $withscores]);
+    }
+
+    /**
+     * @param string $key
+     * @param int $count
+     * @return array
+     * @throws RedisProxyException
+     */
+    public function zpopmin(string $key, int $count = 1): array
+    {
+        $this->init();
+        if ($this->actualDriver() === self::DRIVER_PREDIS) {
+            throw new RedisProxyException('Command zpopmin is not yet implemented for predis driver');
+        }
+        return $this->driver->zpopmin($key, $count);
+    }
+
+    /**
+     * @param string $key
+     * @param int $count
+     * @return array
+     * @throws RedisProxyException
+     */
+    public function zpopmax(string $key, int $count = 1): array
+    {
+        $this->init();
+        if ($this->actualDriver() === self::DRIVER_PREDIS) {
+            throw new RedisProxyException('Command zpopmax is not yet implemented for predis driver');
+        }
+        return $this->driver->zpopmax($key, $count);
+    }
+
+    /**
      * Incrementally iterate Sorted set elements
      * @param string      $key
      * @param mixed       $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished

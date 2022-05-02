@@ -8,7 +8,7 @@ use RedisProxy\RedisProxy;
 
 class InfoHelperTest extends TestCase
 {
-    public function testCreateEmptyInfoArrayForRedis()
+    public function testCreateEmptyInfoArrayForRedis(): void
     {
         $redisProxy = new RedisProxy(getenv('REDIS_PROXY_REDIS_HOST'), getenv('REDIS_PROXY_REDIS_PORT'), getenv('REDIS_PROXY_REDIS_DATABASE'));
         $redisProxy->setDriversOrder([RedisProxy::DRIVER_REDIS]);
@@ -17,7 +17,7 @@ class InfoHelperTest extends TestCase
         self::assertEmpty(InfoHelper::createInfoArray($redisProxy, []));
     }
 
-    public function testOnlyDatabasesInfoArrayForRedis()
+    public function testOnlyDatabasesInfoArrayForRedis(): void
     {
         $redisProxy = new RedisProxy(getenv('REDIS_PROXY_REDIS_HOST'), getenv('REDIS_PROXY_REDIS_PORT'), getenv('REDIS_PROXY_REDIS_DATABASE'));
         $redisProxy->setDriversOrder([RedisProxy::DRIVER_REDIS]);
@@ -34,7 +34,7 @@ class InfoHelperTest extends TestCase
         }
     }
 
-    public function testCreateEmptyInfoArrayForPredis()
+    public function testCreateEmptyInfoArrayForPredis(): void
     {
         $redisProxy = new RedisProxy(getenv('REDIS_PROXY_REDIS_HOST'), getenv('REDIS_PROXY_REDIS_PORT'), getenv('REDIS_PROXY_REDIS_DATABASE'));
         $redisProxy->setDriversOrder([RedisProxy::DRIVER_PREDIS]);
@@ -43,7 +43,7 @@ class InfoHelperTest extends TestCase
         self::assertEmpty(InfoHelper::createInfoArray($redisProxy, []));
     }
 
-    public function testOnlyDatabasesInfoArrayForPredis()
+    public function testOnlyDatabasesInfoArrayForPredis(): void
     {
         $redisProxy = new RedisProxy(getenv('REDIS_PROXY_REDIS_HOST'), getenv('REDIS_PROXY_REDIS_PORT'), getenv('REDIS_PROXY_REDIS_DATABASE'));
         $redisProxy->setDriversOrder([RedisProxy::DRIVER_PREDIS]);

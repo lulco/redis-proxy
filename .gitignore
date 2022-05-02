@@ -2,5 +2,5 @@
 /vendor/
 /composer.lock
 /coverage/
-/humbuglog.txt
-/humbuglog.json
+/.idea
+/.phpunit.result.cache
