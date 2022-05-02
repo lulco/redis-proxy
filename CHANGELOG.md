@@ -2,6 +2,13 @@
 
 ### [Unreleased][unreleased]
 
+#### Changed
+- Added typehints
+- Dropped support for php < 7.4
+
+#### Added
+- Added commands zrangebyscore, zpopmin, zpopmax
+
 ### [0.4.2] - 2020-06-25
 #### Fixed
 - Fixed zrem for multiple members
