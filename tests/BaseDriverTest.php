@@ -1144,12 +1144,13 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(3, $this->redisProxy->zcard('my_sorted_set_key'));
 
         self::assertEquals(['element_1', 'element_2', 'element_3'], $this->redisProxy->zrangebyscore('my_sorted_set_key', '-inf', 'inf'));
+        self::assertEquals(['element_2', 'element_3'], $this->redisProxy->zrangebyscore('my_sorted_set_key', '-inf', 'inf', ['limit' => [1, 2]]));
         self::assertEquals(['element_1', 'element_2'], $this->redisProxy->zrangebyscore('my_sorted_set_key', '-inf', 0));
         self::assertEquals(['element_2', 'element_3'], $this->redisProxy->zrangebyscore('my_sorted_set_key', 0, 'inf'));
 
-        self::assertEquals(['element_1' => -1, 'element_2' => 0, 'element_3' => 1], $this->redisProxy->zrangebyscore('my_sorted_set_key', '-inf', 'inf', true));
-        self::assertEquals(['element_1' => -1, 'element_2' => 0], $this->redisProxy->zrangebyscore('my_sorted_set_key', '-inf', 0, true));
-        self::assertEquals(['element_2' => 0, 'element_3' => 1], $this->redisProxy->zrangebyscore('my_sorted_set_key', 0, 'inf', true));
+        self::assertEquals(['element_1' => -1, 'element_2' => 0, 'element_3' => 1], $this->redisProxy->zrangebyscore('my_sorted_set_key', '-inf', 'inf', ['withscores' => true]));
+        self::assertEquals(['element_1' => -1, 'element_2' => 0], $this->redisProxy->zrangebyscore('my_sorted_set_key', '-inf', 0, ['withscores' => true]));
+        self::assertEquals(['element_2' => 0, 'element_3' => 1], $this->redisProxy->zrangebyscore('my_sorted_set_key', 0, 'inf', ['withscores' => true]));
     }
 
     public function testZscan(): void

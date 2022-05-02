@@ -857,17 +857,17 @@ class RedisProxy
      * @param string $key
      * @param int|string $start - you can use -inf / inf
      * @param int|string $stop - you can use -inf / inf
-     * @param bool $withscores
+     * @param array{limit: array{0: int, 1: int}, withscores: bool} $options - limit<offset, count>, withscores default false
      * @return array
      * @throws RedisProxyException
      */
-    public function zrangebyscore(string $key, $start, $stop, bool $withscores = false): array
+    public function zrangebyscore(string $key, $start, $stop, array $options = []): array
     {
         $this->init();
         if ($this->actualDriver() === self::DRIVER_PREDIS) {
-            return $this->driver->zrangebyscore($key, $start, $stop, ['WITHSCORES' => $withscores]);
+            return $this->driver->zrangebyscore($key, $start, $stop, $options);
         }
-        return $this->driver->zrangebyscore($key, $start, $stop, ['WITHSCORES' => $withscores]);
+        return $this->driver->zrangebyscore($key, $start, $stop, $options);
     }
 
     /**
