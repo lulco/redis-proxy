@@ -2,6 +2,7 @@
 
 ### [Unreleased][unreleased]
 
+### [0.5.0] - 2022-05-05
 #### Changed
 - Added typehints
 - Dropped support for php < 7.4
@@ -59,7 +60,8 @@
 #### Added
 - Wrapper for \Redis
 
-[unreleased]: https://github.com/lulco/redis-proxy/compare/0.4.2...HEAD
+[unreleased]: https://github.com/lulco/redis-proxy/compare/0.5.0...HEAD
+[0.5.0]: https://github.com/lulco/redis-proxy/compare/0.4.2...0.5.0
 [0.4.2]: https://github.com/lulco/redis-proxy/compare/0.4.1...0.4.2
 [0.4.1]: https://github.com/lulco/redis-proxy/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/lulco/redis-proxy/compare/0.3.1...0.4.0
