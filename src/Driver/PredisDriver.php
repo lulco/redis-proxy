@@ -56,7 +56,8 @@ class PredisDriver implements Driver
                 return call_user_func_array([$this, $command], $params);
             }
 
-            return call_user_func_array([$this->connectionPool->getConnection($command), $command], $params);
+            $result = call_user_func_array([$this->connectionPool->getConnection($command), $command], $params);
+            return $this->transformResult($result);
         } catch (RedisException $e) {
             // @TODO
         }
