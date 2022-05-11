@@ -2,6 +2,7 @@
 
 namespace RedisProxy\ConnectionPool;
 
+use RedisProxy\ConnectionPoolFactory\SingleNodeConnectionPoolFactory;
 use RedisProxy\Driver\Driver;
 
 class SentinelConnectionPool implements ConnectionPool
@@ -27,7 +28,11 @@ class SentinelConnectionPool implements ConnectionPool
 
     public function getConnection(string $command)
     {
-
+        foreach ($this->sentinels as $sentinel) {
+            $sentinelConnection = $this->driver->getDriverFactory()->create(new SingleNodeConnectionPoolFactory($sentinel['host'], $sentinel['port']));
+            var_dump($sentinelConnection->sentinelReplicas($this->clusterId));
+            exit;
+        }
     }
 
     public function handleFailed(): bool

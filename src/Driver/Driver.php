@@ -12,4 +12,6 @@ interface Driver
     public function getConnectionFactory(): ConnectionFactory;
 
     public function getDriverFactory(): DriverFactory;
+
+    public function sentinelReplicas(string $clusterId);
 }

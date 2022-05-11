@@ -88,4 +88,10 @@ class RedisDriver implements Driver
         }
         return !!$result;
     }
+
+    public function sentinelReplicas(string $clusterId)
+    {
+        $connection = $this->connectionPool->getConnection('sentinel');
+        return $connection->rawCommand('sentinel', 'replicas', $clusterId);
+    }
 }

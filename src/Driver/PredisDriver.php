@@ -150,6 +150,11 @@ class PredisDriver implements Driver
         return $this->connectionPool->getConnection('zrevrange')->zrevrange($key, $start, $stop, ['WITHSCORES' => $withscores]);
     }
 
+    public function sentinelReplicas(string $clusterId)
+    {
+        return $this->connectionPool->getConnection('sentinel')->executeRaw(['sentniel', 'replicas', $clusterId]);
+    }
+
     /**
      * Transforms Predis result Payload to boolean
      * @param mixed $result

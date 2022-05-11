@@ -35,7 +35,9 @@ class SingleNodeConnectionPool implements ConnectionPool
         if ($this->connection !== null) {
             return $this->connection;
         }
-        return $this->driver->getConnectionFactory()->create($this->host, $this->port, $this->database, $this->timeout);
+        $this->connection = $this->driver->getConnectionFactory()->create($this->host, $this->port, $this->timeout);
+        $this->connection->select($this->database);
+        return $this->connection;
     }
 
     public function handleFailed(): bool
