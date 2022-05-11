@@ -37,6 +37,15 @@ use Throwable;
  * @method int zscore(string $key, string $member) Returns the score of member in the sorted set at key
  * @method boolean flushall() Remove all keys from all databases
  * @method boolean flushdb() Remove all keys from the current database
+ * @method int incr(string $key) Increment the integer value of a key by one
+ * @method int incrby(string $key, int $increment = 1) Increment the integer value of a key by the given amount
+ * @method int decr(string $key) Decrement the integer value of a key by one
+ * @method int decrby(string $key, int $decrement = 1) Decrement the integer value of a key by the given number
+ * @method array zrange(string $key, int $start, int $stop, bool $withscores = false) Return a range of members in a sorted set, by index
+ * @method array zrangebyscore(string $key, $start, $stop, array $options = []) Returns all the elements in the sorted set at key with a score between min and max (including elements with score equal to min or max). The elements are considered to be ordered from low to high scores
+ * @method array zpopmin(string $key, int $count = 1)
+ * @method array zpopmax(string $key, int $count = 1)
+ * @method array zrevrange(string $key, int $start, int $stop, bool $withscores = false) Return a range of members in a sorted set, by index, with scores ordered from high to low
  */
 class RedisProxy
 {
@@ -328,31 +337,6 @@ class RedisProxy
     }
 
     /**
-     * Increment the integer value of a key by one
-     * @param string $key
-     * @return integer
-     * @throws RedisProxyException
-     */
-    public function incr(string $key): int
-    {
-        $this->init();
-        return $this->driver->call('incr', [$key]);
-    }
-
-    /**
-     * Increment the integer value of a key by the given amount
-     * @param string  $key
-     * @param integer $increment
-     * @return integer
-     * @throws RedisProxyException
-     */
-    public function incrby(string $key, int $increment = 1): int
-    {
-        $this->init();
-        return $this->driver->call('incrby', [$key, $increment]);
-    }
-
-    /**
      * Increment the float value of a key by the given amount
      * @param string $key
      * @param float  $increment
@@ -363,31 +347,6 @@ class RedisProxy
     {
         $this->init();
         return (float) $this->driver->call('incrbyfloat', [$key, $increment]);
-    }
-
-    /**
-     * Decrement the integer value of a key by one
-     * @param string $key
-     * @return integer
-     * @throws RedisProxyException
-     */
-    public function decr(string $key): int
-    {
-        $this->init();
-        return $this->driver->call('decr', [$key]);
-    }
-
-    /**
-     * Decrement the integer value of a key by the given number
-     * @param string  $key
-     * @param integer $decrement
-     * @return integer
-     * @throws RedisProxyException
-     */
-    public function decrby(string $key, int $decrement = 1): int
-    {
-        $this->init();
-        return $this->driver->call('decrby', [$key, (int)$decrement]);
     }
 
     /**
@@ -416,7 +375,6 @@ class RedisProxy
     }
 
     /**
-     * @TEST
      * Set multiple values to multiple keys
      * @param array $dictionary
      * @return boolean true on success
@@ -450,7 +408,6 @@ class RedisProxy
     }
 
     /**
-     * @TEST
      * Incrementally iterate the keys space
      * @param mixed       $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
      * @param string|null $pattern pattern for keys, use * as wild card
@@ -464,7 +421,7 @@ class RedisProxy
             return null;
         }
         $this->init();
-        return $this->driver->call('scan', [$iterator, $pattern, $count]);
+        return $this->driver->call('scan', [&$iterator, $pattern, $count]);
     }
 
     /**
@@ -515,7 +472,6 @@ class RedisProxy
     }
 
     /**
-     * @TODO
      * Set multiple values to multiple hash fields
      * @param string $key
      * @param array  $dictionary
@@ -526,12 +482,10 @@ class RedisProxy
     {
         $this->init();
         if (is_array($dictionary[0])) {
-            $result = $this->driver->hmset($key, ...$dictionary);
-            return $this->transformResult($result);
+            return $this->driver->call('hmset', [$key, ...$dictionary]);
         }
         $dictionary = $this->prepareKeyValue($dictionary, 'hmset');
-        $result = $this->driver->hmset($key, $dictionary);
-        return !!$this->transformResult($result);
+        return !!$this->driver->call('hmset', [$key, $dictionary]);
     }
 
     /**
@@ -555,7 +509,6 @@ class RedisProxy
     }
 
     /**
-     * @TEST
      * Incrementally iterate hash fields and associated values
      * @param mixed       $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
      * @param string|null $pattern pattern for fields, use * as wild card
@@ -564,11 +517,11 @@ class RedisProxy
      */
     public function hscan(string $key, &$iterator, ?string $pattern = null, int $count = 0)
     {
-        if ((string)$iterator === '0') {
+        if ((string) $iterator === '0') {
             return null;
         }
         $this->init();
-        return $this->driver->call('hscan', [$key, $iterator, $pattern, $count]);
+        return $this->driver->call('hscan', [$key, &$iterator, $pattern, $count]);
     }
 
     /**
@@ -613,7 +566,6 @@ class RedisProxy
     }
 
     /**
-     * @TODO
      * Incrementally iterate Set elements
      * @param string      $key
      * @param mixed       $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
@@ -624,19 +576,11 @@ class RedisProxy
      */
     public function sscan(string $key, &$iterator, string $pattern = null, int $count = null)
     {
-        if ((string)$iterator === '0') {
+        if ((string) $iterator === '0') {
             return null;
         }
         $this->init();
-        $driver = $this->driver;
-        if ($driver instanceof Client) {
-            $returned = $driver->sscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
-            $iterator = $returned[0];
-            return $returned[1];
-        }
-
-        /** @var Redis $driver */
-        return $driver->sscan($key, $iterator, $pattern, $count);
+        return $this->driver->call('sscan', [$key, &$iterator, $pattern, $count]);
     }
 
     /**
@@ -666,7 +610,7 @@ class RedisProxy
     {
         $elements = $this->prepareArguments('rpush', ...$elements);
         $this->init();
-        return (int)$this->driver->call('rpush', [$key, ...$elements]);
+        return (int) $this->driver->call('rpush', [$key, ...$elements]);
     }
 
     /**
@@ -742,69 +686,6 @@ class RedisProxy
     }
 
     /**
-     * @TODO
-     * Return a range of members in a sorted set, by index
-     * @throws RedisProxyException
-     */
-    public function zrange(string $key, int $start, int $stop, bool $withscores = false): array
-    {
-        $this->init();
-        if ($this->actualDriver() === self::DRIVER_PREDIS) {
-            return $this->driver->call('zrange', [$key, $start, $stop, ['WITHSCORES' => $withscores]]);
-        }
-        return $this->driver->call('zrange', [$key, $start, $stop, $withscores]);
-    }
-
-    /**
-     * Returns all the elements in the sorted set at key with a score between min and max (including elements with score equal to min or max). The elements are considered to be ordered from low to high scores
-     *
-     * @param string $key
-     * @param int|string $start - you can use -inf / inf
-     * @param int|string $stop - you can use -inf / inf
-     * @param array{limit?: array{0: int, 1: int}, withscores?: bool} $options - limit<offset, count>, withscores default false
-     * @return array
-     * @throws RedisProxyException
-     */
-    public function zrangebyscore(string $key, $start, $stop, array $options = []): array
-    {
-        $this->init();
-        return $this->driver->call('zrangebyscore', [$key, $start, $stop, $options]);
-    }
-
-    /**
-     * @TODO
-     * @param string $key
-     * @param int $count
-     * @return array
-     * @throws RedisProxyException
-     */
-    public function zpopmin(string $key, int $count = 1): array
-    {
-        $this->init();
-        if ($this->actualDriver() === self::DRIVER_PREDIS) {
-            throw new RedisProxyException('Command zpopmin is not yet implemented for predis driver');
-        }
-        return $this->driver->zpopmin($key, $count);
-    }
-
-    /**
-     * @TODO
-     * @param string $key
-     * @param int $count
-     * @return array
-     * @throws RedisProxyException
-     */
-    public function zpopmax(string $key, int $count = 1): array
-    {
-        $this->init();
-        if ($this->actualDriver() === self::DRIVER_PREDIS) {
-            throw new RedisProxyException('Command zpopmax is not yet implemented for predis driver');
-        }
-        return $this->driver->zpopmax($key, $count);
-    }
-
-    /**
-     * @TODO
      * Incrementally iterate Sorted set elements
      * @param string      $key
      * @param mixed       $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
@@ -815,33 +696,11 @@ class RedisProxy
      */
     public function zscan(string $key, &$iterator, ?string $pattern = null, ?int $count = null)
     {
-        if ((string)$iterator === '0') {
+        if ((string) $iterator === '0') {
             return null;
         }
         $this->init();
-        $driver = $this->driver;
-        if ($driver instanceof Client) {
-            $returned = $driver->zscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
-            $iterator = $returned[0];
-            return $returned[1];
-        }
-
-        /** @var Redis $driver */
-        return $driver->zscan($key, $iterator, $pattern, $count);
-    }
-
-    /**
-     * @TODO
-     * Return a range of members in a sorted set, by index, with scores ordered from high to low
-     * @throws RedisProxyException
-     */
-    public function zrevrange(string $key, int $start, int $stop, bool $withscores = false): array
-    {
-        $this->init();
-        if ($this->actualDriver() === self::DRIVER_PREDIS) {
-            return $this->driver->zrevrange($key, $start, $stop, ['WITHSCORES' => $withscores]);
-        }
-        return $this->driver->zrevrange($key, $start, $stop, $withscores);
+        return $this->driver->call('zscan', [$key, &$iterator, $pattern, $count]);
     }
 
     /**

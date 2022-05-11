@@ -116,6 +116,40 @@ class PredisDriver implements Driver
         return $returned[1];
     }
 
+    private function sscan(string $key, &$iterator, string $pattern = null, int $count = null)
+    {
+        $returned = $this->connectionPool->getConnection('sscan')->sscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
+        $iterator = $returned[0];
+        return $returned[1];
+    }
+
+    private function zscan(string $key, &$iterator, ?string $pattern = null, ?int $count = null)
+    {
+        $returned = $this->connectionPool->getConnection('zscan')->zscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
+        $iterator = $returned[0];
+        return $returned[1];
+    }
+
+    private function zrange(string $key, int $start, int $stop, bool $withscores = false): array
+    {
+        return $this->connectionPool->getConnection('zrange')->zrange($key, $start, $stop, ['WITHSCORES' => $withscores]);
+    }
+
+    private function zpopmin(string $key, int $count = 1): array
+    {
+        throw new RedisProxyException('Command zpopmin is not yet implemented for predis driver');
+    }
+
+    private function zpopmax(string $key, int $count = 1): array
+    {
+        throw new RedisProxyException('Command zpopmax is not yet implemented for predis driver');
+    }
+
+    public function zrevrange(string $key, int $start, int $stop, bool $withscores = false): array
+    {
+        return $this->connectionPool->getConnection('zrevrange')->zrevrange($key, $start, $stop, ['WITHSCORES' => $withscores]);
+    }
+
     /**
      * Transforms Predis result Payload to boolean
      * @param mixed $result
