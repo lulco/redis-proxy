@@ -51,6 +51,9 @@ class PredisDriver implements Driver
         return $this->driverFactory;
     }
 
+    /**
+     * @throws RedisProxyException
+     */
     public function call(string $command, array $params = [])
     {
         try {
@@ -60,25 +63,24 @@ class PredisDriver implements Driver
 
             $result = call_user_func_array([$this->connectionPool->getConnection($command), $command], $params);
             return $this->transformResult($result);
-        } catch (ConnectionException $e) {
-            if ($this->connectionPool->handleFailed()) {
+        } catch (Throwable $t) {
+            if ($t instanceof ConnectionException && $this->connectionPool->handleFailed()) {
                 return $this->call($command, $params);
             }
-            throw $e;
+            throw new RedisProxyException('Predis driver exception: ' . $t->getMessage(), 0, $t);
         }
     }
 
+    /**
+     * @throws Throwable
+     */
     public function callSentinel(string $command, array $params = [])
     {
-        try {
-            if (method_exists($this, $command)) {
-                return call_user_func_array([$this, $command], $params);
-            }
-
-            return $this->connectionPool->getConnection('sentinel')->executeRaw(['sentinel', $command, ...$params]);
-        } catch (Throwable $t) {
-            throw new RedisProxyException($t->getMessage(), 0, $t);
+        if (method_exists($this, $command)) {
+            return call_user_func_array([$this, $command], $params);
         }
+
+        return $this->connectionPool->getConnection('sentinel')->executeRaw(['sentinel', $command, ...$params]);
     }
 
     /**

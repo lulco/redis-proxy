@@ -94,7 +94,7 @@ class SentinelConnectionPool implements ConnectionPool
             try {
                 $masterData = $sentinelConnection->callSentinel('get-master-addr-by-name', [$this->clusterId]);
                 $replicasData = $sentinelConnection->callSentinel('replicas', [$this->clusterId]);
-            } catch (RedisProxyException $e) {
+            } catch (Throwable $e) {
                 $this->shiftSentinels();
                 continue;
             }
@@ -107,7 +107,6 @@ class SentinelConnectionPool implements ConnectionPool
                     $this->reset();
                     continue;
                 }
-                
             } catch (Throwable $t) {
                 continue;
             }

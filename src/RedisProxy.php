@@ -152,8 +152,12 @@ class RedisProxy
         $name = strtolower($name);
         try {
             return $this->driver->call($name, $arguments);
-        } catch (Throwable $e) {
-            throw new RedisProxyException("Error for command '$name', use getPrevious() for more info", 1484162284, $e);
+        } catch (Throwable $t) {
+            if ($t instanceof RedisProxyException) {
+                throw $t;
+            }
+
+            throw new RedisProxyException("Error for command '$name', use getPrevious() for more info", 1484162284, $t);
         }
     }
 

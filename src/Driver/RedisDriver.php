@@ -48,6 +48,9 @@ class RedisDriver implements Driver
         return $this->driverFactory;
     }
 
+    /**
+     * @throws RedisProxyException
+     */
     public function call(string $command, array $params = [])
     {
         try {
@@ -56,25 +59,24 @@ class RedisDriver implements Driver
             }
 
             return call_user_func_array([$this->connectionPool->getConnection($command), $command], $params);
-        } catch (RedisException $e) {
-            if ($this->connectionPool->handleFailed()) {
+        } catch (Throwable $t) {
+            if ($t instanceof RedisException && $this->connectionPool->handleFailed()) {
                 return $this->call($command, $params);
             }
-            throw $e;
+            throw new RedisProxyException('Redis driver exception: ' . $t->getMessage(), 0, $t);
         }
     }
 
+    /**
+     * @throws Throwable
+     */
     public function callSentinel(string $command, array $params = [])
     {
-        try {
-            if (method_exists($this, $command)) {
-                return call_user_func_array([$this, $command], $params);
-            }
-
-            return $this->connectionPool->getConnection('sentinel')->rawCommand('sentinel', $command, ...$params);
-        } catch (Throwable $t) {
-            throw new RedisProxyException('', 0, $t);
+        if (method_exists($this, $command)) {
+            return call_user_func_array([$this, $command], $params);
         }
+
+        return $this->connectionPool->getConnection('sentinel')->rawCommand('sentinel', $command, ...$params);
     }
 
     /**
