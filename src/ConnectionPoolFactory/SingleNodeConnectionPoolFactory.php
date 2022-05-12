@@ -15,16 +15,19 @@ class SingleNodeConnectionPoolFactory implements ConnectionPoolFactory
 
     private float $timeout;
 
-    public function __construct(string $host, int $port, int $database = 0, float $timeout = 0.0)
+    private bool $autoSelectDb;
+
+    public function __construct(string $host, int $port, int $database = 0, float $timeout = 0.0, bool $autoSelectDb = true)
     {
         $this->host = $host;
         $this->port = $port;
         $this->database = $database;
         $this->timeout = $timeout;
+        $this->autoSelectDb = $autoSelectDb;
     }
 
     public function create(Driver $driver): SingleNodeConnectionPool
     {
-        return new SingleNodeConnectionPool($driver, $this->host, $this->port, $this->database, $this->timeout);
+        return new SingleNodeConnectionPool($driver, $this->host, $this->port, $this->database, $this->timeout, $this->autoSelectDb);
     }
 }

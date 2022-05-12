@@ -2,6 +2,8 @@
 
 namespace RedisProxy\Driver;
 
+use Predis\CommunicationException;
+use Predis\Connection\ConnectionException;
 use Predis\Response\Status;
 use RedisException;
 use RedisProxy\ConnectionFactory\PredisConnectionFactory;
@@ -58,8 +60,24 @@ class PredisDriver implements Driver
 
             $result = call_user_func_array([$this->connectionPool->getConnection($command), $command], $params);
             return $this->transformResult($result);
-        } catch (RedisException $e) {
-            // @TODO
+        } catch (ConnectionException $e) {
+            if ($this->connectionPool->handleFailed()) {
+                return $this->call($command, $params);
+            }
+            throw $e;
+        }
+    }
+
+    public function callSentinel(string $command, array $params = [])
+    {
+        try {
+            if (method_exists($this, $command)) {
+                return call_user_func_array([$this, $command], $params);
+            }
+
+            return $this->connectionPool->getConnection('sentinel')->executeRaw(['sentinel', $command, ...$params]);
+        } catch (Throwable $t) {
+            throw new RedisProxyException($t->getMessage(), 0, $t);
         }
     }
 
@@ -150,9 +168,15 @@ class PredisDriver implements Driver
         return $this->connectionPool->getConnection('zrevrange')->zrevrange($key, $start, $stop, ['WITHSCORES' => $withscores]);
     }
 
-    public function sentinelReplicas(string $clusterId)
+    public function close()
     {
-        return $this->connectionPool->getConnection('sentinel')->executeRaw(['sentniel', 'replicas', $clusterId]);
+        return $this->connectionPool->getConnection('close')->executeRaw(['close']);
+    }
+    
+    public function connectionRole($connection): string
+    {
+        $result = $connection->executeRaw(['role']);
+        return is_array($result) ? $result[0] : '';
     }
 
     /**

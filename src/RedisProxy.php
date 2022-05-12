@@ -80,9 +80,9 @@ class RedisProxy
         $this->driversOrder = $this->supportedDrivers;
     }
 
-    public function setSentinelConnectionPool(array $sentinels, string $clusterId, int $database, float $timeout = 0.0)
+    public function setSentinelConnectionPool(array $sentinels, string $clusterId, int $database, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null)
     {
-        $this->connectionPoolFactory = new SentinelConnectionPoolFactory($sentinels, $clusterId, $database, $timeout);
+        $this->connectionPoolFactory = new SentinelConnectionPoolFactory($sentinels, $clusterId, $database, $timeout, $retryWait, $maxFails);
     }
 
     /**

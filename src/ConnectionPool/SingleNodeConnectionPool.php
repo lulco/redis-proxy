@@ -18,16 +18,19 @@ class SingleNodeConnectionPool implements ConnectionPool
 
     private float $timeout;
 
+    private bool $autoSelectDb;
+
     /** @var Redis|Client */
     private $connection = null;
 
-    public function __construct(Driver $driver, string $host, int $port, int $database = 0, float $timeout = 0.0)
+    public function __construct(Driver $driver, string $host, int $port, int $database = 0, float $timeout = 0.0, bool $autoSelectDb = true)
     {
         $this->driver = $driver;
         $this->host = $host;
         $this->port = $port;
         $this->database = $database;
         $this->timeout = $timeout;
+        $this->autoSelectDb = $autoSelectDb;
     }
 
     public function getConnection(string $command)
@@ -36,7 +39,11 @@ class SingleNodeConnectionPool implements ConnectionPool
             return $this->connection;
         }
         $this->connection = $this->driver->getConnectionFactory()->create($this->host, $this->port, $this->timeout);
-        $this->connection->select($this->database);
+
+        if ($this->autoSelectDb) {
+            $this->connection->select($this->database);
+        }
+
         return $this->connection;
     }
 

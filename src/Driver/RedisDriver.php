@@ -57,7 +57,23 @@ class RedisDriver implements Driver
 
             return call_user_func_array([$this->connectionPool->getConnection($command), $command], $params);
         } catch (RedisException $e) {
-            // @TODO
+            if ($this->connectionPool->handleFailed()) {
+                return $this->call($command, $params);
+            }
+            throw $e;
+        }
+    }
+
+    public function callSentinel(string $command, array $params = [])
+    {
+        try {
+            if (method_exists($this, $command)) {
+                return call_user_func_array([$this, $command], $params);
+            }
+
+            return $this->connectionPool->getConnection('sentinel')->rawCommand('sentinel', $command, ...$params);
+        } catch (Throwable $t) {
+            throw new RedisProxyException('', 0, $t);
         }
     }
 
@@ -89,9 +105,9 @@ class RedisDriver implements Driver
         return !!$result;
     }
 
-    public function sentinelReplicas(string $clusterId)
+    public function connectionRole($connection): string
     {
-        $connection = $this->connectionPool->getConnection('sentinel');
-        return $connection->rawCommand('sentinel', 'replicas', $clusterId);
+        $result = $connection->rawCommand('role');
+        return is_array($result) ? $result[0] : '';
     }
 }
