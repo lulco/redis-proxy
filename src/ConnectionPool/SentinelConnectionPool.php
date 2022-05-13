@@ -112,8 +112,7 @@ class SentinelConnectionPool implements ConnectionPool
             }
             foreach ($replicasData as $replicaData) {
                 $normalizedRepolicaData = $this->normalizeResponze($replicaData);
-                if (
-                    isset($normalizedRepolicaData['flags']) &&
+                if (isset($normalizedRepolicaData['flags']) &&
                     !array_intersect(explode(',', $normalizedRepolicaData['flags']), ['s_down', 'o_down', 'disconnected']) &&
                     !empty($normalizedRepolicaData['ip']) &&
                     !empty($normalizedRepolicaData['port'])
@@ -145,7 +144,7 @@ class SentinelConnectionPool implements ConnectionPool
     private function getReplicaConnection()
     {
         if (count($this->replicas) > 0) {
-            while($replica = array_shift($this->replicas)) {
+            while ($replica = array_shift($this->replicas)) {
                 try {
                     $replicaConnection = $this->driver->getConnectionFactory()->create($replica['ip'], $replica['port'], $this->timeout);
                     $replicaConnection->select($this->database);

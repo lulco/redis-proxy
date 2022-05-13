@@ -2,8 +2,6 @@
 
 namespace RedisProxy;
 
-use Predis\Client;
-use Redis;
 use RedisProxy\ConnectionPoolFactory\ConnectionPoolFactory;
 use RedisProxy\ConnectionPoolFactory\SentinelConnectionPoolFactory;
 use RedisProxy\ConnectionPoolFactory\SingleNodeConnectionPoolFactory;
@@ -38,9 +36,7 @@ use Throwable;
  * @method boolean flushall() Remove all keys from all databases
  * @method boolean flushdb() Remove all keys from the current database
  * @method int incr(string $key) Increment the integer value of a key by one
- * @method int incrby(string $key, int $increment = 1) Increment the integer value of a key by the given amount
  * @method int decr(string $key) Decrement the integer value of a key by one
- * @method int decrby(string $key, int $decrement = 1) Decrement the integer value of a key by the given number
  * @method array zrange(string $key, int $start, int $stop, bool $withscores = false) Return a range of members in a sorted set, by index
  * @method array zrangebyscore(string $key, $start, $stop, array $options = []) Returns all the elements in the sorted set at key with a score between min and max (including elements with score equal to min or max). The elements are considered to be ordered from low to high scores
  * @method array zpopmin(string $key, int $count = 1)
@@ -341,6 +337,19 @@ class RedisProxy
     }
 
     /**
+     * Increment the integer value of a key by the given amount
+     * @param string  $key
+     * @param integer $increment
+     * @return integer
+     * @throws RedisProxyException
+     */
+    public function incrby(string $key, int $increment = 1): int
+    {
+        $this->init();
+        return $this->driver->call('incrby', [$key, $increment]);
+    }
+
+    /**
      * Increment the float value of a key by the given amount
      * @param string $key
      * @param float  $increment
@@ -351,6 +360,19 @@ class RedisProxy
     {
         $this->init();
         return (float) $this->driver->call('incrbyfloat', [$key, $increment]);
+    }
+
+    /**
+     * Decrement the integer value of a key by the given number
+     * @param string  $key
+     * @param integer $decrement
+     * @return integer
+     * @throws RedisProxyException
+     */
+    public function decrby(string $key, int $decrement = 1): int
+    {
+        $this->init();
+        return $this->driver->call('decrby', [$key, $decrement]);
     }
 
     /**

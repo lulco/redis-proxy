@@ -9,6 +9,8 @@ interface Driver
 {
     public function call(string $command, array $params = []);
 
+    public function callSentinel(string $command, array $params = []);
+
     public function getConnectionFactory(): ConnectionFactory;
 
     public function getDriverFactory(): DriverFactory;
