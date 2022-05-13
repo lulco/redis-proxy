@@ -19,7 +19,7 @@ class SentinelConnectionPoolFactory implements ConnectionPoolFactory
 
     private ?int $maxFails;
 
-    public function __construct( array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null)
+    public function __construct(array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null)
     {
         $this->sentinels = $sentinels;
         $this->clusterId = $clusterId;

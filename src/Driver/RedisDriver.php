@@ -63,6 +63,9 @@ class RedisDriver implements Driver
             if ($t instanceof RedisException && $this->connectionPool->handleFailed()) {
                 return $this->call($command, $params);
             }
+            if ($t instanceof RedisProxyException) {
+                throw $t;
+            }
             throw new RedisProxyException('Redis driver exception: ' . $t->getMessage(), 0, $t);
         }
     }
@@ -111,5 +114,21 @@ class RedisDriver implements Driver
     {
         $result = $connection->rawCommand('role');
         return is_array($result) ? $result[0] : '';
+    }
+
+    /**
+     * @throws RedisProxyException
+     */
+    public function connectionSelect($connection, int $database): bool
+    {
+        try {
+            $result = $connection->select($database);
+        } catch (Throwable $t) {
+            throw new RedisProxyException('Invalid DB index');
+        }
+        if ($result === false) {
+            throw new RedisProxyException('Invalid DB index');
+        }
+        return (bool) $result;
     }
 }

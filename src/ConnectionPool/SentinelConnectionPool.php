@@ -54,11 +54,14 @@ class SentinelConnectionPool implements ConnectionPool
         return $this;
     }
 
+    /**
+     * @throws RedisProxyException
+     */
     public function getConnection(string $command)
     {
         if ($this->getMasterConnection() === null) {
             if (!$this->loadMasterReplicasDataFromSentinel()) {
-                throw new RedisProxyException('Cannot load or estabilis connection to master/replicas from sentinel configuration');
+                throw new RedisProxyException('Cannot load or establish connection to master/replicas from sentinel configuration');
             }
         }
 
@@ -101,7 +104,7 @@ class SentinelConnectionPool implements ConnectionPool
 
             try {
                 $this->masterConnection = $this->driver->getConnectionFactory()->create($masterData[0], $masterData[1], $this->timeout);
-                $this->masterConnection->select($this->database);
+                $this->driver->connectionSelect($this->masterConnection, $this->database);
                 $role = $this->driver->connectionRole($this->masterConnection);
                 if ($role !== 'master') {
                     $this->reset();
@@ -147,7 +150,7 @@ class SentinelConnectionPool implements ConnectionPool
             while ($replica = array_shift($this->replicas)) {
                 try {
                     $replicaConnection = $this->driver->getConnectionFactory()->create($replica['ip'], $replica['port'], $this->timeout);
-                    $replicaConnection->select($this->database);
+                    $this->driver->connectionSelect($replicaConnection, $this->database);
 
                     $role = $this->driver->connectionRole($replicaConnection);
                     if ($role !== 'slave') {

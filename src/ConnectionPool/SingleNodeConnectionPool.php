@@ -5,6 +5,7 @@ namespace RedisProxy\ConnectionPool;
 use Redis;
 use Predis\Client;
 use RedisProxy\Driver\Driver;
+use RedisProxy\RedisProxyException;
 
 class SingleNodeConnectionPool implements ConnectionPool
 {
@@ -33,6 +34,9 @@ class SingleNodeConnectionPool implements ConnectionPool
         $this->autoSelectDb = $autoSelectDb;
     }
 
+    /**
+     * @throws RedisProxyException
+     */
     public function getConnection(string $command)
     {
         if ($this->connection !== null) {
@@ -41,7 +45,7 @@ class SingleNodeConnectionPool implements ConnectionPool
         $this->connection = $this->driver->getConnectionFactory()->create($this->host, $this->port, $this->timeout);
 
         if ($this->autoSelectDb) {
-            $this->connection->select($this->database);
+            $this->driver->connectionSelect($this->connection, $this->database);
         }
 
         return $this->connection;

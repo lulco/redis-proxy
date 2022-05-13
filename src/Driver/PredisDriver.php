@@ -67,6 +67,9 @@ class PredisDriver implements Driver
             if ($t instanceof ConnectionException && $this->connectionPool->handleFailed()) {
                 return $this->call($command, $params);
             }
+            if ($t instanceof RedisProxyException) {
+                throw $t;
+            }
             throw new RedisProxyException('Predis driver exception: ' . $t->getMessage(), 0, $t);
         }
     }
@@ -97,7 +100,7 @@ class PredisDriver implements Driver
         if ($result === false) {
             throw new RedisProxyException('Invalid DB index');
         }
-        return (bool) $result;
+        return (bool)$result;
     }
 
     private function type(string $key): ?string
@@ -174,11 +177,28 @@ class PredisDriver implements Driver
     {
         return $this->connectionPool->getConnection('close')->executeRaw(['close']);
     }
-    
+
     public function connectionRole($connection): string
     {
         $result = $connection->executeRaw(['role']);
         return is_array($result) ? $result[0] : '';
+    }
+
+    /**
+     * @throws RedisProxyException
+     */
+    public function connectionSelect($connection, int $database): bool
+    {
+        try {
+            $result = $connection->select($database);
+        } catch (Throwable $t) {
+            throw new RedisProxyException('Invalid DB index');
+        }
+        $result = $this->transformResult($result);
+        if ($result === false) {
+            throw new RedisProxyException('Invalid DB index');
+        }
+        return (bool) $result;
     }
 
     /**

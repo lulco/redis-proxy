@@ -4,6 +4,7 @@ namespace RedisProxy\Driver;
 
 use RedisProxy\ConnectionFactory\ConnectionFactory;
 use RedisProxy\DriverFactory\DriverFactory;
+use RedisProxy\RedisProxyException;
 
 interface Driver
 {
@@ -16,4 +17,9 @@ interface Driver
     public function getDriverFactory(): DriverFactory;
 
     public function connectionRole($connection): string;
+
+    /**
+     * @throws RedisProxyException('Invalid DB index');
+     */
+    public function connectionSelect($connection, int $database): bool;
 }
