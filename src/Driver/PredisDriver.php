@@ -162,7 +162,7 @@ class PredisDriver implements Driver
 
     public function select(int $database): bool
     {
-        return $this->connectionSelect($this->connectionPool->getConnection('select'));
+        return $this->connectionSelect($this->connectionPool->getConnection('select'), $database);
     }
 
     public function connectionRole($connection): string
