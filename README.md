@@ -28,12 +28,34 @@ The fastest way to install Redis proxy is to add it to your project using Compos
     ```
 
 ## Usage
-```
+### Single redis node
+```php
 $redis = new \RedisProxy\RedisProxy($host, $port);
+
+// Call redis methods
 $redis->select($database);
 $redis->hset($key, $field, $value);
 $redis->hlen($key);
 $redis->hget($key, $field);
 $redis->hgetall($key);
 ...
+```
+
+### Sentinel
+```php
+$sentinels = [
+    ['host' => '172.19.0.5', 'port' => 26379],
+    ['host' => '172.19.0.6', 'port' => 26379],
+    ['host' => '172.19.0.7', 'port' => 26379],
+];
+$clusterId = 'mymaster';
+
+$redis = new \RedisProxy\RedisProxy();
+$redis->setSentinelConnectionPool($sentinels, $clusterId, $database);
+
+// Call redis methods
+$redis->hset($key, $field, $value);
+$redis->hlen($key);
+$redis->hget($key, $field);
+$redis->hgetall($key);
 ```
