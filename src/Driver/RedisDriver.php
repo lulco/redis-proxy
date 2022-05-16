@@ -59,14 +59,13 @@ class RedisDriver implements Driver
             }
 
             return call_user_func_array([$this->connectionPool->getConnection($command), $command], $params);
+        } catch (RedisProxyException $e) {
+            throw $e;
         } catch (Throwable $t) {
             if ($t instanceof RedisException && $this->connectionPool->handleFailed()) {
                 return $this->call($command, $params);
             }
-            if ($t instanceof RedisProxyException) {
-                throw $t;
-            }
-            throw new RedisProxyException('Redis driver exception: ' . $t->getMessage(), 0, $t);
+            throw new RedisProxyException("Error for command '$command', use getPrevious() for more info", 1484162284, $t);
         }
     }
 
@@ -82,19 +81,6 @@ class RedisDriver implements Driver
         return $this->connectionPool->getConnection('sentinel')->rawCommand('sentinel', $command, ...$params);
     }
 
-    /**
-     * @throws RedisProxyException
-     */
-    private function select(int $database): bool
-    {
-        try {
-            $result = $this->connectionPool->getConnection('select')->select($database);
-        } catch (Throwable $t) {
-            throw new RedisProxyException('Invalid DB index');
-        }
-        return (bool) $result;
-    }
-
     private function type(string $key): ?string
     {
         $result = $this->connectionPool->getConnection('type')->type($key);
@@ -108,6 +94,11 @@ class RedisDriver implements Driver
             return true;
         }
         return !!$result;
+    }
+
+    private function select(int $database): bool
+    {
+        return $this->connectionSelect($this->connectionPool->getConnection('select'));
     }
 
     public function connectionRole($connection): string

@@ -86,15 +86,17 @@ class SentinelConnectionPool implements ConnectionPool
         return $this->failedCount < $this->maxFails;
     }
 
+    /**
+     * @throws RedisProxyException
+     */
     private function loadMasterReplicasDataFromSentinel(): bool
     {
         $this->reset();
 
         $sentinels = $this->sentinels;
         foreach ($sentinels as $sentinel) {
-            $sentinelConnection = $this->driver->getDriverFactory()->create(new SingleNodeConnectionPoolFactory($sentinel['host'], $sentinel['port'], 0, 0.0, false));
-
             try {
+                $sentinelConnection = $this->driver->getDriverFactory()->create(new SingleNodeConnectionPoolFactory($sentinel['host'], $sentinel['port'], 0, 0.0, false));
                 $masterData = $sentinelConnection->callSentinel('get-master-addr-by-name', [$this->clusterId]);
                 $replicasData = $sentinelConnection->callSentinel('replicas', [$this->clusterId]);
             } catch (Throwable $e) {
@@ -110,6 +112,8 @@ class SentinelConnectionPool implements ConnectionPool
                     $this->reset();
                     continue;
                 }
+            } catch (RedisProxyException $e) {
+                throw $e;
             } catch (Throwable $t) {
                 continue;
             }
@@ -144,6 +148,9 @@ class SentinelConnectionPool implements ConnectionPool
         return $this->masterConnection;
     }
 
+    /**
+     * @throws RedisProxyException
+     */
     private function getReplicaConnection()
     {
         if (count($this->replicas) > 0) {
@@ -159,6 +166,8 @@ class SentinelConnectionPool implements ConnectionPool
 
                     $this->replicasConnection[] = $replicaConnection;
                     return $replicaConnection;
+                } catch (RedisProxyException $e) {
+                    throw $e;
                 } catch (Throwable $t) {
                     continue;
                 }
@@ -250,7 +259,6 @@ class SentinelConnectionPool implements ConnectionPool
             'hstrlen',
             'ping',
             'auth',
-            'select',
             'echo',
             'quit',
             'object',

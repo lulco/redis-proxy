@@ -63,14 +63,13 @@ class PredisDriver implements Driver
 
             $result = call_user_func_array([$this->connectionPool->getConnection($command), $command], $params);
             return $this->transformResult($result);
+        } catch (RedisProxyException $e) {
+            throw $e;
         } catch (Throwable $t) {
             if ($t instanceof ConnectionException && $this->connectionPool->handleFailed()) {
                 return $this->call($command, $params);
             }
-            if ($t instanceof RedisProxyException) {
-                throw $t;
-            }
-            throw new RedisProxyException('Predis driver exception: ' . $t->getMessage(), 0, $t);
+            throw new RedisProxyException("Error for command '$command', use getPrevious() for more info", 1484162284, $t);
         }
     }
 
@@ -84,23 +83,6 @@ class PredisDriver implements Driver
         }
 
         return $this->connectionPool->getConnection('sentinel')->executeRaw(['sentinel', $command, ...$params]);
-    }
-
-    /**
-     * @throws RedisProxyException
-     */
-    private function select(int $database): bool
-    {
-        try {
-            $result = $this->connectionPool->getConnection('select')->select($database);
-        } catch (Throwable $t) {
-            throw new RedisProxyException('Invalid DB index');
-        }
-        $result = $this->transformResult($result);
-        if ($result === false) {
-            throw new RedisProxyException('Invalid DB index');
-        }
-        return (bool)$result;
     }
 
     private function type(string $key): ?string
@@ -176,6 +158,11 @@ class PredisDriver implements Driver
     public function close()
     {
         return $this->connectionPool->getConnection('close')->executeRaw(['close']);
+    }
+
+    public function select(int $database): bool
+    {
+        return $this->connectionSelect($this->connectionPool->getConnection('select'));
     }
 
     public function connectionRole($connection): string
