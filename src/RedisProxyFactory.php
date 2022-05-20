@@ -20,6 +20,7 @@ class RedisProxyFactory
      *          'sentinels' => <array> ['IP:PORT', 'IP:PORT', ...], # mandatory
      *          'clusterId' => <string>, # mandatory
      *          'database' => <int>, # optional (default: 0)
+     *          'timeout' => <float>, # optional (default: 0.0)
      *          'retryWait' => <int|null>, # optional (default: null)
      *          'maxFails' => <int|null>, # optional (default: null)
      *          'writeToReplicas' => <bool>, # optional (default: false)
@@ -42,6 +43,7 @@ class RedisProxyFactory
                 $sentinelConfig['sentinels'],
                 $sentinelConfig['clusterId'],
                 array_key_exists('database', $sentinelConfig) ? $sentinelConfig['database'] : 0,
+                array_key_exists('timeout', $sentinelConfig) ? $sentinelConfig['timeout'] : 0.0,
                 array_key_exists('retryWait', $sentinelConfig) ? $sentinelConfig['retryWait'] : null,
                 array_key_exists('maxFails', $sentinelConfig) ? $sentinelConfig['maxFails'] : null,
                 array_key_exists('writeToReplicas', $sentinelConfig) ? $sentinelConfig['writeToReplicas'] : true,
