@@ -3,7 +3,9 @@
 ### [Unreleased][unreleased]
 
 #### Added
+- Sentinels
 - Sentinel add write to replicas config
+- RedisProxyFactory
 
 ### [0.5.0] - 2022-05-05
 #### Changed
