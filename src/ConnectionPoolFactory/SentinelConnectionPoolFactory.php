@@ -19,7 +19,9 @@ class SentinelConnectionPoolFactory implements ConnectionPoolFactory
 
     private ?int $maxFails;
 
-    public function __construct(array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null)
+    private bool $writeToReplicas;
+
+    public function __construct(array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true)
     {
         $this->sentinels = $sentinels;
         $this->clusterId = $clusterId;
@@ -27,11 +29,13 @@ class SentinelConnectionPoolFactory implements ConnectionPoolFactory
         $this->timeout = $timeout;
         $this->retryWait = $retryWait;
         $this->maxFails = $maxFails;
+        $this->writeToReplicas = $writeToReplicas;
     }
 
     public function create(Driver $driver): SentinelConnectionPool
     {
         $connectionPool = new SentinelConnectionPool($driver, $this->sentinels, $this->clusterId, $this->database, $this->timeout);
+        $connectionPool->setWriteToReplicas($this->writeToReplicas);
         if ($this->retryWait) {
             $connectionPool->setRetryWait($this->retryWait);
         }

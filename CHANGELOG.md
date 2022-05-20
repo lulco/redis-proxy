@@ -2,6 +2,9 @@
 
 ### [Unreleased][unreleased]
 
+#### Added
+- Sentinel add write to replicas config
+
 ### [0.5.0] - 2022-05-05
 #### Changed
 - Added typehints

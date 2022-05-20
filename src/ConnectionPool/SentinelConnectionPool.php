@@ -31,6 +31,8 @@ class SentinelConnectionPool implements ConnectionPool
 
     private float $retryWait = 1000;
 
+    private bool $writeToReplicas = true;
+
     public function __construct(Driver $driver, array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0)
     {
         shuffle($sentinels);
@@ -54,6 +56,12 @@ class SentinelConnectionPool implements ConnectionPool
         return $this;
     }
 
+    public function setWriteToReplicas(bool $writeToReplicas): SentinelConnectionPool
+    {
+        $this->writeToReplicas = $writeToReplicas;
+        return $this;
+    }
+
     /**
      * @throws RedisProxyException
      */
@@ -65,7 +73,7 @@ class SentinelConnectionPool implements ConnectionPool
             }
         }
 
-        if (in_array($command, $this->getReadOnlyOperations())) {
+        if ($this->writeToReplicas && in_array($command, $this->getReadOnlyOperations())) {
             $connection = $this->getReplicaConnection();
             return $connection ?? $this->getMasterConnection();
         }
