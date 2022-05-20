@@ -33,10 +33,6 @@ class RedisProxyFactory
     public function createFromConfig(array $config): RedisProxy
     {
         if (array_key_exists('sentinel', $config)) {
-            if (count($config) > 1) {
-                throw new RedisProxyException('Wrong "sentinel" configuration');
-            }
-
             $sentinelConfig = $config['sentinel'];
             $proxy = new RedisProxy();
             $proxy->setSentinelConnectionPool(
