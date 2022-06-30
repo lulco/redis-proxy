@@ -2,6 +2,10 @@
 
 ### [Unreleased][unreleased]
 
+#### Added
+- Support for predis/predis ^2.0
+- Support for zpopmin, zpopmax with predis driver 2.0
+
 ### [0.6.0] - 2022-05-24
 #### Added
 - Sentinels

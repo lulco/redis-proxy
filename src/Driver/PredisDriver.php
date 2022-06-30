@@ -142,12 +142,12 @@ class PredisDriver implements Driver
 
     private function zpopmin(string $key, int $count = 1): array
     {
-        throw new RedisProxyException('Command zpopmin is not yet implemented for predis driver');
+        return $this->connectionPool->getConnection('zpopmin')->zpopmin($key, $count);
     }
 
     private function zpopmax(string $key, int $count = 1): array
     {
-        throw new RedisProxyException('Command zpopmax is not yet implemented for predis driver');
+        return $this->connectionPool->getConnection('zpopmax')->zpopmax($key, $count);
     }
 
     public function zrevrange(string $key, int $start, int $stop, bool $withscores = false): array
