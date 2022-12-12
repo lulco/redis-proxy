@@ -455,12 +455,12 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(1, $this->redisProxy->get('my_key'));
         self::assertEquals(6, $this->redisProxy->incrbyfloat('my_key', 5));
         self::assertEquals(6, $this->redisProxy->get('my_key'));
-        self::assertEquals(10.1234, $this->redisProxy->incrbyfloat('my_key', 4.1234));
-        self::assertEquals(10.1234, $this->redisProxy->get('my_key'));
-        self::assertEquals(5.1234, $this->redisProxy->incrbyfloat('my_key', -5));
-        self::assertEquals(5.1234, $this->redisProxy->get('my_key'));
-        self::assertEquals(-1.4, $this->redisProxy->incrbyfloat('my_key', -6.5234));
-        self::assertEquals(-1.4, $this->redisProxy->get('my_key'));
+        self::assertEquals(10.1234, round($this->redisProxy->incrbyfloat('my_key', 4.1234), 4));
+        self::assertEquals(10.1234, round($this->redisProxy->get('my_key'), 4));
+        self::assertEquals(5.1234, round($this->redisProxy->incrbyfloat('my_key', -5), 4));
+        self::assertEquals(5.1234, round($this->redisProxy->get('my_key'), 4));
+        self::assertEquals(-1.4, round($this->redisProxy->incrbyfloat('my_key', -6.5234), 1));
+        self::assertEquals(-1.4, round($this->redisProxy->get('my_key'), 1));
     }
 
     public function testDecr(): void
@@ -502,12 +502,12 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(9, $this->redisProxy->get('my_key'));
         self::assertEquals(4, $this->redisProxy->decrbyfloat('my_key', 5));
         self::assertEquals(4, $this->redisProxy->get('my_key'));
-        self::assertEquals(-0.1234, $this->redisProxy->decrbyfloat('my_key', 4.1234));
-        self::assertEquals(-0.1234, $this->redisProxy->get('my_key'));
-        self::assertEquals(4.8766, $this->redisProxy->decrbyfloat('my_key', -5));
-        self::assertEquals(4.8766, $this->redisProxy->get('my_key'));
-        self::assertEquals(11.4, $this->redisProxy->decrbyfloat('my_key', -6.5234));
-        self::assertEquals(11.4, $this->redisProxy->get('my_key'));
+        self::assertEquals(-0.1234, round($this->redisProxy->decrbyfloat('my_key', 4.1234), 4));
+        self::assertEquals(-0.1234, round($this->redisProxy->get('my_key'), 4));
+        self::assertEquals(4.8766, round($this->redisProxy->decrbyfloat('my_key', -5), 4));
+        self::assertEquals(4.8766, round($this->redisProxy->get('my_key'), 4));
+        self::assertEquals(11.4, round($this->redisProxy->decrbyfloat('my_key', -6.5234), 1));
+        self::assertEquals(11.4, round($this->redisProxy->get('my_key'), 1));
     }
 
     public function testScan(): void
