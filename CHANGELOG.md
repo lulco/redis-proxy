@@ -2,6 +2,9 @@
 
 ### [Unreleased][unreleased]
 
+#### Added
+- Support for PHP 8.2
+
 ### [0.7.0] - 2022-06-30
 #### Added
 - Support for predis/predis ^2.0
