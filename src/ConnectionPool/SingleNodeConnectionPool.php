@@ -21,7 +21,7 @@ class SingleNodeConnectionPool implements ConnectionPool
 
     private bool $autoSelectDb;
 
-    /** @var Redis|Client */
+    /** @var Redis|Client|null */
     private $connection = null;
 
     private int $retryWait;

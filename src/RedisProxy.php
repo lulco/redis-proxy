@@ -781,7 +781,7 @@ class RedisProxy
     public function zrangebyscore(string $key, int $start, int $end, array $options = []): array
     {
         $this->init();
-        return $this->driver->zrangebyscore($key, $start, $end, $options);
+        return $this->driver->call('zrangebyscore', func_get_args());
     }
 
     /**
