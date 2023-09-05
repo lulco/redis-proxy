@@ -29,7 +29,7 @@ class SentinelConnectionPool implements ConnectionPool
 
     private int $maxFails = 3;
 
-    private float $retryWait = 1000;
+    private int $retryWait = 1000;
 
     private bool $writeToReplicas = true;
 
@@ -81,7 +81,7 @@ class SentinelConnectionPool implements ConnectionPool
         return $this->getMasterConnection();
     }
 
-    public function handleFailed(): bool
+    public function handleFailed(int $attempt): bool
     {
         $this->failedCount++;
         $result = $this->loadMasterReplicasDataFromSentinel();
@@ -212,11 +212,11 @@ class SentinelConnectionPool implements ConnectionPool
         }, ARRAY_FILTER_USE_KEY));
 
         if (count($keys) != count($values)) {
-            throw new RedisProxyException("Wrong number of arguments");
+            throw new RedisProxyException('Wrong number of arguments');
         }
         return array_combine($keys, $values);
     }
-    
+
     private function getReadOnlyOperations(): array
     {
         return [

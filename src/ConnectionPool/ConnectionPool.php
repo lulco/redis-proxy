@@ -2,11 +2,12 @@
 
 namespace RedisProxy\ConnectionPool;
 
-use RedisProxy\Driver\Driver;
-
 interface ConnectionPool
 {
     public function getConnection(string $command);
 
-    public function handleFailed(): bool;
+    /**
+     * @param int $attempt First attempt is 1
+     */
+    public function handleFailed(int $attempt): bool;
 }

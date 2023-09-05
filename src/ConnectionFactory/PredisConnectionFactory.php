@@ -14,7 +14,7 @@ class PredisConnectionFactory implements ConnectionFactory
         $redis = new Client([
             'host' => $host,
             'port' => $port,
-            'timeout' => $timeout
+            'timeout' => $timeout,
         ]);
         $redis->connect();
         return $redis;

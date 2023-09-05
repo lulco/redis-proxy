@@ -8,7 +8,6 @@ use RedisProxy\ConnectionPoolFactory\SingleNodeConnectionPoolFactory;
 use RedisProxy\Driver\Driver;
 use RedisProxy\Driver\PredisDriver;
 use RedisProxy\Driver\RedisDriver;
-use Throwable;
 
 /**
  * @method string|null type(string $key)
@@ -36,7 +35,6 @@ use Throwable;
  * @method boolean flushall() Remove all keys from all databases
  * @method boolean flushdb() Remove all keys from the current database
  * @method array zrange(string $key, int $start, int $stop, bool $withscores = false) Return a range of members in a sorted set, by index
- * @method array zrangebyscore(string $key, $start, $stop, array $options = []) Returns all the elements in the sorted set at key with a score between min and max (including elements with score equal to min or max). The elements are considered to be ordered from low to high scores
  * @method array zpopmin(string $key, int $count = 1)
  * @method array zpopmax(string $key, int $count = 1)
  * @method array zrevrange(string $key, int $start, int $stop, bool $withscores = false) Return a range of members in a sorted set, by index, with scores ordered from high to low
@@ -68,9 +66,15 @@ class RedisProxy
         self::DRIVER_PREDIS,
     ];
 
-    public function __construct(string $host = '127.0.0.1', int $port = 6379, int $database = 0, float $timeout = 0.0)
+    /**
+     * @param float $timeout seconds (default is 0.0 = unlimited)
+     * @param int|null $retryWait milliseconds (null defaults to 1 second)
+     * @param int|null $maxFails 1 = no retries, one attempt (default)
+     *                           2 = one retry, two attempts, ...
+     */
+    public function __construct(string $host = '127.0.0.1', int $port = 6379, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null)
     {
-        $this->connectionPoolFactory = new SingleNodeConnectionPoolFactory($host, $port, $database, $timeout);
+        $this->connectionPoolFactory = new SingleNodeConnectionPoolFactory($host, $port, $database, $timeout, true, $retryWait, $maxFails);
         $this->driversOrder = $this->supportedDrivers;
     }
 
@@ -769,6 +773,11 @@ class RedisProxy
         return $this->convertFalseToNull($result);
     }
 
+    /**
+     * Returns all the elements in the sorted set at key with a score between min and max (including elements with score equal to min or max).
+     * The elements are considered to be ordered from low to high scores
+     * @throws RedisProxyException
+     */
     public function zrangebyscore(string $key, int $start, int $end, array $options = []): array
     {
         $this->init();
