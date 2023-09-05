@@ -35,6 +35,7 @@ use RedisProxy\Driver\RedisDriver;
  * @method boolean flushall() Remove all keys from all databases
  * @method boolean flushdb() Remove all keys from the current database
  * @method array zrange(string $key, int $start, int $stop, bool $withscores = false) Return a range of members in a sorted set, by index
+ * @method array zrangebyscore(string $key, $start, $stop, array $options = []) Returns all the elements in the sorted set at key with a score between min and max (including elements with score equal to min or max). The elements are considered to be ordered from low to high scores
  * @method array zpopmin(string $key, int $count = 1)
  * @method array zpopmax(string $key, int $count = 1)
  * @method array zrevrange(string $key, int $start, int $stop, bool $withscores = false) Return a range of members in a sorted set, by index, with scores ordered from high to low
@@ -771,17 +772,6 @@ class RedisProxy
         $this->init();
         $result = $this->driver->call('zrevrank', [$key, $member]);
         return $this->convertFalseToNull($result);
-    }
-
-    /**
-     * Returns all the elements in the sorted set at key with a score between min and max (including elements with score equal to min or max).
-     * The elements are considered to be ordered from low to high scores
-     * @throws RedisProxyException
-     */
-    public function zrangebyscore(string $key, int $start, int $end, array $options = []): array
-    {
-        $this->init();
-        return $this->driver->call('zrangebyscore', func_get_args());
     }
 
     /**
