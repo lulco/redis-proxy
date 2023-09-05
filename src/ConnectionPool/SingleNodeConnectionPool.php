@@ -65,4 +65,16 @@ class SingleNodeConnectionPool implements ConnectionPool
         }
         return false;
     }
+
+    public function setRetryWait(int $retryWait): self
+    {
+        $this->retryWait = $retryWait;
+        return $this;
+    }
+
+    public function setMaxFails(int $maxFails): self
+    {
+        $this->maxFails = $maxFails;
+        return $this;
+    }
 }
