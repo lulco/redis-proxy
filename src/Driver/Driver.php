@@ -19,7 +19,7 @@ interface Driver
     public function connectionRole($connection): string;
 
     /**
-     * @throws RedisProxyException('Invalid DB index');
+     * @throws RedisProxyException ('Invalid DB index');
      */
     public function connectionSelect($connection, int $database): bool;
 }

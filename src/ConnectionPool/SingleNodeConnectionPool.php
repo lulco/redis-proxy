@@ -59,6 +59,7 @@ class SingleNodeConnectionPool implements ConnectionPool
 
     public function handleFailed(int $attempt): bool
     {
+        $this->connection = null; // retry connection on fail
         if ($attempt < $this->maxFails) {
             usleep($this->retryWait * 1000);
             return true;
