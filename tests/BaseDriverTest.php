@@ -8,7 +8,7 @@ use RedisProxy\RedisProxyException;
 
 abstract class BaseDriverTest extends TestCase
 {
-    private RedisProxy $redisProxy;
+    protected RedisProxy $redisProxy;
 
     protected function setUp(): void
     {
@@ -18,7 +18,7 @@ abstract class BaseDriverTest extends TestCase
 
     abstract protected function initializeDriver(): RedisProxy;
 
-    public function testSelect()
+    public function testSelect(): void
     {
         self::assertTrue($this->redisProxy->select(getenv('REDIS_PROXY_REDIS_DATABASE')));
         self::assertTrue($this->redisProxy->select(getenv('REDIS_PROXY_REDIS_DATABASE_2')));
@@ -31,7 +31,7 @@ abstract class BaseDriverTest extends TestCase
         $this->redisProxy->select(-1);
     }
 
-    public function testInfo()
+    public function testInfo(): void
     {
         // no data
         $info = $this->redisProxy->info();
@@ -91,14 +91,14 @@ abstract class BaseDriverTest extends TestCase
         self::assertNotEmpty($serverInfo);
     }
 
-    public function testUnknownInfoSection()
+    public function testUnknownInfoSection(): void
     {
         $this->expectExceptionMessage("Info section \"unknown\" doesn't exist");
         $this->expectException(RedisProxyException::class);
         $this->redisProxy->info('unknown');
     }
 
-    public function testDbSize()
+    public function testDbSize(): void
     {
         self::assertEquals(0, $this->redisProxy->dbsize());
         self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
@@ -111,7 +111,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(count($keys), $this->redisProxy->dbsize());
     }
 
-    public function testKeys()
+    public function testKeys(): void
     {
         $keys = $this->redisProxy->keys('*');
         self::assertTrue(is_array($keys));
@@ -122,7 +122,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(['my_key'], $keys);
     }
 
-    public function testKeysWithoutPattern()
+    public function testKeysWithoutPattern(): void
     {
         $this->expectExceptionCode(1484162284);
         $this->expectExceptionMessage("Error for command 'keys', use getPrevious() for more info");
@@ -139,7 +139,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals('my_new_value', $this->redisProxy->get('my_key'));
     }
 
-    public function testExists()
+    public function testExists(): void
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertFalse($this->redisProxy->exists('my_key'));
@@ -148,7 +148,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertTrue($this->redisProxy->exists('my_key'));
     }
 
-    public function testDumpAndRestore()
+    public function testDumpAndRestore(): void
     {
         self::assertNull($this->redisProxy->get('my_key_1'));
         self::assertNull($this->redisProxy->get('my_key_2'));
@@ -169,7 +169,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals('my_value_1', $this->redisProxy->get('my_key_2'));
     }
 
-    public function testExpire()
+    public function testExpire(): void
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertFalse($this->redisProxy->expire('my_key', 10));
@@ -177,7 +177,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertTrue($this->redisProxy->expire('my_key', 10));
     }
 
-    public function testPexpire()
+    public function testPexpire(): void
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertFalse($this->redisProxy->pexpire('my_key', 10000));
@@ -185,7 +185,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertTrue($this->redisProxy->pexpire('my_key', 10000));
     }
 
-    public function testTtl()
+    public function testTtl(): void
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertEquals(-2, $this->redisProxy->ttl('my_key'));
@@ -204,7 +204,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertLessThanOrEqual(10, $this->redisProxy->ttl('my_key_2'));
     }
 
-    public function testExpireat()
+    public function testExpireat(): void
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertFalse($this->redisProxy->expireat('my_key', time() + 10));
@@ -214,7 +214,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertLessThanOrEqual(10, $this->redisProxy->ttl('my_key'));
     }
 
-    public function testPexpireat()
+    public function testPexpireat(): void
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertFalse($this->redisProxy->pexpireat('my_key', (time() + 10) * 1000));
@@ -226,7 +226,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertLessThanOrEqual(10000, $this->redisProxy->pttl('my_key'));
     }
 
-    public function testPersist()
+    public function testPersist(): void
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertFalse($this->redisProxy->persist('my_key'));
@@ -240,7 +240,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(-1, $this->redisProxy->ttl('my_key'));
     }
 
-    public function testGetSet()
+    public function testGetSet(): void
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertNull($this->redisProxy->getset('my_key', 'my_value'));
@@ -248,7 +248,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals('my_new_value', $this->redisProxy->get('my_key'));
     }
 
-    public function testSetnx()
+    public function testSetnx(): void
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertTrue($this->redisProxy->setnx('my_key', 'my_value'));
@@ -257,7 +257,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals('my_value', $this->redisProxy->get('my_key'));
     }
 
-    public function testSetex()
+    public function testSetex(): void
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
@@ -267,7 +267,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertLessThanOrEqual(10, $this->redisProxy->ttl('my_key'));
     }
 
-    public function testPsetex()
+    public function testPsetex(): void
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
@@ -279,7 +279,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertLessThanOrEqual(10000, $this->redisProxy->pttl('my_key'));
     }
 
-    public function testMset()
+    public function testMset(): void
     {
         self::assertEquals(0, $this->redisProxy->dbsize());
         self::assertTrue($this->redisProxy->mset('my_key_1', 'my_value_1', 'my_key_2', 'my_value_2'));
@@ -297,14 +297,14 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(0, $this->redisProxy->dbsize());
     }
 
-    public function testWrongNumberOfArgumentsMset()
+    public function testWrongNumberOfArgumentsMset(): void
     {
         $this->expectExceptionMessage("Wrong number of arguments for mset command");
         $this->expectException(RedisProxyException::class);
         $this->redisProxy->mset('my_key_1', 'my_value_1', 'my_key_2', 'my_value_2', 'xxx');
     }
 
-    public function testMget()
+    public function testMget(): void
     {
         // all non existing keys
         $mget = $this->redisProxy->mget(['first_key', 'second_key']);
@@ -366,7 +366,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals('third_value', $mget['third_key']);
     }
 
-    public function testDelete()
+    public function testDelete(): void
     {
         self::assertEquals(0, $this->redisProxy->delete('my_key'));
         self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
@@ -386,7 +386,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertNull($this->redisProxy->get('my_key_2'));
     }
 
-    public function testMultipleDelete()
+    public function testMultipleDelete(): void
     {
         self::assertEquals(0, $this->redisProxy->delete('first_key', 'second_key', 'third_key'));
         self::assertNull($this->redisProxy->get('first_key'));
@@ -408,21 +408,21 @@ abstract class BaseDriverTest extends TestCase
         self::assertNull($this->redisProxy->get('third_key'));
     }
 
-    public function testDelNoKeys()
+    public function testDelNoKeys(): void
     {
         $this->expectExceptionMessage("Wrong number of arguments for del command");
         $this->expectException(RedisProxyException::class);
         $this->redisProxy->del();
     }
 
-    public function testDeleteNoKeys()
+    public function testDeleteNoKeys(): void
     {
         $this->expectExceptionMessage("Wrong number of arguments for del command");
         $this->expectException(RedisProxyException::class);
         $this->redisProxy->delete();
     }
 
-    public function testIncr()
+    public function testIncr(): void
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertEquals(1, $this->redisProxy->incr('my_key'));
@@ -433,7 +433,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(3, $this->redisProxy->get('my_key'));
     }
 
-    public function testIncrby()
+    public function testIncrby(): void
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertEquals(1, $this->redisProxy->incrby('my_key'));
@@ -448,22 +448,22 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(0, $this->redisProxy->get('my_key'));
     }
 
-    public function testIncrbyfloat()
+    public function testIncrbyfloat(): void
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertEquals(1, $this->redisProxy->incrbyfloat('my_key'));
         self::assertEquals(1, $this->redisProxy->get('my_key'));
         self::assertEquals(6, $this->redisProxy->incrbyfloat('my_key', 5));
         self::assertEquals(6, $this->redisProxy->get('my_key'));
-        self::assertEquals(10.1234, $this->redisProxy->incrbyfloat('my_key', 4.1234));
-        self::assertEquals(10.1234, $this->redisProxy->get('my_key'));
-        self::assertEquals(5.1234, $this->redisProxy->incrbyfloat('my_key', -5));
-        self::assertEquals(5.1234, $this->redisProxy->get('my_key'));
-        self::assertEquals(-1.4, $this->redisProxy->incrbyfloat('my_key', -6.5234));
-        self::assertEquals(-1.4, $this->redisProxy->get('my_key'));
+        self::assertEquals(10.1234, round($this->redisProxy->incrbyfloat('my_key', 4.1234), 4));
+        self::assertEquals(10.1234, round($this->redisProxy->get('my_key'), 4));
+        self::assertEquals(5.1234, round($this->redisProxy->incrbyfloat('my_key', -5), 4));
+        self::assertEquals(5.1234, round($this->redisProxy->get('my_key'), 4));
+        self::assertEquals(-1.4, round($this->redisProxy->incrbyfloat('my_key', -6.5234), 1));
+        self::assertEquals(-1.4, round($this->redisProxy->get('my_key'), 1));
     }
 
-    public function testDecr()
+    public function testDecr(): void
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertTrue($this->redisProxy->set('my_key', 10));
@@ -476,7 +476,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(7, $this->redisProxy->get('my_key'));
     }
 
-    public function testDecrby()
+    public function testDecrby(): void
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertTrue($this->redisProxy->set('my_key', 10));
@@ -493,7 +493,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(10, $this->redisProxy->get('my_key'));
     }
 
-    public function testDecrbyfloat()
+    public function testDecrbyfloat(): void
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertTrue($this->redisProxy->set('my_key', 10));
@@ -502,15 +502,15 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(9, $this->redisProxy->get('my_key'));
         self::assertEquals(4, $this->redisProxy->decrbyfloat('my_key', 5));
         self::assertEquals(4, $this->redisProxy->get('my_key'));
-        self::assertEquals(-0.1234, $this->redisProxy->decrbyfloat('my_key', 4.1234));
-        self::assertEquals(-0.1234, $this->redisProxy->get('my_key'));
-        self::assertEquals(4.8766, $this->redisProxy->decrbyfloat('my_key', -5));
-        self::assertEquals(4.8766, $this->redisProxy->get('my_key'));
-        self::assertEquals(11.4, $this->redisProxy->decrbyfloat('my_key', -6.5234));
-        self::assertEquals(11.4, $this->redisProxy->get('my_key'));
+        self::assertEquals(-0.1234, round($this->redisProxy->decrbyfloat('my_key', 4.1234), 4));
+        self::assertEquals(-0.1234, round($this->redisProxy->get('my_key'), 4));
+        self::assertEquals(4.8766, round($this->redisProxy->decrbyfloat('my_key', -5), 4));
+        self::assertEquals(4.8766, round($this->redisProxy->get('my_key'), 4));
+        self::assertEquals(11.4, round($this->redisProxy->decrbyfloat('my_key', -6.5234), 1));
+        self::assertEquals(11.4, round($this->redisProxy->get('my_key'), 1));
     }
 
-    public function testScan()
+    public function testScan(): void
     {
         self::assertEquals(0, $this->redisProxy->dbsize());
         $keys = [];
@@ -554,7 +554,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(0, $iterator);
     }
 
-    public function testHset()
+    public function testHset(): void
     {
         self::assertNull($this->redisProxy->hget('my_hash_key', 'my_field'));
         self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_field', 'my_value'));
@@ -563,7 +563,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals('my_new_value', $this->redisProxy->hget('my_hash_key', 'my_field'));
     }
 
-    public function testHgetall()
+    public function testHgetall(): void
     {
         self::assertTrue(is_array($this->redisProxy->hgetall('my_hash_key')));
         self::assertCount(0, $this->redisProxy->hgetall('my_hash_key'));
@@ -577,7 +577,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertArrayNotHasKey('my_third_field', $this->redisProxy->hgetall('my_hash_key'));
     }
 
-    public function testHlen()
+    public function testHlen(): void
     {
         self::assertEquals(0, $this->redisProxy->hlen('my_hash_key'));
         self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_first_field', 'my_first_value'));
@@ -588,7 +588,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(1, $this->redisProxy->hlen('my_hash_key'));
     }
 
-    public function testHkeys()
+    public function testHkeys(): void
     {
         self::assertEquals(0, $this->redisProxy->hlen('my_hash_key'));
         self::assertTrue(is_array($this->redisProxy->hkeys('my_hash_key')));
@@ -599,7 +599,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(['my_first_field', 'my_second_field'], $this->redisProxy->hkeys('my_hash_key'));
     }
 
-    public function testHdel()
+    public function testHdel(): void
     {
         self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_first_field', 'my_first_value'));
         self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_second_field', 'my_second_value'));
@@ -641,7 +641,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(1, $this->redisProxy->hlen('my_hash_key'));
     }
 
-    public function testHincrby()
+    public function testHincrby(): void
     {
         self::assertEquals(0, $this->redisProxy->hget('my_hash_key', 'my_incr_field'));
         self::assertEquals(1, $this->redisProxy->hincrby('my_hash_key', 'my_incr_field'));
@@ -654,7 +654,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(5, $this->redisProxy->hget('my_hash_key', 'my_incr_field'));
     }
 
-    public function testHincrbyFloat()
+    public function testHincrbyFloat(): void
     {
         self::assertEquals(0, $this->redisProxy->hget('my_hash_key', 'my_incr_field'));
         self::assertEquals(1, $this->redisProxy->hincrbyfloat('my_hash_key', 'my_incr_field'));
@@ -667,7 +667,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(9.1, $this->redisProxy->hget('my_hash_key', 'my_incr_field'));
     }
 
-    public function testHmset()
+    public function testHmset(): void
     {
         self::assertEquals(0, $this->redisProxy->hlen('my_hash_key'));
 
@@ -684,14 +684,14 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(1, $this->redisProxy->del('my_hash_key'));
     }
 
-    public function testWrongNumberOfArgumentsHmset()
+    public function testWrongNumberOfArgumentsHmset(): void
     {
         $this->expectExceptionMessage("Wrong number of arguments for hmset command");
         $this->expectException(RedisProxyException::class);
         $this->redisProxy->hmset('my_hash_key', 'my_field_1', 'my_value_1', 'my_field_2', 'my_value_2', 'xxx');
     }
 
-    public function testHmget()
+    public function testHmget(): void
     {
         // all non existing keys
         $hmget = $this->redisProxy->hmget('my_hash_key', ['first_field', 'second_field']);
@@ -753,7 +753,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals('third_value', $hmget['third_field']);
     }
 
-    public function testHscan()
+    public function testHscan(): void
     {
         self::assertEquals(0, $this->redisProxy->hlen('my_hash_key'));
         $members = [];
@@ -800,7 +800,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(0, $iterator);
     }
 
-    public function testSadd()
+    public function testSadd(): void
     {
         // add one member
         self::assertEquals(1, $this->redisProxy->sadd('my_set_key', 'member'));
@@ -823,7 +823,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(9, $this->redisProxy->scard('my_set_key'));
     }
 
-    public function testSpop()
+    public function testSpop(): void
     {
         self::assertEquals(0, $this->redisProxy->scard('my_set_key'));
         self::assertNull($this->redisProxy->spop('my_set_key'));
@@ -863,7 +863,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(0, $this->redisProxy->scard('my_set_key'));
     }
 
-    public function testSscan()
+    public function testSscan(): void
     {
         self::assertEquals(0, $this->redisProxy->scard('my_set_key'));
         $members = [];
@@ -907,14 +907,14 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(0, $iterator);
     }
 
-    public function testLlen()
+    public function testLlen(): void
     {
         self::assertEquals(0, $this->redisProxy->llen('my_list_key'));
         self::assertEquals(1, $this->redisProxy->lpush('my_list_key', 'my_value'));
         self::assertEquals(1, $this->redisProxy->llen('my_list_key'));
     }
 
-    public function testLpush()
+    public function testLpush(): void
     {
         // add one element
         self::assertEquals(1, $this->redisProxy->lpush('my_list_key', 'element'));
@@ -937,7 +937,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(14, $this->redisProxy->llen('my_list_key'));
     }
 
-    public function testRpush()
+    public function testRpush(): void
     {
         // add one element
         self::assertEquals(1, $this->redisProxy->rpush('my_list_key', 'element'));
@@ -960,7 +960,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(14, $this->redisProxy->llen('my_list_key'));
     }
 
-    public function testLrange()
+    public function testLrange(): void
     {
         self::assertEquals(0, $this->redisProxy->llen('my_list_key'));
         self::assertCount(0, $this->redisProxy->lrange('my_list_key', 0, -1));
@@ -979,7 +979,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(['element_2', 'element_1', 'element_3', 'element_4'], $this->redisProxy->lrange('my_list_key', 0, -1));
     }
 
-    public function testLindex()
+    public function testLindex(): void
     {
         self::assertEquals(0, $this->redisProxy->llen('my_list_key'));
         self::assertNull($this->redisProxy->lindex('my_list_key', 0));
@@ -999,7 +999,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertNull($this->redisProxy->lindex('my_list_key', 4));
     }
 
-    public function testLpop()
+    public function testLpop(): void
     {
         self::assertEquals(0, $this->redisProxy->llen('my_list_key'));
         self::assertNull($this->redisProxy->lindex('my_list_key', 0));
@@ -1018,7 +1018,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertNull($this->redisProxy->lindex('my_list_key', 0));
     }
 
-    public function testRpop()
+    public function testRpop(): void
     {
         self::assertEquals(0, $this->redisProxy->llen('my_list_key'));
         self::assertNull($this->redisProxy->lindex('my_list_key', 0));
@@ -1037,14 +1037,14 @@ abstract class BaseDriverTest extends TestCase
         self::assertNull($this->redisProxy->lindex('my_list_key', 0));
     }
 
-    public function testZcard()
+    public function testZcard(): void
     {
         self::assertEquals(0, $this->redisProxy->zcard('my_sorted_set_key'));
         self::assertEquals(1, $this->redisProxy->zadd('my_sorted_set_key', 1, 'my_member'));
         self::assertEquals(1, $this->redisProxy->zcard('my_sorted_set_key'));
     }
 
-    public function testZadd()
+    public function testZadd(): void
     {
         self::assertEquals(0, $this->redisProxy->zcard('my_sorted_set_key'));
         self::assertEquals(1, $this->redisProxy->zadd('my_sorted_set_key', 1, 'my_member'));
@@ -1063,7 +1063,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(7, $this->redisProxy->zcard('my_sorted_set_key'));
     }
 
-    public function testZrange()
+    public function testZrange(): void
     {
         self::assertEquals(0, $this->redisProxy->zcard('my_sorted_set_key'));
         self::assertCount(0, $this->redisProxy->zrange('my_sorted_set_key', 0, -1));
@@ -1098,7 +1098,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(['element_6' => -6, 'element_8' => -6, 'element_5' => -5, 'element_7' => -5, 'element_1' => 1, 'element_2' => 2, 'element_3' => 3, 'element_4' => 4], $this->redisProxy->zrange('my_sorted_set_key', 0, -1, true));
     }
 
-    public function testZrevrange()
+    public function testZrevrange(): void
     {
         self::assertEquals(0, $this->redisProxy->zcard('my_sorted_set_key'));
         self::assertCount(0, $this->redisProxy->zrevrange('my_sorted_set_key', 0, -1));
@@ -1133,7 +1133,27 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(['element_4' => 4, 'element_3' => 3, 'element_2' => 2, 'element_1' => 1, 'element_7' => -5, 'element_5' => -5, 'element_8' => -6, 'element_6' => -6], $this->redisProxy->zrevrange('my_sorted_set_key', 0, -1, true));
     }
 
-    public function testZscan()
+    public function testZrangebyscore(): void
+    {
+        self::assertEquals(0, $this->redisProxy->zcard('my_sorted_set_key'));
+        self::assertEquals([], $this->redisProxy->zrangebyscore('my_sorted_set_key', '-inf', 'inf'));
+        self::assertEquals([], $this->redisProxy->zrangebyscore('my_sorted_set_key', '-inf', 0));
+        self::assertEquals([], $this->redisProxy->zrangebyscore('my_sorted_set_key', 0, 'inf'));
+
+        self::assertEquals(3, $this->redisProxy->zadd('my_sorted_set_key', -1, 'element_1', 0, 'element_2', 1, 'element_3'));
+        self::assertEquals(3, $this->redisProxy->zcard('my_sorted_set_key'));
+
+        self::assertEquals(['element_1', 'element_2', 'element_3'], $this->redisProxy->zrangebyscore('my_sorted_set_key', '-inf', 'inf'));
+        self::assertEquals(['element_2', 'element_3'], $this->redisProxy->zrangebyscore('my_sorted_set_key', '-inf', 'inf', ['limit' => [1, 2]]));
+        self::assertEquals(['element_1', 'element_2'], $this->redisProxy->zrangebyscore('my_sorted_set_key', '-inf', 0));
+        self::assertEquals(['element_2', 'element_3'], $this->redisProxy->zrangebyscore('my_sorted_set_key', 0, 'inf'));
+
+        self::assertEquals(['element_1' => -1, 'element_2' => 0, 'element_3' => 1], $this->redisProxy->zrangebyscore('my_sorted_set_key', '-inf', 'inf', ['withscores' => true]));
+        self::assertEquals(['element_1' => -1, 'element_2' => 0], $this->redisProxy->zrangebyscore('my_sorted_set_key', '-inf', 0, ['withscores' => true]));
+        self::assertEquals(['element_2' => 0, 'element_3' => 1], $this->redisProxy->zrangebyscore('my_sorted_set_key', 0, 'inf', ['withscores' => true]));
+    }
+
+    public function testZscan(): void
     {
         self::assertEquals(0, $this->redisProxy->zcard('my_sorted_set_key'));
 
@@ -1179,7 +1199,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(0, $iterator);
     }
 
-    public function testZrankAndZrevrank()
+    public function testZrankAndZrevrank(): void
     {
         self::assertEquals(0, $this->redisProxy->zcard('my_sorted_set_key'));
 
@@ -1197,7 +1217,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertNull($this->redisProxy->zrevrank('my_sorted_set_key', 'something'));
     }
 
-    public function testZrem()
+    public function testZrem(): void
     {
         self::assertEquals(0, $this->redisProxy->zcard('my_sorted_set_key'));
         self::assertNull($this->redisProxy->zrank('my_sorted_set_key', 'first'));
@@ -1224,7 +1244,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(2, $this->redisProxy->zrem('my_sorted_set_key', ['first', 'second']));
     }
 
-    public function testType()
+    public function testType(): void
     {
         self::assertNull($this->redisProxy->type('my_key'));
         $this->redisProxy->set('my_key', 'my_value');

@@ -2,6 +2,29 @@
 
 ### [Unreleased][unreleased]
 
+### [0.7.1] - 2022-12-12
+#### Added
+- Support for PHP 8.2
+
+### [0.7.0] - 2022-06-30
+#### Added
+- Support for predis/predis ^2.0
+- Support for zpopmin, zpopmax with predis driver 2.0
+
+### [0.6.0] - 2022-05-24
+#### Added
+- Sentinels
+- Sentinel add write to replicas config
+- RedisProxyFactory
+
+### [0.5.0] - 2022-05-05
+#### Changed
+- Added typehints
+- Dropped support for php < 7.4
+
+#### Added
+- Added commands zrangebyscore, zpopmin, zpopmax
+
 ### [0.4.2] - 2020-06-25
 #### Fixed
 - Fixed zrem for multiple members
@@ -52,7 +75,11 @@
 #### Added
 - Wrapper for \Redis
 
-[unreleased]: https://github.com/lulco/redis-proxy/compare/0.4.2...HEAD
+[unreleased]: https://github.com/lulco/redis-proxy/compare/0.7.1...HEAD
+[0.7.1]: https://github.com/lulco/redis-proxy/compare/0.7.0...0.7.1
+[0.7.0]: https://github.com/lulco/redis-proxy/compare/0.6.0...0.7.0
+[0.6.0]: https://github.com/lulco/redis-proxy/compare/0.5.0...0.6.0
+[0.5.0]: https://github.com/lulco/redis-proxy/compare/0.4.2...0.5.0
 [0.4.2]: https://github.com/lulco/redis-proxy/compare/0.4.1...0.4.2
 [0.4.1]: https://github.com/lulco/redis-proxy/compare/0.4.0...0.4.1
 [0.4.0]: https://github.com/lulco/redis-proxy/compare/0.3.1...0.4.0
