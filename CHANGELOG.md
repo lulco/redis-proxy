@@ -2,6 +2,10 @@
 
 ### [Unreleased][unreleased]
 
+### [1.0.0] - 2023-09-06
+####  Added
+- Redis retries
+
 ### [0.7.1] - 2022-12-12
 #### Added
 - Support for PHP 8.2
@@ -75,7 +79,8 @@
 #### Added
 - Wrapper for \Redis
 
-[unreleased]: https://github.com/lulco/redis-proxy/compare/0.7.1...HEAD
+[unreleased]: https://github.com/lulco/redis-proxy/compare/1.0.0...HEAD
+[1.0.0]: https://github.com/lulco/redis-proxy/compare/0.7.1...1.0.0
 [0.7.1]: https://github.com/lulco/redis-proxy/compare/0.7.0...0.7.1
 [0.7.0]: https://github.com/lulco/redis-proxy/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/lulco/redis-proxy/compare/0.5.0...0.6.0
