@@ -2,8 +2,6 @@
 
 namespace RedisProxy\ConnectionFactory;
 
-use RedisProxy\Driver\Driver;
-
 interface ConnectionFactory
 {
     /**

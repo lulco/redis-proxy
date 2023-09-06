@@ -2,10 +2,8 @@
 
 namespace RedisProxy\Driver;
 
-use Predis\CommunicationException;
 use Predis\Connection\ConnectionException;
 use Predis\Response\Status;
-use RedisException;
 use RedisProxy\ConnectionFactory\PredisConnectionFactory;
 use RedisProxy\ConnectionPool\ConnectionPool;
 use RedisProxy\ConnectionPoolFactory\ConnectionPoolFactory;
@@ -56,20 +54,22 @@ class PredisDriver implements Driver
      */
     public function call(string $command, array $params = [])
     {
-        try {
-            if (method_exists($this, $command)) {
-                return call_user_func_array([$this, $command], $params);
-            }
+        $attempt = 0;
+        while (true) {
+            try {
+                if (method_exists($this, $command)) {
+                    return call_user_func_array([$this, $command], $params);
+                }
 
-            $result = call_user_func_array([$this->connectionPool->getConnection($command), $command], $params);
-            return $this->transformResult($result);
-        } catch (RedisProxyException $e) {
-            throw $e;
-        } catch (Throwable $t) {
-            if ($t instanceof ConnectionException && $this->connectionPool->handleFailed()) {
-                return $this->call($command, $params);
+                $result = call_user_func_array([$this->connectionPool->getConnection($command), $command], $params);
+                return $this->transformResult($result);
+            } catch (RedisProxyException $e) {
+                throw $e;
+            } catch (Throwable $t) {
+                if (!$t instanceof ConnectionException || !$this->connectionPool->handleFailed(++$attempt)) {
+                    throw new RedisProxyException("Error for command '$command', use getPrevious() for more info", 1484162284, $t);
+                }
             }
-            throw new RedisProxyException("Error for command '$command', use getPrevious() for more info", 1484162284, $t);
         }
     }
 

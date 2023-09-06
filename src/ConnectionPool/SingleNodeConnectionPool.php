@@ -2,8 +2,8 @@
 
 namespace RedisProxy\ConnectionPool;
 
-use Redis;
 use Predis\Client;
+use Redis;
 use RedisProxy\Driver\Driver;
 use RedisProxy\RedisProxyException;
 
@@ -21,10 +21,14 @@ class SingleNodeConnectionPool implements ConnectionPool
 
     private bool $autoSelectDb;
 
-    /** @var Redis|Client */
+    /** @var Redis|Client|null */
     private $connection = null;
 
-    public function __construct(Driver $driver, string $host, int $port, int $database = 0, float $timeout = 0.0, bool $autoSelectDb = true)
+    private int $retryWait;
+
+    private int $maxFails;
+
+    public function __construct(Driver $driver, string $host, int $port, int $database = 0, float $timeout = 0.0, bool $autoSelectDb = true, ?int $retryWait = null, ?int $maxFails = null)
     {
         $this->driver = $driver;
         $this->host = $host;
@@ -32,6 +36,8 @@ class SingleNodeConnectionPool implements ConnectionPool
         $this->database = $database;
         $this->timeout = $timeout;
         $this->autoSelectDb = $autoSelectDb;
+        $this->retryWait = $retryWait ?? 1000;
+        $this->maxFails = $maxFails ?? 1;
     }
 
     /**
@@ -51,8 +57,25 @@ class SingleNodeConnectionPool implements ConnectionPool
         return $this->connection;
     }
 
-    public function handleFailed(): bool
+    public function handleFailed(int $attempt): bool
     {
+        $this->connection = null; // retry connection on fail
+        if ($attempt < $this->maxFails) {
+            usleep($this->retryWait * 1000);
+            return true;
+        }
         return false;
+    }
+
+    public function setRetryWait(int $retryWait): self
+    {
+        $this->retryWait = $retryWait;
+        return $this;
+    }
+
+    public function setMaxFails(int $maxFails): self
+    {
+        $this->maxFails = $maxFails;
+        return $this;
     }
 }
