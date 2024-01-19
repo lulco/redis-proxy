@@ -39,6 +39,7 @@ use RedisProxy\Driver\RedisDriver;
  * @method array zpopmin(string $key, int $count = 1)
  * @method array zpopmax(string $key, int $count = 1)
  * @method array zrevrange(string $key, int $start, int $stop, bool $withscores = false) Return a range of members in a sorted set, by index, with scores ordered from high to low
+ * @method bool rename(string $key, string $newKey) Renames key to newkey
  */
 class RedisProxy
 {

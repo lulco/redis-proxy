@@ -1,6 +1,8 @@
 ## Change Log
 
 ### [Unreleased][unreleased]
+####  Added
+- added rename command
 
 ### [1.0.0] - 2023-09-06
 ####  Added
