@@ -26,6 +26,7 @@ use RedisProxy\Driver\RedisDriver;
  * @method int hlen(string $key) Get the number of fields in a hash
  * @method array smembers(string $key) Get all the members in a set
  * @method int scard(string $key) Get the number of members in a set
+ * @method int sismember(string $key, string $member) Returns if member is a member of the set stored at key
  * @method int llen(string $key) Get the length of a list
  * @method bool lset(string $key, string $index, string $value) Sets the list element at index to value
  * @method array lrange(string $key, int $start, int $stop) Get a range of elements from a list
@@ -172,16 +173,18 @@ class RedisProxy
         $section = $section ? strtolower($section) : $section;
         $result = $section === null ? $this->driver->call('info') : $this->driver->call('info', [$section]);
 
-        $databases = $section === null || $section === 'keyspace' ? $this->config(
-            'get',
-            'databases'
-        )['databases'] : null;
-        $groupedResult = InfoHelper::createInfoArray($this, $result, $databases);
-        if ($section === null) {
-            return $groupedResult;
-        }
-        if (isset($groupedResult[$section])) {
-            return $groupedResult[$section];
+        if ($result !== false) {
+            $databases = $section === null || $section === 'keyspace' ? $this->config(
+                'get',
+                'databases'
+            )['databases'] : null;
+            $groupedResult = InfoHelper::createInfoArray($this, $result, $databases);
+            if ($section === null) {
+                return $groupedResult;
+            }
+            if (isset($groupedResult[$section])) {
+                return $groupedResult[$section];
+            }
         }
         throw new RedisProxyException('Info section "' . $section . '" doesn\'t exist');
     }
@@ -626,6 +629,19 @@ class RedisProxy
         }
         $this->init();
         return $this->driver->call('sscan', [$key, &$iterator, $pattern, $count]);
+    }
+
+    /**
+     * Remove the specified members from the set stored at key. Non-existing members are ignored
+     * @param string $key
+     * @param string|array ...$members
+     * @return int
+     * @throws RedisProxyException
+     */
+    public function srem(string $key, ...$members): int
+    {
+        $members = $this->prepareArguments('srem', ...$members);
+        return (int) $this->driver->call('srem', [$key, ...$members]);
     }
 
     /**

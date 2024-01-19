@@ -907,6 +907,83 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(0, $iterator);
     }
 
+    public function testSismember(): void
+    {
+        // add one member
+        self::assertEquals(1, $this->redisProxy->sadd('my_set_key', 'member'));
+        self::assertEquals(1, $this->redisProxy->sismember('my_set_key', 'member'));
+        self::assertEquals(0, $this->redisProxy->sismember('my_set_key', 'member_2'));
+
+        // add one existing member and remove it
+        self::assertEquals(0, $this->redisProxy->sadd('my_set_key', 'member'));
+        self::assertEquals(1, $this->redisProxy->sismember('my_set_key', 'member'));
+        self::assertEquals(1, $this->redisProxy->srem('my_set_key', 'member'));
+        self::assertEquals(0, $this->redisProxy->sismember('my_set_key', 'member'));
+
+        // remove non-exists member and check if non-exists
+        self::assertEquals(0, $this->redisProxy->srem('my_set_key', 'member'));
+        self::assertEquals(0, $this->redisProxy->sismember('my_set_key', 'member'));
+
+        // add three members
+        self::assertEquals(3, $this->redisProxy->sadd('my_set_key', 'member_2', 'member_3', 'member_4'));
+        self::assertEquals(0, $this->redisProxy->sismember('my_set_key', 'member'));
+        self::assertEquals(1, $this->redisProxy->sismember('my_set_key', 'member_2'));
+        self::assertEquals(1, $this->redisProxy->sismember('my_set_key', 'member_3'));
+        self::assertEquals(1, $this->redisProxy->sismember('my_set_key', 'member_4'));
+        self::assertEquals(0, $this->redisProxy->sismember('my_set_key', 'member_5'));
+        self::assertEquals(0, $this->redisProxy->sismember('my_set_key', 'member_6'));
+
+        // add some new members and some members which are already in set
+        self::assertEquals(2, $this->redisProxy->sadd('my_set_key', 'member_2', 'member_3', 'member_5', 'member_6'));
+        self::assertEquals(1, $this->redisProxy->sismember('my_set_key', 'member_2'));
+        self::assertEquals(1, $this->redisProxy->sismember('my_set_key', 'member_3'));
+        self::assertEquals(1, $this->redisProxy->sismember('my_set_key', 'member_4'));
+        self::assertEquals(1, $this->redisProxy->sismember('my_set_key', 'member_5'));
+        self::assertEquals(1, $this->redisProxy->sismember('my_set_key', 'member_6'));
+
+        // remove same members and check if exists
+        self::assertEquals(0, $this->redisProxy->sadd('my_set_key', 'member_2', 'member_3', 'member_5', 'member_6'));
+        self::assertEquals(2, $this->redisProxy->srem('my_set_key', 'member_3', 'member_5', 'member_99'));
+        self::assertEquals(1, $this->redisProxy->sismember('my_set_key', 'member_2'));
+        self::assertEquals(0, $this->redisProxy->sismember('my_set_key', 'member_3'));
+        self::assertEquals(1, $this->redisProxy->sismember('my_set_key', 'member_4'));
+        self::assertEquals(0, $this->redisProxy->sismember('my_set_key', 'member_5'));
+        self::assertEquals(1, $this->redisProxy->sismember('my_set_key', 'member_6'));
+    }
+
+    public function testSrem(): void
+    {
+        // add one member and remove it
+        self::assertEquals(1, $this->redisProxy->sadd('my_set_key', 'member'));
+        self::assertEquals(1, $this->redisProxy->srem('my_set_key', 'member'));
+
+        // add three members and remove one of them
+        self::assertEquals(3, $this->redisProxy->sadd('my_set_key', 'member', 'member_2', 'member_3'));
+        self::assertEquals(1, $this->redisProxy->srem('my_set_key', 'member_2'));
+        self::assertEquals(2, $this->redisProxy->scard('my_set_key'));
+
+        // add members which are already in set and one new before removed
+        self::assertEquals(1, $this->redisProxy->sadd('my_set_key', 'member', 'member_2', 'member_3'));
+        self::assertEquals(3, $this->redisProxy->scard('my_set_key'));
+
+        // removed multiple members
+        self::assertEquals(3, $this->redisProxy->srem('my_set_key', 'member', 'member_2', 'member_3'));
+        self::assertEquals(0, $this->redisProxy->scard('my_set_key'));
+
+        // add four members and remove three
+        self::assertEquals(4, $this->redisProxy->sadd('my_set_key', 'member', 'member_2', 'member_3', 'member_5'));
+        self::assertEquals(4, $this->redisProxy->scard('my_set_key'));
+        self::assertEquals(3, $this->redisProxy->srem('my_set_key', 'member', 'member_2', 'member_5'));
+        self::assertEquals(1, $this->redisProxy->scard('my_set_key'));
+
+        // try to remove non-exists members
+        self::assertEquals(0, $this->redisProxy->sadd('my_set_key', 'member_3'));
+        self::assertEquals(0, $this->redisProxy->sismember('my_set_key', 'member'));
+        self::assertEquals(0, $this->redisProxy->sismember('my_set_key', 'member_5'));
+        self::assertEquals(0, $this->redisProxy->srem('my_set_key', 'member', 'member_5'));
+        self::assertEquals(1, $this->redisProxy->scard('my_set_key'));
+    }
+
     public function testLlen(): void
     {
         self::assertEquals(0, $this->redisProxy->llen('my_list_key'));

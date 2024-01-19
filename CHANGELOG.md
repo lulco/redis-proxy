@@ -1,6 +1,8 @@
 ## Change Log
 
 ### [Unreleased][unreleased]
+####  Added
+- Added srem, sismember commands
 
 ### [1.0.0] - 2023-09-06
 ####  Added
