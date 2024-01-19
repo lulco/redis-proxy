@@ -173,16 +173,18 @@ class RedisProxy
         $section = $section ? strtolower($section) : $section;
         $result = $section === null ? $this->driver->call('info') : $this->driver->call('info', [$section]);
 
-        $databases = $section === null || $section === 'keyspace' ? $this->config(
-            'get',
-            'databases'
-        )['databases'] : null;
-        $groupedResult = InfoHelper::createInfoArray($this, $result, $databases);
-        if ($section === null) {
-            return $groupedResult;
-        }
-        if (isset($groupedResult[$section])) {
-            return $groupedResult[$section];
+        if ($result !== false) {
+            $databases = $section === null || $section === 'keyspace' ? $this->config(
+                'get',
+                'databases'
+            )['databases'] : null;
+            $groupedResult = InfoHelper::createInfoArray($this, $result, $databases);
+            if ($section === null) {
+                return $groupedResult;
+            }
+            if (isset($groupedResult[$section])) {
+                return $groupedResult[$section];
+            }
         }
         throw new RedisProxyException('Info section "' . $section . '" doesn\'t exist');
     }
