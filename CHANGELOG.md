@@ -3,6 +3,7 @@
 ### [Unreleased][unreleased]
 ####  Added
 - added rename command
+- Added srem, sismember commands
 
 ### [1.0.0] - 2023-09-06
 ####  Added
