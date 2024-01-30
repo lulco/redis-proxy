@@ -793,7 +793,7 @@ class RedisProxy
     /** Renames key to newkey
      * @param string $key
      * @param string $newKey
-     * @return bool|null
+     * @return bool
      * @throws RedisProxyException
      */
     public function rename(string $key, string $newKey): ?bool
@@ -802,7 +802,7 @@ class RedisProxy
         $result = $this->driver->call('rename', [$key, $newKey]);
 
         if ($result === false) {
-            return throw new RedisProxyException("Error for command 'rename', use getPrevious() for more info");
+            throw new RedisProxyException("Error for command 'rename', use getPrevious() for more info");
         }
 
         return $result;
