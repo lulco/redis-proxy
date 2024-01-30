@@ -40,7 +40,6 @@ use RedisProxy\Driver\RedisDriver;
  * @method array zpopmin(string $key, int $count = 1)
  * @method array zpopmax(string $key, int $count = 1)
  * @method array zrevrange(string $key, int $start, int $stop, bool $withscores = false) Return a range of members in a sorted set, by index, with scores ordered from high to low
- * @method bool rename(string $key, string $newKey) Renames key to newkey
  */
 class RedisProxy
 {
@@ -789,6 +788,24 @@ class RedisProxy
         $this->init();
         $result = $this->driver->call('zrevrank', [$key, $member]);
         return $this->convertFalseToNull($result);
+    }
+
+    /** Renames key to newkey
+     * @param string $key
+     * @param string $newKey
+     * @return bool|null
+     * @throws RedisProxyException
+     */
+    public function rename(string $key, string $newKey): ?bool
+    {
+        $this->init();
+        $result = $this->driver->call('rename', [$key, $newKey]);
+
+        if ($result === false) {
+            return throw new RedisProxyException("Error for command 'rename', use getPrevious() for more info");
+        }
+
+        return $result;
     }
 
     /**

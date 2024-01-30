@@ -1349,7 +1349,12 @@ abstract class BaseDriverTest extends TestCase
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
         self::assertTrue($this->redisProxy->rename('my_key', 'new_key'));
-        self::assertFalse($this->redisProxy->rename('my_key', 'new_key'));
         self::assertTrue($this->redisProxy->rename('new_key', 'new_new_key'));
+    }
+
+    public function testWrongRename(){
+        $this->expectExceptionMessage("Error for command 'rename', use getPrevious() for more info");
+        $this->expectException(RedisProxyException::class);
+        $this->redisProxy->rename('my_keyaaa', 'new_key');
     }
 }
