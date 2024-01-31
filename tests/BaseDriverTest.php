@@ -1343,4 +1343,16 @@ abstract class BaseDriverTest extends TestCase
         $this->redisProxy->zadd('my_sorted_set_key', 1, 'my_value');
         self::assertEquals(RedisProxy::TYPE_SORTED_SET, $this->redisProxy->type('my_sorted_set_key'));
     }
+
+    public function testRename():void
+    {
+        self::assertNull($this->redisProxy->get('my_key'));
+        self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
+        self::assertTrue($this->redisProxy->rename('my_key', 'new_key'));
+        self::assertTrue($this->redisProxy->rename('new_key', 'new_new_key'));
+    }
+
+    public function testWrongRename(){
+        self::assertFalse($this->redisProxy->rename('my_keyaaa', 'new_key'));
+    }
 }

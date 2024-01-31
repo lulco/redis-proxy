@@ -791,6 +791,20 @@ class RedisProxy
     }
 
     /**
+     * Renames key to newkey
+     */
+    public function rename(string $key, string $newKey): bool
+    {
+        $this->init();
+        try {
+            $result = $this->driver->call('rename', [$key, $newKey]);
+        } catch (RedisProxyException $exception) {
+            return false;
+        }
+        return $result;
+    }
+
+    /**
      * Create array from input array - odd keys are used as keys, even keys are used as values
      * @param array  $dictionary
      * @param string $command
