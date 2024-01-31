@@ -792,7 +792,6 @@ class RedisProxy
 
     /**
      * Renames key to newkey
-     * @throws RedisProxyException
      */
     public function rename(string $key, string $newKey): bool
     {
