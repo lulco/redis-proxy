@@ -499,11 +499,6 @@ class RedisProxy
         return (int) $this->driver->call('hdel', [$key, ...$fields]);
     }
 
-    public function punsubscribe($pattern, ...$patterns)
-    {
-        return (int) $this->driver->call('punsubscribe', [$pattern, ...$fields]);
-    }
-
     /**
      * Increment the integer value of hash field by given number
      * @throws RedisProxyException
