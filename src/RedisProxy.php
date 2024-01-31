@@ -790,13 +790,11 @@ class RedisProxy
         return $this->convertFalseToNull($result);
     }
 
-    /** Renames key to newkey
-     * @param string $key
-     * @param string $newKey
-     * @return bool
+    /**
+     * Renames key to newkey
      * @throws RedisProxyException
      */
-    public function rename(string $key, string $newKey): ?bool
+    public function rename(string $key, string $newKey): bool
     {
         $this->init();
         try {
