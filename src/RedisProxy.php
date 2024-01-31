@@ -799,12 +799,11 @@ class RedisProxy
     public function rename(string $key, string $newKey): ?bool
     {
         $this->init();
-        $result = $this->driver->call('rename', [$key, $newKey]);
-
-        if ($result === false) {
-            throw new RedisProxyException("Error for command 'rename', use getPrevious() for more info");
+        try {
+            $result = $this->driver->call('rename', [$key, $newKey]);
+        }catch (RedisProxyException $exception){
+            return false;
         }
-
         return $result;
     }
 

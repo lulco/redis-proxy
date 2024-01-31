@@ -1353,8 +1353,6 @@ abstract class BaseDriverTest extends TestCase
     }
 
     public function testWrongRename(){
-        $this->expectExceptionMessage("Error for command 'rename', use getPrevious() for more info");
-        $this->expectException(RedisProxyException::class);
-        $this->redisProxy->rename('my_keyaaa', 'new_key');
+        self::assertFalse($this->redisProxy->rename('my_keyaaa', 'new_key'));
     }
 }
