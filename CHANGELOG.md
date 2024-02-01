@@ -2,7 +2,8 @@
 
 ### [Unreleased][unreleased]
 ####  Added
-- added rename command
+- Added publish, subscribe commands
+- Added rename command
 - Added srem, sismember commands
 
 ### [1.0.0] - 2023-09-06
