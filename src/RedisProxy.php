@@ -40,6 +40,7 @@ use RedisProxy\Driver\RedisDriver;
  * @method array zpopmin(string $key, int $count = 1)
  * @method array zpopmax(string $key, int $count = 1)
  * @method array zrevrange(string $key, int $start, int $stop, bool $withscores = false) Return a range of members in a sorted set, by index, with scores ordered from high to low
+ * @method array publish(string $channel, string $message) Posts a message to the given channel.
  */
 class RedisProxy
 {
@@ -321,6 +322,18 @@ class RedisProxy
         $keys = $this->prepareArguments('del', ...$keys);
         $this->init();
         return $this->driver->call('del', [...$keys]);
+    }
+
+    /**
+     * Subscribes the client to the specified channels.
+     * @throws RedisProxyException
+     */
+    public function subscribe(...$channels): array
+    {
+        $channels = $this->prepareArguments('subscribe', $channels);
+        $this->init();
+        return $this->driver->call('subscribe', [...$channels, function () {
+        }]);
     }
 
     /**
