@@ -2,6 +2,7 @@
 
 ### [Unreleased][unreleased]
 ####  Added
+- added publish, subscribe commands
 - added rename command
 - Added srem, sismember commands
 
