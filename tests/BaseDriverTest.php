@@ -1352,7 +1352,21 @@ abstract class BaseDriverTest extends TestCase
         self::assertTrue($this->redisProxy->rename('new_key', 'new_new_key'));
     }
 
-    public function testWrongRename(){
+    public function testWrongRename()
+    {
         self::assertFalse($this->redisProxy->rename('my_keyaaa', 'new_key'));
     }
+
+    public function  testEmptySubscribe()
+    {
+        $this->expectExceptionMessage("Error for command 'subscribe', use getPrevious() for more info");
+        $this->expectException(RedisProxyException::class);
+        $this->redisProxy->subscribe(function (){});
+    }
+
+    public function  testPublish()
+    {
+        self::assertEquals(0, $this->redisProxy->publish('test', 'aaaa'));
+    }
+
 }
