@@ -1361,7 +1361,7 @@ abstract class BaseDriverTest extends TestCase
     {
         $this->expectExceptionMessage("Error for command 'subscribe', use getPrevious() for more info");
         $this->expectException(RedisProxyException::class);
-        $this->redisProxy->subscribe();
+        $this->redisProxy->subscribe(function (){});
     }
 
     public function  testPublish()
