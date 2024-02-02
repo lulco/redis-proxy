@@ -807,14 +807,14 @@ class RedisProxy
 
     /**
      * Subscribes the client to the specified channels
+     * @param string|array ...$channels
      * @throws RedisProxyException
      */
-    public function subscribe(...$channels): array
+    public function subscribe(callable $callback, ...$channels): array
     {
         $channels = $this->prepareArguments('subscribe', $channels);
         $this->init();
-        return $this->driver->call('subscribe', [...$channels, function () {
-        }]);
+        return $this->driver->call('subscribe', [...$channels, $callback]);
     }
 
     /**
