@@ -24,7 +24,7 @@ use RedisProxy\Driver\RedisDriver;
  * @method array hkeys(string $key) Get all fields in a hash (without values)
  * @method array hgetall(string $key) Get all fields and values in a hash
  * @method int hlen(string $key) Get the number of fields in a hash
- * @method bool hexists(string $key, string $field) Check if <i>\$field</i> exists in hash <i>\$key</i>
+ * @method bool hexists(string $key, string $field) Check if <i>$field</i> exists in hash <i>$key</i>
  * @method int hstrlen(string $key, string $field) Get the length of the string field, 0 if field does not exist
  * @method array smembers(string $key) Get all the members in a set
  * @method int scard(string $key) Get the number of members in a set
