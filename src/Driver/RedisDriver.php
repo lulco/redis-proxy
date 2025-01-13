@@ -98,6 +98,17 @@ class RedisDriver implements Driver
         return !!$result;
     }
 
+    /**
+     * @return int[]|null
+     */
+    private function hexpire(string $key, int $seconds, string ...$fields): ?array
+    {
+        return $this
+            ->connectionPool
+            ->getConnection('hexpire')
+            ->hexpire($key, $seconds, ['fields' => count($fields)], ...$fields);
+    }
+
     private function select(int $database): bool
     {
         return $this->connectionSelect($this->connectionPool->getConnection('select'), $database);

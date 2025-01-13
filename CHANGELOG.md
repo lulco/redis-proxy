@@ -2,6 +2,9 @@
 
 ### [Unreleased][unreleased]
 
+####  Added
+- a few new commands: zincrby, hexpire, hexists, hstrlen
+
 ### [1.2.0] - 2024-04-12
 ####  Added
 - PHP 8.3 support

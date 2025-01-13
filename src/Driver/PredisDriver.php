@@ -107,6 +107,17 @@ class PredisDriver implements Driver
         return $this->transformResult($result);
     }
 
+    /**
+     * @return int[]|null
+     */
+    private function hexpire(string $key, int $seconds, string ...$fields): ?array
+    {
+        return $this
+            ->connectionPool
+            ->getConnection('hexpire')
+            ->hexpire($key, $seconds, ['fields' => count($fields)], ...$fields);
+    }
+
     private function scan(&$iterator, ?string $pattern = null, ?int $count = null)
     {
         $returned = $this->connectionPool->getConnection('scan')->scan($iterator, ['match' => $pattern, 'count' => $count]);
