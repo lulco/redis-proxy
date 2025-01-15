@@ -2,7 +2,7 @@
 
 namespace RedisProxy\Tests;
 
-use Override;
+use Composer\InstalledVersions;
 use RedisProxy\RedisProxy;
 
 class PredisDriverTest extends BaseDriverTest
@@ -17,9 +17,13 @@ class PredisDriverTest extends BaseDriverTest
         return $redisProxy;
     }
 
-    #[Override]
+    #[\Override]
     public function testHexpire(): void
     {
+        $predisVersion = InstalledVersions::getVersion('predis/predis');
+        if (version_compare($predisVersion, '2.0.0', '<')) {
+            self::markTestSkipped('predis version < 2.0 does not support HEXPIRE');
+        }
         $server = $this->redisProxy->info('server');
         if (version_compare($server['redis_version'], '7.0.0', '<') && !array_key_exists('dragonfly_version', $server)) {
             self::markTestSkipped('redis version < 7.0 does not support HEXPIRE');
