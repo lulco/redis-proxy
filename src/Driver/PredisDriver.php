@@ -107,6 +107,11 @@ class PredisDriver implements Driver
         return $this->transformResult($result);
     }
 
+    private function hexists(string $key, string $field): bool
+    {
+        return (bool)$this->connectionPool->getConnection('hexists')->hexists($key, $field);
+    }
+
     /**
      * @return int[]|null
      */
@@ -115,11 +120,14 @@ class PredisDriver implements Driver
         return $this
             ->connectionPool
             ->getConnection('hexpire')
-            ->hexpire($key, $seconds, ['fields' => count($fields)], ...$fields);
+            ->hexpire($key, $seconds, $fields);
     }
 
     private function scan(&$iterator, ?string $pattern = null, ?int $count = null)
     {
+        if ($iterator === null) {
+            $iterator = '0';
+        }
         $returned = $this->connectionPool->getConnection('scan')->scan($iterator, ['match' => $pattern, 'count' => $count]);
         $iterator = $returned[0];
         return $returned[1];
@@ -127,6 +135,9 @@ class PredisDriver implements Driver
 
     private function hscan(string $key, &$iterator, ?string $pattern = null, int $count = 0)
     {
+        if ($iterator === null) {
+            $iterator = '0';
+        }
         $returned = $this->connectionPool->getConnection('hscan')->hscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
         $iterator = $returned[0];
         return $returned[1];
@@ -134,6 +145,9 @@ class PredisDriver implements Driver
 
     private function sscan(string $key, &$iterator, string $pattern = null, int $count = null)
     {
+        if ($iterator === null) {
+            $iterator = '0';
+        }
         $returned = $this->connectionPool->getConnection('sscan')->sscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
         $iterator = $returned[0];
         return $returned[1];
@@ -141,6 +155,9 @@ class PredisDriver implements Driver
 
     private function zscan(string $key, &$iterator, ?string $pattern = null, ?int $count = null)
     {
+        if ($iterator === null) {
+            $iterator = '0';
+        }
         $returned = $this->connectionPool->getConnection('zscan')->zscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
         $iterator = $returned[0];
         return $returned[1];

@@ -2,6 +2,7 @@
 
 namespace RedisProxy\Tests;
 
+use Override;
 use RedisProxy\RedisProxy;
 
 class RedisDriverTest extends BaseDriverTest
@@ -45,5 +46,11 @@ class RedisDriverTest extends BaseDriverTest
 
         self::assertEquals(3, $this->redisProxy->zadd('my_sorted_set_key', -1, 'element_1', 0, 'element_2', 1, 'element_3'));
         self::assertEquals(['element_2' => 0, 'element_3' => 1], $this->redisProxy->zpopmax('my_sorted_set_key', 2));
+    }
+
+    #[Override]
+    public function testHexpire(): void
+    {
+        self::markTestSkipped('HEXPIRE is not supported for RedisDriver');
     }
 }
