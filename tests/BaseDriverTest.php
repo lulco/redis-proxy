@@ -39,7 +39,6 @@ abstract class BaseDriverTest extends TestCase
         self::assertArrayHasKey('server', $info);
         self::assertArrayHasKey('clients', $info);
         self::assertArrayHasKey('memory', $info);
-        self::assertArrayHasKey('persistence', $info);
         self::assertArrayHasKey('stats', $info);
         self::assertArrayHasKey('replication', $info);
         self::assertArrayHasKey('cpu', $info);
@@ -55,9 +54,13 @@ abstract class BaseDriverTest extends TestCase
             self::assertArrayHasKey('keys', $dbValues);
             self::assertEquals(0, $dbValues['keys']);
             self::assertArrayHasKey('expires', $dbValues);
-            self::assertNull($dbValues['expires']);
+            self::assertTrue(
+                is_null($dbValues['expires']) || (is_numeric($dbValues['expires']) && (int)$dbValues['expires'] <= 0),
+            );
             self::assertArrayHasKey('avg_ttl', $dbValues);
-            self::assertNull($dbValues['avg_ttl']);
+            self::assertTrue(
+                is_null($dbValues['avg_ttl']) || (is_numeric($dbValues['avg_ttl']) && (int)$dbValues['avg_ttl'] <= 0),
+            );
         }
 
         // insert some data
@@ -81,11 +84,11 @@ abstract class BaseDriverTest extends TestCase
         self::assertArrayHasKey('db0', $keyspaceInfo);
         self::assertEquals(1, $keyspaceInfo['db0']['keys']);
         self::assertEquals(0, $keyspaceInfo['db0']['expires']);
-        self::assertEquals(0, $keyspaceInfo['db0']['avg_ttl']);
+        self::assertLessThanOrEqual(0, $keyspaceInfo['db0']['avg_ttl']);
         self::assertArrayHasKey('db1', $keyspaceInfo);
         self::assertEquals(2, $keyspaceInfo['db1']['keys']);
         self::assertEquals(0, $keyspaceInfo['db1']['expires']);
-        self::assertEquals(0, $keyspaceInfo['db1']['avg_ttl']);
+        self::assertLessThanOrEqual(0, $keyspaceInfo['db1']['avg_ttl']);
 
         $serverInfo = $this->redisProxy->info('server');
         self::assertNotEmpty($serverInfo);
@@ -561,6 +564,44 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals('my_value', $this->redisProxy->hget('my_hash_key', 'my_field'));
         self::assertEquals(0, $this->redisProxy->hset('my_hash_key', 'my_field', 'my_new_value'));
         self::assertEquals('my_new_value', $this->redisProxy->hget('my_hash_key', 'my_field'));
+    }
+
+    public function testHexists(): void
+    {
+        self::assertNull($this->redisProxy->hget('my_hash_key', 'my_field2'));
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_field2', 'my_value'));
+        self::assertTrue($this->redisProxy->hexists('my_hash_key', 'my_field2'));
+        $this->redisProxy->hdel('my_hash_key', 'my_field3');
+        self::assertFalse($this->redisProxy->hexists('my_hash_key', 'my_field3'));
+    }
+
+    public function testHstrlen(): void
+    {
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_field_len', 'abcdefgh'));
+        $this->redisProxy->hdel('my_hash_key', 'my_field_len_2');
+        self::assertEquals(8, $this->redisProxy->hstrlen('my_hash_key', 'my_field_len'));
+        self::assertEquals(0, $this->redisProxy->hstrlen('my_hash_key', 'my_field_len_2'));
+    }
+
+    public function testHexpire(): void
+    {
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_field_expire', 'value'));
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_field_expire_2', 'value'));
+        self::assertEquals(1, $this->redisProxy->hset('my_hash_key', 'my_field_stay', 'value'));
+        $result = $this->redisProxy->hexpire('my_hash_key', 2, 'my_field_expire', 'my_field_expire_2', 'my_field_expire_3');
+        self::assertTrue(is_array($result));
+        self::assertEquals(1, $result[0]);
+        self::assertEquals(1, $result[1]);
+        self::assertEquals(-2, $result[2]);
+        self::assertEquals('value', $this->redisProxy->hget('my_hash_key', 'my_field_expire'));
+        self::assertEquals('value', $this->redisProxy->hget('my_hash_key', 'my_field_expire_2'));
+        sleep(1);
+        self::assertTrue($this->redisProxy->hexists('my_hash_key', 'my_field_expire'));
+        self::assertTrue($this->redisProxy->hexists('my_hash_key', 'my_field_expire_2'));
+        usleep(1100000); // let's wait a little longer just to be sure ...
+        self::assertFalse($this->redisProxy->hexists('my_hash_key', 'my_field_expire'));
+        self::assertFalse($this->redisProxy->hexists('my_hash_key', 'my_field_expire_2'));
+        self::assertTrue($this->redisProxy->hexists('my_hash_key', 'my_field_stay'));
     }
 
     public function testHgetall(): void
@@ -1319,6 +1360,15 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(1, $this->redisProxy->zadd('my_sorted_set_key', 100, 'first'));
         self::assertEquals(1, $this->redisProxy->zadd('my_sorted_set_key', 200, 'second'));
         self::assertEquals(2, $this->redisProxy->zrem('my_sorted_set_key', ['first', 'second']));
+    }
+
+    public function testZincrby(): void
+    {
+        self::assertEquals(1, $this->redisProxy->zadd('my_sorted_set_incrby', 100, 'first'));
+        self::assertEquals(100, $this->redisProxy->zscore('my_sorted_set_incrby', 'first'));
+        self::assertEquals(200, $this->redisProxy->zincrby('my_sorted_set_incrby', 100, 'first'));
+        self::assertEquals(150, $this->redisProxy->zincrby('my_sorted_set_incrby', -50, 'first'));
+        self::assertEquals(150, $this->redisProxy->zscore('my_sorted_set_incrby', 'first'));
     }
 
     public function testType(): void

@@ -2,6 +2,12 @@
 
 ### [Unreleased][unreleased]
 
+####  Added
+- a few new commands: zincrby, hexpire, hexists, hstrlen
+
+####  Fixed
+- several commands fixed to work with redis 6.*, 7.* and dragonfly
+
 ### [1.2.0] - 2024-04-12
 ####  Added
 - PHP 8.3 support

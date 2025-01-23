@@ -89,6 +89,11 @@ class RedisDriver implements Driver
         return $this->typeMap[$result] ?? null;
     }
 
+    private function hexists(string $key, string $field): bool
+    {
+        return (bool)$this->connectionPool->getConnection('hexists')->hexists($key, $field);
+    }
+
     private function psetex(string $key, int $milliseconds, string $value): bool
     {
         $result = $this->connectionPool->getConnection('psetex')->psetex($key, $milliseconds, $value);
@@ -96,6 +101,17 @@ class RedisDriver implements Driver
             return true;
         }
         return !!$result;
+    }
+
+    /**
+     * @return int[]|null
+     */
+    private function hexpire(string $key, int $seconds, string ...$fields): ?array
+    {
+        return $this
+            ->connectionPool
+            ->getConnection('hexpire')
+            ->hexpire($key, $seconds, $fields);
     }
 
     private function select(int $database): bool
