@@ -6,7 +6,6 @@ use Redis;
 use RedisProxy\Driver\Driver;
 use RedisProxy\RedisProxyException;
 use Throwable;
-use Tracy\Debugger;
 
 class MultiConnectionPool implements ConnectionPool
 {
@@ -92,7 +91,6 @@ class MultiConnectionPool implements ConnectionPool
         if ($this->writeToReplicas && in_array($command, $this->getReadOnlyOperations(), true)) {
             return $this->getReplicaConnection();
         }
-        Debugger::log('Using master connection', 'debug');
         return $this->getMasterConnection();
     }
 
@@ -140,7 +138,6 @@ class MultiConnectionPool implements ConnectionPool
             return true;
         }
 
-        /**@pstan  */
         usleep($this->retryWait * self::MICRO_TO_SECONDS);
         return $this->failedCount < $this->maxFails;
     }
@@ -159,10 +156,8 @@ class MultiConnectionPool implements ConnectionPool
     private function getReplicaConnection(): Redis|null
     {
         if (count($this->slavesConnection) === 0) {
-            Debugger::log('Cant find slave using master', 'debug');
             return $this->masterConnection;
         }
-        Debugger::log('Using slave connection', 'debug');
         $slaveConnection = $this->slavesConnection[array_rand($this->slavesConnection)];
 
         if ($this->database) {
