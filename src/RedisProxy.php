@@ -3,6 +3,7 @@
 namespace RedisProxy;
 
 use RedisProxy\ConnectionPoolFactory\ConnectionPoolFactory;
+use RedisProxy\ConnectionPoolFactory\MultiConnectionPoolFactory;
 use RedisProxy\ConnectionPoolFactory\SentinelConnectionPoolFactory;
 use RedisProxy\ConnectionPoolFactory\SingleNodeConnectionPoolFactory;
 use RedisProxy\Driver\Driver;
@@ -87,6 +88,15 @@ class RedisProxy
     public function setSentinelConnectionPool(array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true)
     {
         $this->connectionPoolFactory = new SentinelConnectionPoolFactory($sentinels, $clusterId, $database, $timeout, $retryWait, $maxFails, $writeToReplicas);
+    }
+
+    /**
+     * @param array{host: string, port: int} $master
+     * @param array{array{host: string, port: int}} $slaves
+     */
+    public function setMultiConnectionPool(array $master, array $slaves, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true): void
+    {
+        $this->connectionPoolFactory = new MultiConnectionPoolFactory($master, $slaves, $database, $timeout, $retryWait, $maxFails, $writeToReplicas);
     }
 
     /**
