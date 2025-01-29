@@ -2,6 +2,7 @@
 
 namespace RedisProxy\ConnectionPool;
 
+use Predis\Client;
 use Redis;
 use RedisProxy\Driver\Driver;
 use RedisProxy\RedisProxyException;
@@ -31,10 +32,13 @@ class MultiConnectionPool implements ConnectionPool
 
     private Driver $driver;
 
-    private ?Redis $masterConnection = null;
+    /**
+     * @var Redis|Client|null $masterConnection
+     */
+    private mixed $masterConnection = null;
 
     /**
-     * @var Redis[] $slavesConnection
+     * @var Redis[]|Client[] $slavesConnection
      */
     private array $slavesConnection = [];
 
@@ -80,7 +84,7 @@ class MultiConnectionPool implements ConnectionPool
     /**
      * @throws RedisProxyException
      */
-    public function getConnection(string $command): Redis|null
+    public function getConnection(string $command)
     {
         if ($this->getMasterConnection() === null) {
             if (!$this->loadConnections()) {
@@ -106,7 +110,6 @@ class MultiConnectionPool implements ConnectionPool
         } catch (RedisProxyException $e) {
             throw $e;
         } catch (Throwable $t) {
-
         }
         // load replicas
         if ($this->writeToReplicas) {
@@ -142,7 +145,7 @@ class MultiConnectionPool implements ConnectionPool
         return $this->failedCount < $this->maxFails;
     }
 
-    private function getMasterConnection(): Redis|null
+    private function getMasterConnection()
     {
         if ($this->database) {
             $this->driver->connectionSelect($this->masterConnection, $this->database);
@@ -153,7 +156,7 @@ class MultiConnectionPool implements ConnectionPool
     /**
      * @throws RedisProxyException
      */
-    private function getReplicaConnection(): Redis|null
+    private function getReplicaConnection()
     {
         if (count($this->slavesConnection) === 0) {
             return $this->masterConnection;
