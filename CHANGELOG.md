@@ -4,6 +4,7 @@
 
 ####  Added
 - a few new commands: zincrby, hexpire, hexists, hstrlen
+- Multi connection support
 
 ####  Fixed
 - several commands fixed to work with redis 6.*, 7.* and dragonfly
