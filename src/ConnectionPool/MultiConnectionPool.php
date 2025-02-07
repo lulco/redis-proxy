@@ -2,8 +2,6 @@
 
 namespace RedisProxy\ConnectionPool;
 
-use Predis\Client;
-use Redis;
 use RedisProxy\Driver\Driver;
 use RedisProxy\RedisProxyException;
 use Throwable;
@@ -32,14 +30,8 @@ class MultiConnectionPool implements ConnectionPool
 
     private Driver $driver;
 
-    /**
-     * @var Redis|Client|null $masterConnection
-     */
-    private mixed $masterConnection = null;
+    private $masterConnection = null;
 
-    /**
-     * @var Redis[]|Client[] $slavesConnection
-     */
     private array $slavesConnection = [];
 
     private int $failedCount = 0;
