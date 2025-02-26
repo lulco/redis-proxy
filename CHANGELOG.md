@@ -2,6 +2,7 @@
 
 ### [Unreleased][unreleased]
 
+### [1.3.0] - 2025-02-26
 ####  Added
 - a few new commands: zincrby, hexpire, hexists, hstrlen
 - Multi connection support
@@ -96,7 +97,8 @@
 #### Added
 - Wrapper for \Redis
 
-[unreleased]: https://github.com/lulco/redis-proxy/compare/1.2.0...HEAD
+[unreleased]: https://github.com/lulco/redis-proxy/compare/1.3.0...HEAD
+[1.3.0]: https://github.com/lulco/redis-proxy/compare/1.2.0...1.3.0
 [1.2.0]: https://github.com/lulco/redis-proxy/compare/1.1.0...1.2.0
 [1.1.0]: https://github.com/lulco/redis-proxy/compare/1.0.0...1.1.0
 [1.0.0]: https://github.com/lulco/redis-proxy/compare/0.7.1...1.0.0
