@@ -2,6 +2,9 @@
 
 ### [Unreleased][unreleased]
 
+#### Fixed
+- Fixed getConnection() for MultiConnectionPool
+
 ### [1.3.0] - 2025-02-26
 ####  Added
 - a few new commands: zincrby, hexpire, hexists, hstrlen

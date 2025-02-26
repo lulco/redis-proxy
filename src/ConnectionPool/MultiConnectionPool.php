@@ -78,7 +78,7 @@ class MultiConnectionPool implements ConnectionPool
      */
     public function getConnection(string $command)
     {
-        if ($this->getMasterConnection() === null) {
+        if ($this->masterConnection === null) {
             if (!$this->loadConnections()) {
                 throw new RedisProxyException('Cannot load or establish connection to master/replicas from configuration');
             }
