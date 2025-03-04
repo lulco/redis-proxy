@@ -2,6 +2,7 @@
 
 ### [Unreleased][unreleased]
 
+### [1.3.1] - 2025-03-04
 #### Fixed
 - Fixed getConnection() for MultiConnectionPool
 
@@ -100,7 +101,8 @@
 #### Added
 - Wrapper for \Redis
 
-[unreleased]: https://github.com/lulco/redis-proxy/compare/1.3.0...HEAD
+[unreleased]: https://github.com/lulco/redis-proxy/compare/1.3.1...HEAD
+[1.3.1]: https://github.com/lulco/redis-proxy/compare/1.3.0...1.3.1
 [1.3.0]: https://github.com/lulco/redis-proxy/compare/1.2.0...1.3.0
 [1.2.0]: https://github.com/lulco/redis-proxy/compare/1.1.0...1.2.0
 [1.1.0]: https://github.com/lulco/redis-proxy/compare/1.0.0...1.1.0
