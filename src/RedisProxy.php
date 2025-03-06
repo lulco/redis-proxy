@@ -45,6 +45,7 @@ use RedisProxy\Driver\RedisDriver;
  * @method array zrevrange(string $key, int $start, int $stop, bool $withscores = false) Return a range of members in a sorted set, by index, with scores ordered from high to low
  * @method float zincrby(string $key, float $increment, string $member) Increment or decrement member of key by the given value (decrement when negative value is passed)
  * @method array publish(string $channel, string $message) Posts a message to the given channel
+ * @method mixed rawCommand(string $command, mixed ...$params) Run raw command with paramters
  */
 class RedisProxy
 {

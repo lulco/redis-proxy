@@ -2,6 +2,9 @@
 
 ### [Unreleased][unreleased]
 
+#### Added
+- Added rawCommand
+
 ### [1.3.1] - 2025-03-04
 #### Fixed
 - Fixed getConnection() for MultiConnectionPool
