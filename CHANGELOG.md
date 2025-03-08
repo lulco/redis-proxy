@@ -2,6 +2,7 @@
 
 ### [Unreleased][unreleased]
 
+### [1.4.0] - 2025-03-08
 #### Added
 - Added rawCommand
 
@@ -104,7 +105,8 @@
 #### Added
 - Wrapper for \Redis
 
-[unreleased]: https://github.com/lulco/redis-proxy/compare/1.3.1...HEAD
+[unreleased]: https://github.com/lulco/redis-proxy/compare/1.4.0...HEAD
+[1.4.0]: https://github.com/lulco/redis-proxy/compare/1.3.1...1.4.0
 [1.3.1]: https://github.com/lulco/redis-proxy/compare/1.3.0...1.3.1
 [1.3.0]: https://github.com/lulco/redis-proxy/compare/1.2.0...1.3.0
 [1.2.0]: https://github.com/lulco/redis-proxy/compare/1.1.0...1.2.0
