@@ -140,4 +140,9 @@ class RedisDriver implements Driver
         }
         return (bool) $result;
     }
+
+    public function connectionReset(): void
+    {
+        $this->connectionPool->resetConnection();
+    }
 }

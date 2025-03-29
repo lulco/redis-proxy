@@ -100,6 +100,13 @@ class RedisProxy
         $this->connectionPoolFactory = new MultiConnectionPoolFactory($master, $slaves, $database, $timeout, $retryWait, $maxFails, $writeToReplicas);
     }
 
+    public function resetConnectionPool(): void
+    {
+        if ($this->driver !== null) {
+            $this->driver->connectionReset();
+        }
+    }
+
     /**
      * @throws RedisProxyException
      */

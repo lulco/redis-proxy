@@ -216,6 +216,11 @@ class PredisDriver implements Driver
         return (bool) $result;
     }
 
+    public function connectionReset(): void
+    {
+        $this->connectionPool->resetConnection();
+    }
+
     /**
      * Transforms Predis result Payload to boolean
      * @param mixed $result

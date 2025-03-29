@@ -81,6 +81,11 @@ class SentinelConnectionPool implements ConnectionPool
         return $this->getMasterConnection();
     }
 
+    public function resetConnection(): void
+    {
+        $this->reset();
+    }
+
     public function handleFailed(int $attempt): bool
     {
         $this->failedCount++;
