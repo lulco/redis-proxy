@@ -3,6 +3,7 @@
 namespace RedisProxy;
 
 use RedisProxy\ConnectionPoolFactory\ConnectionPoolFactory;
+use RedisProxy\ConnectionPoolFactory\MultiConnectionPoolFactory;
 use RedisProxy\ConnectionPoolFactory\SentinelConnectionPoolFactory;
 use RedisProxy\ConnectionPoolFactory\SingleNodeConnectionPoolFactory;
 use RedisProxy\Driver\Driver;
@@ -24,6 +25,8 @@ use RedisProxy\Driver\RedisDriver;
  * @method array hkeys(string $key) Get all fields in a hash (without values)
  * @method array hgetall(string $key) Get all fields and values in a hash
  * @method int hlen(string $key) Get the number of fields in a hash
+ * @method bool hexists(string $key, string $field) Check if <i>$field</i> exists in hash <i>$key</i>
+ * @method int hstrlen(string $key, string $field) Get the length of the string field, 0 if field does not exist
  * @method array smembers(string $key) Get all the members in a set
  * @method int scard(string $key) Get the number of members in a set
  * @method int sismember(string $key, string $member) Returns if member is a member of the set stored at key
@@ -40,7 +43,9 @@ use RedisProxy\Driver\RedisDriver;
  * @method array zpopmin(string $key, int $count = 1)
  * @method array zpopmax(string $key, int $count = 1)
  * @method array zrevrange(string $key, int $start, int $stop, bool $withscores = false) Return a range of members in a sorted set, by index, with scores ordered from high to low
+ * @method float zincrby(string $key, float $increment, string $member) Increment or decrement member of key by the given value (decrement when negative value is passed)
  * @method array publish(string $channel, string $message) Posts a message to the given channel
+ * @method mixed rawCommand(string $command, mixed ...$params) Run raw command with paramters
  */
 class RedisProxy
 {
@@ -84,6 +89,15 @@ class RedisProxy
     public function setSentinelConnectionPool(array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true)
     {
         $this->connectionPoolFactory = new SentinelConnectionPoolFactory($sentinels, $clusterId, $database, $timeout, $retryWait, $maxFails, $writeToReplicas);
+    }
+
+    /**
+     * @param array{host: string, port: int} $master
+     * @param array{array{host: string, port: int}} $slaves
+     */
+    public function setMultiConnectionPool(array $master, array $slaves, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true): void
+    {
+        $this->connectionPoolFactory = new MultiConnectionPoolFactory($master, $slaves, $database, $timeout, $retryWait, $maxFails, $writeToReplicas);
     }
 
     /**
@@ -518,6 +532,20 @@ class RedisProxy
     {
         $this->init();
         return (float) $this->driver->call('hincrbyfloat', [$key, $field, $increment]);
+    }
+
+    /**
+     * Sets the expiration of one or more <i>\$fields</i> in given hash <i>\$key</i>, TTL is in <i>\$seconds</i>
+     * @param string|string[] ...$fields fields to set expiration on, either variadic enumeration or array of fields
+     * @return null|int[] int results for each field (in order) or `null` if no-key passed, return values are:
+     * -2 if field does not exist, 1 if expiration is set/updated and 2 if `HEXPIRE` is called with 0 seconds
+     * @throws RedisProxyException
+     */
+    public function hexpire(string $key, int $seconds, ...$fields): ?array
+    {
+        $fields = $this->prepareArguments('hexpire', ...$fields);
+        $this->init();
+        return $this->driver->call('hexpire', [$key, $seconds, ...$fields]);
     }
 
     /**
