@@ -90,6 +90,11 @@ class MultiConnectionPool implements ConnectionPool
         return $this->getMasterConnection();
     }
 
+    public function resetConnection(): void
+    {
+        $this->reset();
+    }
+
     /**
      * @throws RedisProxyException
      */

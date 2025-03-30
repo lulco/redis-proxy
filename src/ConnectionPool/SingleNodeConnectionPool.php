@@ -57,6 +57,11 @@ class SingleNodeConnectionPool implements ConnectionPool
         return $this->connection;
     }
 
+    public function resetConnection(): void
+    {
+        $this->connection = null;
+    }
+
     public function handleFailed(int $attempt): bool
     {
         $this->connection = null; // retry connection on fail
