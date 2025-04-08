@@ -49,7 +49,7 @@ class MultiWriteConnectionPool implements ConnectionPool
     private string $strategy;
 
     /**
-     * @param array{array{host: string, port: int}} $master
+     * @param array{array{host: string, port: int}} $masters
      * @param array{array{host: string, port: int}} $slaves
      * @param string $strategy Implemented strategies: 'random', 'round-robin'
      */
