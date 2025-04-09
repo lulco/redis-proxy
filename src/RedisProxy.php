@@ -2,6 +2,7 @@
 
 namespace RedisProxy;
 
+use Redis;
 use RedisProxy\ConnectionPoolFactory\ConnectionPoolFactory;
 use RedisProxy\ConnectionPoolFactory\MultiConnectionPoolFactory;
 use RedisProxy\ConnectionPoolFactory\SentinelConnectionPoolFactory;
@@ -69,6 +70,8 @@ class RedisProxy
 
     private array $driversOrder;
 
+    private int $optSerializer = Redis::SERIALIZER_NONE;
+
     private array $supportedDrivers = [
         self::DRIVER_REDIS,
         self::DRIVER_PREDIS,
@@ -80,10 +83,11 @@ class RedisProxy
      * @param int|null $maxFails 1 = no retries, one attempt (default)
      *                           2 = one retry, two attempts, ...
      */
-    public function __construct(string $host = '127.0.0.1', int $port = 6379, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null)
+    public function __construct(string $host = '127.0.0.1', int $port = 6379, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, int $optSerializer = Redis::SERIALIZER_NONE)
     {
         $this->connectionPoolFactory = new SingleNodeConnectionPoolFactory($host, $port, $database, $timeout, true, $retryWait, $maxFails);
         $this->driversOrder = $this->supportedDrivers;
+        $this->optSerializer = $optSerializer;
     }
 
     public function setSentinelConnectionPool(array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true)
@@ -118,11 +122,11 @@ class RedisProxy
 
         foreach ($this->driversOrder as $preferredDriver) {
             if ($preferredDriver === self::DRIVER_REDIS && extension_loaded('redis')) {
-                $this->driver = new RedisDriver($this->connectionPoolFactory);
+                $this->driver = new RedisDriver($this->connectionPoolFactory, $this->optSerializer);
                 return;
             }
             if ($preferredDriver === self::DRIVER_PREDIS && class_exists('Predis\Client')) {
-                $this->driver = new PredisDriver($this->connectionPoolFactory);
+                $this->driver = new PredisDriver($this->connectionPoolFactory, $this->optSerializer);
                 return;
             }
         }

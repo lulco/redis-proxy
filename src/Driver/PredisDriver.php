@@ -4,6 +4,7 @@ namespace RedisProxy\Driver;
 
 use Predis\Connection\ConnectionException;
 use Predis\Response\Status;
+use Redis;
 use RedisProxy\ConnectionFactory\PredisConnectionFactory;
 use RedisProxy\ConnectionPool\ConnectionPool;
 use RedisProxy\ConnectionPoolFactory\ConnectionPoolFactory;
@@ -20,6 +21,8 @@ class PredisDriver implements Driver
 
     private ?PredisDriverFactory $driverFactory = null;
 
+    private int $optSerializer = Redis::SERIALIZER_NONE;
+
     private array $typeMap = [
         'string' => RedisProxy::TYPE_STRING,
         'set' => RedisProxy::TYPE_SET,
@@ -28,15 +31,16 @@ class PredisDriver implements Driver
         'hash' => RedisProxy::TYPE_HASH,
     ];
 
-    public function __construct(ConnectionPoolFactory $connectionPollFactory)
+    public function __construct(ConnectionPoolFactory $connectionPollFactory, int $optSerializer = Redis::SERIALIZER_NONE)
     {
         $this->connectionPool = $connectionPollFactory->create($this);
+        $this->optSerializer = $optSerializer;
     }
 
     public function getConnectionFactory(): PredisConnectionFactory
     {
         if ($this->connectionFactory === null) {
-            $this->connectionFactory = new PredisConnectionFactory();
+            $this->connectionFactory = new PredisConnectionFactory($this->optSerializer);
         }
         return $this->connectionFactory;
     }
