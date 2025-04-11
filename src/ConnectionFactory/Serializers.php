@@ -2,11 +2,11 @@
 
 namespace RedisProxy\ConnectionFactory;
 
-enum Serializers: string
+class Serializers
 {
-    case NONE = 'none';
-    case PHP = 'php';
-    case JSON = 'json';
-    case MSGPACK = 'msgpack';
-    case IG_BINARY = 'igbinary';
+    public const NONE = 'none';
+    public const PHP = 'php';
+    public const JSON = 'json';
+    public const MSGPACK = 'msgpack';
+    public const IG_BINARY = 'igbinary';
 }

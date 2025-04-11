@@ -21,7 +21,7 @@ class PredisDriver implements Driver
 
     private ?PredisDriverFactory $driverFactory = null;
 
-    private Serializers $optSerializer = Serializers::NONE;
+    private string $optSerializer = Serializers::NONE;
 
     private array $typeMap = [
         'string' => RedisProxy::TYPE_STRING,
@@ -31,7 +31,7 @@ class PredisDriver implements Driver
         'hash' => RedisProxy::TYPE_HASH,
     ];
 
-    public function __construct(ConnectionPoolFactory $connectionPollFactory, Serializers $optSerializer = Serializers::NONE)
+    public function __construct(ConnectionPoolFactory $connectionPollFactory, string $optSerializer = Serializers::NONE)
     {
         $this->connectionPool = $connectionPollFactory->create($this);
         $this->optSerializer = $optSerializer;

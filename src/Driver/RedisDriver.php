@@ -20,7 +20,7 @@ class RedisDriver implements Driver
 
     private ?RedisDriverFactory $driverFactory = null;
 
-    private Serializers $optSerializer = Serializers::NONE;
+    private string $optSerializer = Serializers::NONE;
 
     private array $typeMap = [
         1 => RedisProxy::TYPE_STRING,
@@ -30,7 +30,7 @@ class RedisDriver implements Driver
         5 => RedisProxy::TYPE_HASH,
     ];
 
-    public function __construct(ConnectionPoolFactory $connectionPollFactory, Serializers $optSerializer = Serializers::NONE)
+    public function __construct(ConnectionPoolFactory $connectionPollFactory, string $optSerializer = Serializers::NONE)
     {
         $this->connectionPool = $connectionPollFactory->create($this);
         $this->optSerializer = $optSerializer;
