@@ -6,11 +6,17 @@ use Redis;
 
 class RedisConnectionFactory implements ConnectionFactory
 {
-    private int $optSerializer = Redis::SERIALIZER_NONE;
+    private int $optSerializer = 0;
 
-    public function __construct(int $optSerializer = Redis::SERIALIZER_NONE)
+    public function __construct(Serializers $optSerializer = Serializers::NONE)
     {
-        $this->optSerializer = $optSerializer;
+        match ($optSerializer) {
+            Serializers::NONE => $this->optSerializer = Redis::SERIALIZER_NONE,
+            Serializers::PHP => $this->optSerializer = Redis::SERIALIZER_PHP,
+            Serializers::JSON => $this->optSerializer = Redis::SERIALIZER_JSON,
+            Serializers::MSGPACK => $this->optSerializer = Redis::SERIALIZER_MSGPACK,
+            Serializers::IG_BINARY => $this->optSerializer = Redis::SERIALIZER_IGBINARY
+        };
     }
     /**
      * @return Redis

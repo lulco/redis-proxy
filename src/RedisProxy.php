@@ -3,6 +3,7 @@
 namespace RedisProxy;
 
 use Redis;
+use RedisProxy\ConnectionFactory\Serializers;
 use RedisProxy\ConnectionPoolFactory\ConnectionPoolFactory;
 use RedisProxy\ConnectionPoolFactory\MultiConnectionPoolFactory;
 use RedisProxy\ConnectionPoolFactory\SentinelConnectionPoolFactory;
@@ -70,7 +71,7 @@ class RedisProxy
 
     private array $driversOrder;
 
-    private int $optSerializer = Redis::SERIALIZER_NONE;
+    private Serializers $optSerializer = Serializers::NONE;
 
     private array $supportedDrivers = [
         self::DRIVER_REDIS,
@@ -83,7 +84,7 @@ class RedisProxy
      * @param int|null $maxFails 1 = no retries, one attempt (default)
      *                           2 = one retry, two attempts, ...
      */
-    public function __construct(string $host = '127.0.0.1', int $port = 6379, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, int $optSerializer = Redis::SERIALIZER_NONE)
+    public function __construct(string $host = '127.0.0.1', int $port = 6379, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, Serializers $optSerializer = Serializers::NONE)
     {
         $this->connectionPoolFactory = new SingleNodeConnectionPoolFactory($host, $port, $database, $timeout, true, $retryWait, $maxFails);
         $this->driversOrder = $this->supportedDrivers;

@@ -3,15 +3,20 @@
 namespace RedisProxy\ConnectionFactory;
 
 use Predis\Client;
-use Redis;
 
 class PredisConnectionFactory implements ConnectionFactory
 {
-    private int $optSerializer = Redis::SERIALIZER_NONE;
+    private ?string $optSerializer = null;
 
-    public function __construct(int $optSerializer = Redis::SERIALIZER_NONE)
+    public function __construct(Serializers $optSerializer = Serializers::NONE)
     {
-        $this->optSerializer = $optSerializer;
+        match ($optSerializer) {
+            Serializers::NONE => $this->optSerializer = null,
+            Serializers::PHP => $this->optSerializer = 'php',
+            Serializers::JSON => $this->optSerializer = 'json',
+            Serializers::MSGPACK => $this->optSerializer = 'msgpack',
+            Serializers::IG_BINARY => $this->optSerializer = 'igbinary'
+        };
     }
 
     /**
@@ -23,7 +28,7 @@ class PredisConnectionFactory implements ConnectionFactory
             'host' => $host,
             'port' => $port,
             'timeout' => $timeout,
-            'serializer' => $this->optSerializer,
+            'serializer' => (string) $this->optSerializer,
         ]);
         $redis->connect();
         return $redis;
