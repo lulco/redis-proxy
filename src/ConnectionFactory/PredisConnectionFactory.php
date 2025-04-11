@@ -10,7 +10,7 @@ class PredisConnectionFactory implements ConnectionFactory
 
     public function __construct(string $optSerializer = Serializers::NONE)
     {
-        switch ($this->optSerializer) {
+        switch ($optSerializer) {
             case Serializers::NONE:
                 $this->optSerializer = null;
                 break;
