@@ -64,6 +64,7 @@ $redis->hgetall($key);
 Read from multiple redis nodes
 Write to one master redis node
 ```php
+$master = ['host' => '172.19.0.5', 'port' => 26379];
 $slaves = [
     ['host' => '172.19.0.5', 'port' => 26379],
     ['host' => '172.19.0.6', 'port' => 26379],
@@ -92,5 +93,5 @@ $slaves = [
 $clusterId = 'mymaster';
 
 $redis = new \RedisProxy\RedisProxy();
-$redis->setMultiConnectionPool($masters, $slaves);
+$redis->setMultiWriteConnectionPool($masters, $slaves);
 ```
