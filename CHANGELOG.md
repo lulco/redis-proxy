@@ -3,6 +3,7 @@
 ### [Unreleased][unreleased]
 #### Added
 - Multi write connections support
+- Message serializer change support
 
 ### [1.5.0] - 2025-04-01
 #### Added
