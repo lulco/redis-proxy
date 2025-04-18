@@ -59,3 +59,38 @@ $redis->hlen($key);
 $redis->hget($key, $field);
 $redis->hgetall($key);
 ```
+
+### Multi read connection
+Read from multiple redis nodes
+Write to one master redis node
+```php
+$slaves = [
+    ['host' => '172.19.0.5', 'port' => 26379],
+    ['host' => '172.19.0.6', 'port' => 26379],
+    ['host' => '172.19.0.7', 'port' => 26379],
+];
+$clusterId = 'mymaster';
+
+$redis = new \RedisProxy\RedisProxy();
+$redis->setMultiConnectionPool($master, $slaves);
+```
+
+### Multi write connection
+Write to multiple master redis nodes
+Optionally read from multiple redis nodes
+```php
+$masters = [
+    ['host' => '172.19.0.5', 'port' => 26379],
+    ['host' => '172.19.0.6', 'port' => 26379],
+    ['host' => '172.19.0.7', 'port' => 26379],
+];
+$slaves = [
+    ['host' => '172.19.0.5', 'port' => 26379],
+    ['host' => '172.19.0.6', 'port' => 26379],
+    ['host' => '172.19.0.7', 'port' => 26379],
+];
+$clusterId = 'mymaster';
+
+$redis = new \RedisProxy\RedisProxy();
+$redis->setMultiConnectionPool($masters, $slaves);
+```
