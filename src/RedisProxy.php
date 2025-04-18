@@ -4,8 +4,10 @@ namespace RedisProxy;
 
 use Redis;
 use RedisProxy\ConnectionFactory\Serializers;
+use RedisProxy\ConnectionPool\MultiWriteConnectionPool;
 use RedisProxy\ConnectionPoolFactory\ConnectionPoolFactory;
 use RedisProxy\ConnectionPoolFactory\MultiConnectionPoolFactory;
+use RedisProxy\ConnectionPoolFactory\MultiWriteConnectionPoolFactory;
 use RedisProxy\ConnectionPoolFactory\SentinelConnectionPoolFactory;
 use RedisProxy\ConnectionPoolFactory\SingleNodeConnectionPoolFactory;
 use RedisProxy\Driver\Driver;
@@ -103,6 +105,15 @@ class RedisProxy
     public function setMultiConnectionPool(array $master, array $slaves, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true): void
     {
         $this->connectionPoolFactory = new MultiConnectionPoolFactory($master, $slaves, $database, $timeout, $retryWait, $maxFails, $writeToReplicas);
+    }
+
+    /**
+     * @param array{host: string, port: int} $masters
+     * @param array{array{host: string, port: int}} $slaves
+     */
+    public function setMultiWriteConnectionPool(array $masters, array $slaves, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true, string $strategy = MultiWriteConnectionPool::STRATEGY_RANDOM): void
+    {
+        $this->connectionPoolFactory = new MultiWriteConnectionPoolFactory($masters, $slaves, $database, $timeout, $retryWait, $maxFails, $writeToReplicas, $strategy);
     }
 
     public function resetConnectionPool(): void
