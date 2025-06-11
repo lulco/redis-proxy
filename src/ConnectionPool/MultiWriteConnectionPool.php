@@ -2,7 +2,6 @@
 
 namespace RedisProxy\ConnectionPool;
 
-use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 use RedisProxy\Driver\Driver;
 use RedisProxy\RedisProxyException;
@@ -57,7 +56,7 @@ class MultiWriteConnectionPool implements ConnectionPool
      * @param array{array{host: string, port: int}} $slaves
      * @param string $strategy Implemented strategies: 'random', 'round-robin'
      */
-    public function __construct(Driver $driver, array $masters, array $slaves, int $database = 0, float $timeout = 0.0, string $strategy = self::STRATEGY_RANDOM)
+    public function __construct(Driver $driver, array $masters, array $slaves, int $database = 0, float $timeout = 0.0, string $strategy = self::STRATEGY_RANDOM, Logger $logger = null)
     {
         $this->driver = $driver;
         $this->masters = $masters;
@@ -65,12 +64,7 @@ class MultiWriteConnectionPool implements ConnectionPool
         $this->database = $database;
         $this->timeout = $timeout;
         $this->strategy = $strategy;
-
-        $this->logger = new Logger('MultiWriteConnectionPool', [new RotatingFileHandler(
-            __DIR__ . '/../../logs/multi_write_connection_pool.log',
-            0,
-            Logger::DEBUG
-        )]);
+        $this->logger = $logger ?? new Logger('MultiWriteConnectionPool');
     }
 
     public function setRetryWait(int $retryWait): MultiWriteConnectionPool
@@ -208,18 +202,18 @@ class MultiWriteConnectionPool implements ConnectionPool
                 if ($masterConnection === false) {
                     $masterConnection = reset($this->mastersConnection);
                 }
+                $this->logger->debug('Selected master connection', [key($this->mastersConnection)]);
                 break;
             case self::STRATEGY_RANDOM:
-                $masterConnection = $this->mastersConnection[array_rand($this->mastersConnection)];
+                $connection = array_rand($this->mastersConnection);
+                $this->logger->debug('Selected master connection', [$connection]);
+                $masterConnection = $this->mastersConnection[$connection];
                 break;
             default:
-                $masterConnection = $this->mastersConnection[array_rand($this->mastersConnection)];
+                $connection = array_rand($this->mastersConnection);
+                $masterConnection = $this->mastersConnection[$connection];
                 break;
         }
-        $this->logger->debug('Selected master connection', [
-            'host' => $masterConnection['host'],
-            'port' => $masterConnection['port'],
-        ]);
         if ($this->database) {
             $this->driver->connectionSelect($masterConnection, $this->database);
         }
