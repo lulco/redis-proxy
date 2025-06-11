@@ -2,6 +2,7 @@
 
 namespace RedisProxy\ConnectionPool;
 
+use Monolog\Logger;
 use RedisProxy\Driver\Driver;
 use RedisProxy\RedisProxyException;
 use Throwable;
@@ -48,12 +49,14 @@ class MultiWriteConnectionPool implements ConnectionPool
 
     private string $strategy;
 
+    private Logger $logger;
+
     /**
      * @param array{array{host: string, port: int}} $masters
      * @param array{array{host: string, port: int}} $slaves
      * @param string $strategy Implemented strategies: 'random', 'round-robin'
      */
-    public function __construct(Driver $driver, array $masters, array $slaves, int $database = 0, float $timeout = 0.0, string $strategy = self::STRATEGY_RANDOM)
+    public function __construct(Driver $driver, array $masters, array $slaves, int $database = 0, float $timeout = 0.0, string $strategy = self::STRATEGY_RANDOM, Logger $logger = null)
     {
         $this->driver = $driver;
         $this->masters = $masters;
@@ -61,6 +64,7 @@ class MultiWriteConnectionPool implements ConnectionPool
         $this->database = $database;
         $this->timeout = $timeout;
         $this->strategy = $strategy;
+        $this->logger = $logger ?? new Logger('MultiWriteConnectionPool');
     }
 
     public function setRetryWait(int $retryWait): MultiWriteConnectionPool
@@ -93,9 +97,15 @@ class MultiWriteConnectionPool implements ConnectionPool
         }
 
         if ($this->writeToReplicas && in_array($command, $this->getReadOnlyOperations(), true)) {
+            $this->logger->debug('Selecting replica connection for read-only command', [
+                'command' => $command,
+            ]);
             return $this->getReplicaConnection();
         }
 
+        $this->logger->debug('Selecting master connection for write command', [
+            'command' => $command,
+        ]);
         return $this->getMasterConnection();
     }
 
@@ -115,9 +125,23 @@ class MultiWriteConnectionPool implements ConnectionPool
             try {
                 $masterConnection = $this->driver->getConnectionFactory()->create($master['host'], $master['port'], $this->timeout);
                 $this->mastersConnection[] = $masterConnection;
+                $this->logger->debug('Master connection established', [
+                    'host' => $master['host'],
+                    'port' => $master['port'],
+                ]);
             } catch (RedisProxyException $e) {
+                $this->logger->debug('Failed to establish master connection', [
+                    'host' => $master['host'],
+                    'port' => $master['port'],
+                    'error' => $e->getMessage(),
+                ]);
                 throw $e;
             } catch (Throwable $t) {
+                $this->logger->debug('Failed to establish master connection', [
+                    'host' => $master['host'],
+                    'port' => $master['port'],
+                    'error' => $t->getMessage(),
+                ]);
                 continue;
             }
         }
@@ -127,15 +151,30 @@ class MultiWriteConnectionPool implements ConnectionPool
                 try {
                     $replicaConnection = $this->driver->getConnectionFactory()->create($slave['host'], $slave['port'], $this->timeout);
                     $this->slavesConnection[] = $replicaConnection;
+                    $this->logger->debug('Replica connection established', [
+                        'host' => $slave['host'],
+                        'port' => $slave['port'],
+                    ]);
                 } catch (RedisProxyException $e) {
+                    $this->logger->debug('Failed to establish replica connection', [
+                        'host' => $slave['host'],
+                        'port' => $slave['port'],
+                        'error' => $e->getMessage(),
+                    ]);
                     throw $e;
                 } catch (Throwable $t) {
+                    $this->logger->debug('Failed to establish replica connection', [
+                        'host' => $slave['host'],
+                        'port' => $slave['port'],
+                        'error' => $t->getMessage(),
+                    ]);
                     continue;
                 }
             }
         }
 
         if ($this->mastersConnection === []) {
+            $this->logger->error('No master connections available');
             return false;
         }
 
@@ -163,12 +202,16 @@ class MultiWriteConnectionPool implements ConnectionPool
                 if ($masterConnection === false) {
                     $masterConnection = reset($this->mastersConnection);
                 }
+                $this->logger->debug('Selected master connection', [key($this->mastersConnection)]);
                 break;
             case self::STRATEGY_RANDOM:
-                $masterConnection = $this->mastersConnection[array_rand($this->mastersConnection)];
+                $connection = array_rand($this->mastersConnection);
+                $this->logger->debug('Selected master connection', [$connection]);
+                $masterConnection = $this->mastersConnection[$connection];
                 break;
             default:
-                $masterConnection = $this->mastersConnection[array_rand($this->mastersConnection)];
+                $connection = array_rand($this->mastersConnection);
+                $masterConnection = $this->mastersConnection[$connection];
                 break;
         }
         if ($this->database) {
@@ -199,7 +242,10 @@ class MultiWriteConnectionPool implements ConnectionPool
                 $slaveConnection = $this->slavesConnection[array_rand($this->slavesConnection)];
                 break;
         }
-
+        $this->logger->debug('Selected replica connection', [
+            'host' => $slaveConnection['host'],
+            'port' => $slaveConnection['port'],
+        ]);
         if ($this->database) {
             $this->driver->connectionSelect($slaveConnection, $this->database);
         }

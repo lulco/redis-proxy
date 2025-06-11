@@ -2,6 +2,7 @@
 
 namespace RedisProxy;
 
+use Monolog\Logger;
 use Redis;
 use RedisProxy\ConnectionFactory\Serializers;
 use RedisProxy\ConnectionPool\MultiWriteConnectionPool;
@@ -75,6 +76,8 @@ class RedisProxy
 
     private string $optSerializer = Serializers::NONE;
 
+    private Logger $logger;
+
     private array $supportedDrivers = [
         self::DRIVER_REDIS,
         self::DRIVER_PREDIS,
@@ -86,11 +89,12 @@ class RedisProxy
      * @param int|null $maxFails 1 = no retries, one attempt (default)
      *                           2 = one retry, two attempts, ...
      */
-    public function __construct(string $host = '127.0.0.1', int $port = 6379, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, string $optSerializer = Serializers::NONE)
+    public function __construct(string $host = '127.0.0.1', int $port = 6379, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, string $optSerializer = Serializers::NONE, Logger $logger = null)
     {
         $this->connectionPoolFactory = new SingleNodeConnectionPoolFactory($host, $port, $database, $timeout, true, $retryWait, $maxFails);
         $this->driversOrder = $this->supportedDrivers;
         $this->optSerializer = $optSerializer;
+        $this->logger = $logger ?: new Logger('redis-proxy');
     }
 
     public function setSentinelConnectionPool(array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true)
@@ -113,7 +117,7 @@ class RedisProxy
      */
     public function setMultiWriteConnectionPool(array $masters, array $slaves, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true, string $strategy = MultiWriteConnectionPool::STRATEGY_RANDOM): void
     {
-        $this->connectionPoolFactory = new MultiWriteConnectionPoolFactory($masters, $slaves, $database, $timeout, $retryWait, $maxFails, $writeToReplicas, $strategy);
+        $this->connectionPoolFactory = new MultiWriteConnectionPoolFactory($masters, $slaves, $database, $timeout, $retryWait, $maxFails, $writeToReplicas, $strategy, $this->logger);
     }
 
     public function resetConnectionPool(): void
