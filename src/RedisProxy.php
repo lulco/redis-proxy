@@ -188,7 +188,11 @@ class RedisProxy
     {
         $this->init();
         $name = strtolower($name);
-        return $this->driver->call($name, $arguments);
+        $response = $this->driver->call($name, $arguments);
+        if ($response === false && in_array($name, ['zpopmax', 'zpopmin', 'zrevrange', 'zrangebyscore', 'zrange', 'lrange', 'smembers', 'hgetall', 'hkeys'], true)) {
+            throw new RedisProxyException("{$name} command failed, possible reasons: key is assigned as different type.");
+        }
+        return $response;
     }
 
     /**
