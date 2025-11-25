@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace RedisProxy\ConnectionPool;
 
 use RedisProxy\Driver\Driver;
@@ -20,7 +22,7 @@ class MultiConnectionPool implements ConnectionPool
     private array $master;
 
     /**
-     * @var array{array{host: string, port: int}} $slaves
+     * @var list<array{host: string, port: int}> $slaves
      */
     private array $slaves;
 
@@ -30,8 +32,9 @@ class MultiConnectionPool implements ConnectionPool
 
     private Driver $driver;
 
-    private $masterConnection = null;
+    private \Redis|\Predis\Client|null $masterConnection = null;
 
+    /** @var list<\Redis|\Predis\Client> */
     private array $slavesConnection = [];
 
     private int $failedCount = 0;
@@ -44,7 +47,7 @@ class MultiConnectionPool implements ConnectionPool
 
     /**
      * @param array{host: string, port: int} $master
-     * @param array{array{host: string, port: int}} $slaves
+     * @param list<array{host: string, port: int}> $slaves
      */
     public function __construct(Driver $driver, array $master, array $slaves, int $database = 0, float $timeout = 0.0)
     {
@@ -76,7 +79,7 @@ class MultiConnectionPool implements ConnectionPool
     /**
      * @throws RedisProxyException
      */
-    public function getConnection(string $command)
+    public function getConnection(string $command): \Redis|\Predis\Client
     {
         if ($this->masterConnection === null) {
             if (!$this->loadConnections()) {
@@ -142,9 +145,12 @@ class MultiConnectionPool implements ConnectionPool
         return $this->failedCount < $this->maxFails;
     }
 
-    private function getMasterConnection()
+    private function getMasterConnection(): \Redis|\Predis\Client
     {
-        if ($this->database) {
+        if ($this->masterConnection === null) {
+            throw new RedisProxyException('Master connection is not initialized');
+        }
+        if ($this->database !== 0) {
             $this->driver->connectionSelect($this->masterConnection, $this->database);
         }
         return $this->masterConnection;
@@ -153,14 +159,14 @@ class MultiConnectionPool implements ConnectionPool
     /**
      * @throws RedisProxyException
      */
-    private function getReplicaConnection()
+    private function getReplicaConnection(): \Redis|\Predis\Client
     {
         if (count($this->slavesConnection) === 0) {
-            return $this->masterConnection;
+            return $this->getMasterConnection();
         }
         $slaveConnection = $this->slavesConnection[array_rand($this->slavesConnection)];
 
-        if ($this->database) {
+        if ($this->database !== 0) {
             $this->driver->connectionSelect($slaveConnection, $this->database);
         }
 
@@ -173,6 +179,9 @@ class MultiConnectionPool implements ConnectionPool
         $this->slavesConnection = [];
     }
 
+    /**
+     * @return list<string>
+     */
     private function getReadOnlyOperations(): array
     {
         return [

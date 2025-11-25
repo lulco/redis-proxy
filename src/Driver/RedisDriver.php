@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace RedisProxy\Driver;
 
 use RedisException;
@@ -22,6 +24,9 @@ class RedisDriver implements Driver
 
     private string $optSerializer = Serializers::NONE;
 
+    /**
+     * @var array<int, string>
+     */
     private array $typeMap = [
         1 => RedisProxy::TYPE_STRING,
         2 => RedisProxy::TYPE_SET,
@@ -55,16 +60,20 @@ class RedisDriver implements Driver
     /**
      * @throws RedisProxyException
      */
-    public function call(string $command, array $params = [])
+    /**
+     * @param list<mixed> $params
+     */
+    public function call(string $command, array $params = []): mixed
     {
         $attempt = 0;
         while (true) {
             try {
                 if (method_exists($this, $command)) {
-                    return call_user_func_array([$this, $command], $params);
+                    return $this->$command(...$params);
                 }
 
-                return call_user_func_array([$this->connectionPool->getConnection($command), $command], $params);
+                $connection = $this->connectionPool->getConnection($command);
+                return $connection->$command(...$params);
             } catch (RedisProxyException $e) {
                 throw $e;
             } catch (Throwable $t) {
@@ -78,13 +87,25 @@ class RedisDriver implements Driver
     /**
      * @throws Throwable
      */
-    public function callSentinel(string $command, array $params = [])
+    /**
+     * @param list<mixed> $params
+     */
+    public function callSentinel(string $command, array $params = []): mixed
     {
         if (method_exists($this, $command)) {
-            return call_user_func_array([$this, $command], $params);
+            return $this->$command(...$params);
         }
 
-        return $this->connectionPool->getConnection('sentinel')->rawCommand('sentinel', $command, ...$params);
+        $conn = $this->connectionPool->getConnection('sentinel');
+        if (method_exists($conn, 'rawcommand')) {
+            /** @var \Redis $conn */
+            return $conn->rawcommand('sentinel', $command, ...$params);
+        }
+        if (method_exists($conn, 'executeRaw')) {
+            /** @var \Predis\Client $conn */
+            return $conn->executeRaw(['sentinel', $command, ...$params]);
+        }
+        return null;
     }
 
     private function type(string $key): ?string
@@ -104,7 +125,7 @@ class RedisDriver implements Driver
         if ($result == '+OK') {
             return true;
         }
-        return !!$result;
+        return (bool) $result;
     }
 
     /**
@@ -112,10 +133,18 @@ class RedisDriver implements Driver
      */
     private function hexpire(string $key, int $seconds, string ...$fields): ?array
     {
-        return $this
-            ->connectionPool
-            ->getConnection('hexpire')
-            ->hexpire($key, $seconds, $fields);
+        $conn = $this->connectionPool->getConnection('hexpire');
+        if (method_exists($conn, 'rawcommand')) {
+            /** @var \Redis $conn */
+            $res = $conn->rawcommand('hexpire', $key, $seconds, ...$fields);
+            return is_array($res) ? $res : null;
+        }
+        if (method_exists($conn, 'executeRaw')) {
+            /** @var \Predis\Client $conn */
+            $res = $conn->executeRaw(['hexpire', $key, $seconds, ...$fields]);
+            return is_array($res) ? $res : null;
+        }
+        return null;
     }
 
     private function select(int $database): bool
@@ -123,18 +152,30 @@ class RedisDriver implements Driver
         return $this->connectionSelect($this->connectionPool->getConnection('select'), $database);
     }
 
-    public function connectionRole($connection): string
+    public function connectionRole(mixed $connection): string
     {
-        $result = $connection->rawCommand('role');
+        $result = null;
+        if (is_object($connection)) {
+            if (method_exists($connection, 'rawcommand')) {
+                /** @var \Redis $connection */
+                $result = $connection->rawcommand('role');
+            } elseif (method_exists($connection, 'executeRaw')) {
+                /** @var \Predis\Client $connection */
+                $result = $connection->executeRaw(['role']);
+            }
+        }
         return is_array($result) ? $result[0] : '';
     }
 
     /**
      * @throws RedisProxyException
      */
-    public function connectionSelect($connection, int $database): bool
+    public function connectionSelect(mixed $connection, int $database): bool
     {
         try {
+            if (!is_object($connection) || !method_exists($connection, 'select')) {
+                throw new RedisProxyException('Invalid connection');
+            }
             $result = $connection->select($database);
         } catch (Throwable $t) {
             throw new RedisProxyException('Invalid DB index');

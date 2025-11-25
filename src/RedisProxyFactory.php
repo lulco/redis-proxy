@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace RedisProxy;
 
 class RedisProxyFactory
@@ -29,6 +31,9 @@ class RedisProxyFactory
      * </code>
      *
      * @throws RedisProxyException
+     */
+    /**
+     * @param array<string, mixed> $config
      */
     public function createFromConfig(array $config): RedisProxy
     {

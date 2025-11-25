@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace RedisProxy\ConnectionPoolFactory;
 
 use RedisProxy\ConnectionPool\SentinelConnectionPool;
@@ -7,6 +9,9 @@ use RedisProxy\Driver\Driver;
 
 class SentinelConnectionPoolFactory implements ConnectionPoolFactory
 {
+    /**
+     * @var list<array{host: string, port: int}>
+     */
     private array $sentinels;
 
     private string $clusterId;
@@ -21,6 +26,9 @@ class SentinelConnectionPoolFactory implements ConnectionPoolFactory
 
     private bool $writeToReplicas;
 
+    /**
+     * @param list<array{host: string, port: int}> $sentinels
+     */
     public function __construct(array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true)
     {
         $this->sentinels = $sentinels;
@@ -36,10 +44,10 @@ class SentinelConnectionPoolFactory implements ConnectionPoolFactory
     {
         $connectionPool = new SentinelConnectionPool($driver, $this->sentinels, $this->clusterId, $this->database, $this->timeout);
         $connectionPool->setWriteToReplicas($this->writeToReplicas);
-        if ($this->retryWait) {
+        if ($this->retryWait !== null) {
             $connectionPool->setRetryWait($this->retryWait);
         }
-        if ($this->maxFails) {
+        if ($this->maxFails !== null) {
             $connectionPool->setMaxFails($this->maxFails);
         }
         return $connectionPool;

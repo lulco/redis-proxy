@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace RedisProxy;
 
 class InfoHelper
@@ -48,10 +50,8 @@ class InfoHelper
     ];
 
     /**
-     * @param RedisProxy $redisProxy
-     * @param array $result
-     * @param integer|null $databases
-     * @return array
+     * @param array<string, mixed> $result
+     * @return array<string, mixed>
      */
     public static function createInfoArray(RedisProxy $redisProxy, array $result, ?int $databases = null): array
     {
@@ -63,6 +63,9 @@ class InfoHelper
         return self::createInfoForRedis($result, $groupedResult);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private static function initializeKeyspace(?int $databases = null): array
     {
         $groupedResult = [];
@@ -80,6 +83,11 @@ class InfoHelper
         return $groupedResult;
     }
 
+    /**
+     * @param array<string, mixed> $result
+     * @param array<string, mixed> $groupedResult
+     * @return array<string, mixed>
+     */
     private static function createInfoForPredis(array $result, array $groupedResult): array
     {
         $result = array_change_key_case($result, CASE_LOWER);
@@ -90,6 +98,11 @@ class InfoHelper
         return array_merge($groupedResult, $result);
     }
 
+    /**
+     * @param array<string, mixed> $result
+     * @param array<string, mixed> $groupedResult
+     * @return array<string, mixed>
+     */
     private static function createInfoForRedis(array $result, array $groupedResult): array
     {
         foreach ($result as $key => $value) {
@@ -99,10 +112,10 @@ class InfoHelper
             }
 
             foreach (self::$keyStartToSectionMap as $keyStart => $targetSection) {
-                if (strpos($key, $keyStart) === 0 && $keyStart === 'db') {
+                if (str_starts_with($key, $keyStart) && $keyStart === 'db') {
                     $value = self::createKeyspaceInfo($value);
                 }
-                if (strpos($key, $keyStart) === 0) {
+                if (str_starts_with($key, $keyStart)) {
                     $groupedResult[$targetSection][$key] = $value;
                     continue;
                 }
@@ -111,13 +124,16 @@ class InfoHelper
         return $groupedResult;
     }
 
-    private static function createKeyspaceInfo($keyspaceInfo): array
+    /**
+     * @return array{keys: int, expires: int|null, avg_ttl: int|null}
+     */
+    private static function createKeyspaceInfo(string $keyspaceInfo): array
     {
         [$keys, $expires, $avgTtl] = explode(',', $keyspaceInfo);
         return [
-            'keys' => strpos($keys, '=') !== false ? explode('=', $keys)[1] : 0,
-            'expires' => strpos($expires, '=') !== false ? explode('=', $expires)[1] : null,
-            'avg_ttl' => strpos($avgTtl, '=') !== false ? explode('=', $avgTtl)[1] : null,
+            'keys' => str_contains($keys, '=') ? (int) explode('=', $keys)[1] : 0,
+            'expires' => str_contains($expires, '=') ? (int) explode('=', $expires)[1] : null,
+            'avg_ttl' => str_contains($avgTtl, '=') ? (int) explode('=', $avgTtl)[1] : null,
         ];
     }
 }

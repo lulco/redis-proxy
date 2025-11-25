@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace RedisProxy\ConnectionPool;
 
 use RedisProxy\ConnectionPoolFactory\SingleNodeConnectionPoolFactory;
@@ -9,8 +11,19 @@ use Throwable;
 
 class SentinelConnectionPool implements ConnectionPool
 {
+    public const MAX_FAILS = 3;
+    public const RETRY_WAIT = 1000;
+    private const MICRO_TO_SECONDS = 1000;
+    private const INDEX_EVEN = 0;
+    private const INDEX_ODD = 1;
+    private const MODULO_BASE = 2;
+    private const MASTER_ADDR_PARTS = 2;
+
     private Driver $driver;
 
+    /**
+     * @var list<array{host: string, port: int}>
+     */
     private array $sentinels;
 
     private string $clusterId;
@@ -19,20 +32,29 @@ class SentinelConnectionPool implements ConnectionPool
 
     private float $timeout;
 
-    private $masterConnection = null;
+    private \Redis|\Predis\Client|null $masterConnection = null;
 
+    /**
+     * @var array<string, array{ip: string, port: int}>
+     */
     private array $replicas = [];
 
+    /**
+     * @var list<\Redis|\Predis\Client>
+     */
     private array $replicasConnection = [];
 
     private int $failedCount = 0;
 
-    private int $maxFails = 3;
+    private int $maxFails = self::MAX_FAILS;
 
-    private int $retryWait = 1000;
+    private int $retryWait = self::RETRY_WAIT;
 
     private bool $writeToReplicas = true;
 
+    /**
+     * @param list<array{host: string, port: int}> $sentinels
+     */
     public function __construct(Driver $driver, array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0)
     {
         shuffle($sentinels);
@@ -65,15 +87,15 @@ class SentinelConnectionPool implements ConnectionPool
     /**
      * @throws RedisProxyException
      */
-    public function getConnection(string $command)
+    public function getConnection(string $command): \Redis|\Predis\Client
     {
-        if ($this->getMasterConnection() === null) {
+        if ($this->masterConnection === null) {
             if (!$this->loadMasterReplicasDataFromSentinel()) {
                 throw new RedisProxyException('Cannot load or establish connection to master/replicas from sentinel configuration');
             }
         }
 
-        if ($this->writeToReplicas && in_array($command, $this->getReadOnlyOperations())) {
+        if ($this->writeToReplicas && in_array($command, $this->getReadOnlyOperations(), true)) {
             $connection = $this->getReplicaConnection();
             return $connection ?? $this->getMasterConnection();
         }
@@ -95,7 +117,7 @@ class SentinelConnectionPool implements ConnectionPool
             return true;
         }
 
-        usleep($this->retryWait * 1000);
+        usleep($this->retryWait * self::MICRO_TO_SECONDS);
         return $this->failedCount < $this->maxFails;
     }
 
@@ -118,7 +140,14 @@ class SentinelConnectionPool implements ConnectionPool
             }
 
             try {
-                $this->masterConnection = $this->driver->getConnectionFactory()->create($masterData[0], $masterData[1], $this->timeout);
+                if (!is_array($masterData) || count($masterData) < self::MASTER_ADDR_PARTS) {
+                    continue;
+                }
+                /** @var string $host */
+                $host = $masterData[0];
+                /** @var int $port */
+                $port = (int) $masterData[1];
+                $this->masterConnection = $this->driver->getConnectionFactory()->create($host, $port, $this->timeout);
                 $this->driver->connectionSelect($this->masterConnection, $this->database);
                 $role = $this->driver->connectionRole($this->masterConnection);
                 if ($role !== 'master') {
@@ -130,10 +159,15 @@ class SentinelConnectionPool implements ConnectionPool
             } catch (Throwable $t) {
                 continue;
             }
+            if (!is_array($replicasData)) {
+                continue;
+            }
             foreach ($replicasData as $replicaData) {
-                $normalizedRepolicaData = $this->normalizeResponze($replicaData);
+                /** @var array<int, string> $replicaDataList */
+                $replicaDataList = array_map('strval', (array) $replicaData);
+                $normalizedRepolicaData = $this->normalizeResponze($replicaDataList);
                 if (isset($normalizedRepolicaData['flags']) &&
-                    !array_intersect(explode(',', $normalizedRepolicaData['flags']), ['s_down', 'o_down', 'disconnected']) &&
+                    empty(array_intersect(explode(',', $normalizedRepolicaData['flags']), ['s_down', 'o_down', 'disconnected'])) &&
                     !empty($normalizedRepolicaData['ip']) &&
                     !empty($normalizedRepolicaData['port'])
                 ) {
@@ -144,7 +178,7 @@ class SentinelConnectionPool implements ConnectionPool
 
                     $this->replicas[$replicaKey] = [
                         'ip' => $normalizedRepolicaData['ip'],
-                        'port' => $normalizedRepolicaData['port'],
+                        'port' => (int) $normalizedRepolicaData['port'],
                     ];
                 }
             }
@@ -156,15 +190,18 @@ class SentinelConnectionPool implements ConnectionPool
         return false;
     }
 
-    private function getMasterConnection()
+    private function getMasterConnection(): \Redis|\Predis\Client
     {
+        if ($this->masterConnection === null) {
+            throw new RedisProxyException('Master connection is not initialized');
+        }
         return $this->masterConnection;
     }
 
     /**
      * @throws RedisProxyException
      */
-    private function getReplicaConnection()
+    private function getReplicaConnection(): \Redis|\Predis\Client|null
     {
         if (count($this->replicas) > 0) {
             while ($replica = array_shift($this->replicas)) {
@@ -197,7 +234,9 @@ class SentinelConnectionPool implements ConnectionPool
     private function shiftSentinels(): void
     {
         $sentinel = array_shift($this->sentinels);
-        $this->sentinels[] = $sentinel;
+        if ($sentinel !== null) {
+            $this->sentinels[] = $sentinel;
+        }
     }
 
     private function reset(): void
@@ -207,21 +246,32 @@ class SentinelConnectionPool implements ConnectionPool
         $this->replicasConnection = [];
     }
 
+    /**
+     * @param array<int, string> $arr
+     * @return array<string, string>
+     */
     private function normalizeResponze(array $arr): array
     {
         $keys = array_values(array_filter($arr, function ($key) {
-            return $key % 2 == 0;
+            return $key % self::MODULO_BASE === self::INDEX_EVEN;
         }, ARRAY_FILTER_USE_KEY));
         $values = array_values(array_filter($arr, function ($key) {
-            return $key % 2 == 1;
+            return $key % self::MODULO_BASE === self::INDEX_ODD;
         }, ARRAY_FILTER_USE_KEY));
 
-        if (count($keys) != count($values)) {
+        if (count($keys) !== count($values)) {
             throw new RedisProxyException('Wrong number of arguments');
         }
-        return array_combine($keys, $values);
+        /** @var list<string> $keys */
+        /** @var list<string> $values */
+        /** @var array<string, string> $combined */
+        $combined = array_combine($keys, $values) ?: [];
+        return $combined;
     }
 
+    /**
+     * @return list<string>
+     */
     private function getReadOnlyOperations(): array
     {
         return [
