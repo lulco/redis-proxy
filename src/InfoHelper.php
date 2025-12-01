@@ -135,7 +135,6 @@ class InfoHelper
             foreach (self::$keyStartToSectionMap as $keyStart => $targetSection) {
                 if ($keyStart === 'db' && str_starts_with($key, $keyStart)) {
                     if (!is_string($value)) {
-                        // neočakávaný formát, preskočíme
                         continue;
                     }
                     $value = self::createKeyspaceInfo($value);
