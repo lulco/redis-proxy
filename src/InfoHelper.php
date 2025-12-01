@@ -83,6 +83,7 @@ class InfoHelper
         return $groupedResult;
     }
 
+
     /**
      * @param array<string, mixed> $result
      * @param array<string, mixed> $groupedResult
@@ -91,11 +92,23 @@ class InfoHelper
     private static function createInfoForPredis(array $result, array $groupedResult): array
     {
         $result = array_change_key_case($result, CASE_LOWER);
-        if (isset($groupedResult['keyspace']) && isset($result['keyspace'])) {
-            $groupedResult['keyspace'] = array_merge($groupedResult['keyspace'], $result['keyspace']);
+
+        if (isset($groupedResult['keyspace'], $result['keyspace'])
+            && is_array($groupedResult['keyspace'])
+            && is_array($result['keyspace'])
+        ) {
+            /** @var array<string, mixed> $groupedKeyspace */
+            $groupedKeyspace = $groupedResult['keyspace'];
+            /** @var array<string, mixed> $resultKeyspace */
+            $resultKeyspace = $result['keyspace'];
+
+            $groupedResult['keyspace'] = array_merge($groupedKeyspace, $resultKeyspace);
             unset($result['keyspace']);
         }
-        return array_merge($groupedResult, $result);
+
+        /** @var array<string, mixed> $merged */
+        $merged = array_merge($groupedResult, $result);
+        return $merged;
     }
 
     /**
@@ -107,20 +120,42 @@ class InfoHelper
     {
         foreach ($result as $key => $value) {
             if (isset(self::$keyToSectionMap[$key])) {
-                $groupedResult[self::$keyToSectionMap[$key]][$key] = $value;
+                $section = self::$keyToSectionMap[$key];
+
+                if (!isset($groupedResult[$section]) || !is_array($groupedResult[$section])) {
+                    $groupedResult[$section] = [];
+                }
+
+                /** @var array<string, mixed> $sectionArray */
+                $sectionArray = $groupedResult[$section];
+                $sectionArray[$key] = $value;
+                $groupedResult[$section] = $sectionArray;
                 continue;
             }
 
             foreach (self::$keyStartToSectionMap as $keyStart => $targetSection) {
-                if (str_starts_with($key, $keyStart) && $keyStart === 'db') {
+                if ($keyStart === 'db' && str_starts_with($key, $keyStart)) {
+                    if (!is_string($value)) {
+                        // neočakávaný formát, preskočíme
+                        continue;
+                    }
                     $value = self::createKeyspaceInfo($value);
                 }
+
                 if (str_starts_with($key, $keyStart)) {
-                    $groupedResult[$targetSection][$key] = $value;
+                    if (!isset($groupedResult[$targetSection]) || !is_array($groupedResult[$targetSection])) {
+                        $groupedResult[$targetSection] = [];
+                    }
+
+                    /** @var array<string, mixed> $sectionArray */
+                    $sectionArray = $groupedResult[$targetSection];
+                    $sectionArray[$key] = $value;
+                    $groupedResult[$targetSection] = $sectionArray;
                     continue;
                 }
             }
         }
+
         return $groupedResult;
     }
 

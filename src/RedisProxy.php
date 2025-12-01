@@ -134,19 +134,8 @@ class RedisProxy
         ?int $maxFails = null,
         bool $writeToReplicas = true
     ): void {
-        // Normalize sentinels input: accept list<string "host:port"> or list<array{host,port}>
-        $normalized = [];
-        foreach ($sentinels as $s) {
-            if (is_string($s)) {
-                $parts = explode(':', $s, 2);
-                $normalized[] = ['host' => $parts[0], 'port' => isset($parts[1]) ? (int) $parts[1] : self::DEFAULT_PORT];
-            } elseif (is_array($s) && isset($s['host'], $s['port'])) {
-                $normalized[] = ['host' => (string) $s['host'], 'port' => (int) $s['port']];
-            }
-        }
-        /** @var list<array{host: string, port: int}> $normalized */
         $this->connectionPoolFactory = new SentinelConnectionPoolFactory(
-            array_values($normalized),
+            $sentinels,
             $clusterId,
             $database,
             $timeout,
@@ -157,8 +146,8 @@ class RedisProxy
     }
 
     /**
-     * @param array{host: string, port: int}       $master
-     * @param list<array{host: string, port: int}> $slaves
+     * @param array{host: string, port: int} $master
+     * @param array{array{host: string, port: int}} $slaves
      */
     public function setMultiConnectionPool(
         array $master,
@@ -169,16 +158,9 @@ class RedisProxy
         ?int $maxFails = null,
         bool $writeToReplicas = true
     ): void {
-        $master = ['host' => (string) $master['host'], 'port' => (int) $master['port']];
-        $normalizedSlaves = [];
-        foreach ($slaves as $s) {
-            if (is_array($s) && isset($s['host'], $s['port'])) {
-                $normalizedSlaves[] = ['host' => (string) $s['host'], 'port' => (int) $s['port']];
-            }
-        }
         $this->connectionPoolFactory = new MultiConnectionPoolFactory(
             $master,
-            array_values($normalizedSlaves),
+            $slaves,
             $database,
             $timeout,
             $retryWait,
@@ -188,7 +170,7 @@ class RedisProxy
     }
 
     /**
-     * @param array{host: string, port: int}       $master
+     * @param array{host: string, port: int} $master
      * @param list<array{host: string, port: int}> $slaves
      */
     public function setMultiWriteConnectionPool(
@@ -201,17 +183,9 @@ class RedisProxy
         bool $writeToReplicas = true,
         string $strategy = MultiWriteConnectionPool::STRATEGY_RANDOM
     ): void {
-        // Normalize inputs
-        $master = ['host' => (string) $master['host'], 'port' => (int) $master['port']];
-        $normalizedSlaves = [];
-        foreach ($slaves as $s) {
-            if (is_array($s) && isset($s['host'], $s['port'])) {
-                $normalizedSlaves[] = ['host' => (string) $s['host'], 'port' => (int) $s['port']];
-            }
-        }
         $this->connectionPoolFactory = new MultiWriteConnectionPoolFactory(
             [$master],
-            array_values($normalizedSlaves),
+            $slaves,
             $database,
             $timeout,
             $retryWait,
@@ -583,10 +557,15 @@ class RedisProxy
     {
         $this->init();
 
-        if (isset($dictionary[0]) && is_array($dictionary[0])) {
+        // mset(['k1' => 'v1', 'k2' => 'v2'])
+        if (isset($dictionary[0])) {
             $result = $this->driver?->call('mset', [$dictionary[0]]);
             return (bool) $result;
         }
+
+        // mset('k1', 'v1', 'k2', 'v2', ...)
+        /** @phpstan-var list<mixed> $dictionary */
+        $dictionary = $dictionary;
 
         $prepared = $this->prepareKeyValue($dictionary, 'mset');
         $result = $this->driver?->call('mset', [$prepared]);
@@ -616,7 +595,15 @@ class RedisProxy
             $values[] = $v;
         }
 
-        $keysStr = array_map(static fn(mixed $k): string => (string) $k, $keys);
+        $keysStr = array_map(
+            static function ($k): string {
+                if (!is_scalar($k) && $k !== null) {
+                    throw new \InvalidArgumentException('Expected scalar or null, ' . get_debug_type($k) . ' given.');
+                }
+                return (string) $k;
+            },
+            $keys
+        );
         /** @var array<string, string|null> $combined */
         $combined = array_combine($keysStr, $values) ?: [];
         return $combined;
@@ -676,7 +663,8 @@ class RedisProxy
         $fields = $this->prepareArguments('hdel', ...$fields);
         $this->init();
         $result = $this->driver?->call('hdel', [$key, ...$fields]);
-        return (int) $result;
+
+        return $this->requireInt($result, 'hdel');
     }
 
     /**
@@ -687,7 +675,8 @@ class RedisProxy
     {
         $this->init();
         $result = $this->driver?->call('hincrby', [$key, $field, $increment]);
-        return (int) $result;
+
+        return $this->requireInt($result, 'hincrby');
     }
 
     /**
@@ -740,10 +729,15 @@ class RedisProxy
     {
         $this->init();
 
-        if (isset($dictionary[0]) && is_array($dictionary[0])) {
+        // hmset($key, ['f1' => 'v1', 'f2' => 'v2'])
+        if (isset($dictionary[0])) {
             $result = $this->driver?->call('hmset', [$key, $dictionary[0]]);
             return (bool) $result;
         }
+
+        // hmset($key, 'f1', 'v1', 'f2', 'v2', ...)
+        /** @phpstan-var list<mixed> $dictionary */
+        $dictionary = $dictionary;
 
         $prepared = $this->prepareKeyValue($dictionary, 'hmset');
         $result = $this->driver?->call('hmset', [$key, $prepared]);
@@ -774,7 +768,16 @@ class RedisProxy
             $values[] = $v;
         }
 
-        $fieldsStr = array_map(static fn(mixed $k): string => (string) $k, $fields);
+        /** @var list<string> $fieldsStr */
+        $fieldsStr = array_map(
+            static function ($k): string {
+                if (!is_scalar($k) && $k !== null) {
+                    throw new \InvalidArgumentException('Expected scalar or null, ' . get_debug_type($k) . ' given.');
+                }
+                return (string) $k;
+            },
+            $fields
+        );
         /** @var array<string, string|null> $combined */
         $combined = array_combine($fieldsStr, $values) ?: [];
         return $combined;
@@ -993,7 +996,7 @@ class RedisProxy
             /** @var array<string, float|int> $map */
             $map = $dictionary[0];
             foreach ($map as $member => $score) {
-                $res = $this->zadd($key, (float) $score, (string) $member);
+                $res = $this->  zadd($key, (float) $score, $member);
                 $return += $res;
             }
             return $return;
@@ -1146,8 +1149,27 @@ class RedisProxy
             throw new RedisProxyException("Wrong number of arguments for $command command");
         }
 
-        $keysStr = array_map(static fn(mixed $k): string => (string) $k, $keys);
-        $valuesStr = array_map(static fn(mixed $v): string => (string) $v, $values);
+
+        $keysStr = array_map(
+            static function ($k): string {
+                if (!is_scalar($k) && $k !== null) {
+                    throw new \InvalidArgumentException('Expected scalar or null, ' . get_debug_type($k) . ' given.');
+                }
+                return (string) $k;
+            },
+            $keys
+        );
+
+        /** @var list<string> $valuesStr */
+        $valuesStr = array_map(
+            static function ($k): string {
+                if (!is_scalar($k) && $k !== null) {
+                    throw new \InvalidArgumentException('Expected scalar or null, ' . get_debug_type($k) . ' given.');
+                }
+                return (string) $k;
+            },
+            $values
+        );
         /** @var array<string, string> $combined */
         $combined = array_combine($keysStr, $valuesStr) ?: [];
         return $combined;
