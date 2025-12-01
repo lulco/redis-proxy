@@ -83,7 +83,6 @@ class InfoHelper
         return $groupedResult;
     }
 
-
     /**
      * @param array<string, mixed> $result
      * @param array<string, mixed> $groupedResult

@@ -33,9 +33,7 @@ class RedisConnectionFactory implements ConnectionFactory
                 break;
         }
     }
-    /**
-     * @return Redis
-     */
+
     public function create(string $host, int $port, float $timeout = 0.0): Redis
     {
         $redis = new Redis();

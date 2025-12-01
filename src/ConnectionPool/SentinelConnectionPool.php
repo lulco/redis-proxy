@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace RedisProxy\ConnectionPool;
 
+use Predis\Client;
+use Redis;
 use RedisProxy\ConnectionPoolFactory\SingleNodeConnectionPoolFactory;
 use RedisProxy\Driver\Driver;
 use RedisProxy\RedisProxyException;
@@ -32,7 +34,7 @@ class SentinelConnectionPool implements ConnectionPool
 
     private float $timeout;
 
-    private \Redis|\Predis\Client|null $masterConnection = null;
+    private Redis|Client|null $masterConnection = null;
 
     /**
      * @var array<string, array{ip: string, port: int}>
@@ -40,7 +42,7 @@ class SentinelConnectionPool implements ConnectionPool
     private array $replicas = [];
 
     /**
-     * @var list<\Redis|\Predis\Client>
+     * @var list<Redis|Client>
      */
     private array $replicasConnection = [];
 
@@ -87,7 +89,7 @@ class SentinelConnectionPool implements ConnectionPool
     /**
      * @throws RedisProxyException
      */
-    public function getConnection(string $command): \Redis|\Predis\Client
+    public function getConnection(string $command): Redis|Client
     {
         if ($this->masterConnection === null) {
             if (!$this->loadMasterReplicasDataFromSentinel()) {
@@ -190,7 +192,7 @@ class SentinelConnectionPool implements ConnectionPool
         return false;
     }
 
-    private function getMasterConnection(): \Redis|\Predis\Client
+    private function getMasterConnection(): Redis|Client
     {
         if ($this->masterConnection === null) {
             throw new RedisProxyException('Master connection is not initialized');
@@ -201,7 +203,7 @@ class SentinelConnectionPool implements ConnectionPool
     /**
      * @throws RedisProxyException
      */
-    private function getReplicaConnection(): \Redis|\Predis\Client|null
+    private function getReplicaConnection(): Redis|Client|null
     {
         if (count($this->replicas) > 0) {
             while ($replica = array_shift($this->replicas)) {

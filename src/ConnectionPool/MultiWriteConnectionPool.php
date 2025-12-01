@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace RedisProxy\ConnectionPool;
 
+use Predis\Client;
+use Redis;
 use RedisProxy\Driver\Driver;
 use RedisProxy\RedisProxyException;
 use Throwable;
@@ -36,10 +38,10 @@ class MultiWriteConnectionPool implements ConnectionPool
 
     private Driver $driver;
 
-    /** @var list<\Redis|\Predis\Client> */
+    /** @var list<Redis|Client> */
     private array $mastersConnection = [];
 
-    /** @var list<\Redis|\Predis\Client> */
+    /** @var list<Redis|Client> */
     private array $slavesConnection = [];
 
     private int $failedCount = 0;
@@ -88,7 +90,7 @@ class MultiWriteConnectionPool implements ConnectionPool
     /**
      * @throws RedisProxyException
      */
-    public function getConnection(string $command): \Redis|\Predis\Client
+    public function getConnection(string $command): Redis|Client
     {
         if ($this->mastersConnection === []) {
             if (!$this->loadConnections()) {
@@ -159,7 +161,7 @@ class MultiWriteConnectionPool implements ConnectionPool
         return $this->failedCount < $this->maxFails;
     }
 
-    private function getMasterConnection(): \Redis|\Predis\Client
+    private function getMasterConnection(): Redis|Client
     {
         switch ($this->strategy) {
             case self::STRATEGY_ROUND_ROBIN:
@@ -188,7 +190,7 @@ class MultiWriteConnectionPool implements ConnectionPool
     /**
      * @throws RedisProxyException
      */
-    private function getReplicaConnection(): \Redis|\Predis\Client
+    private function getReplicaConnection(): Redis|Client
     {
         if (count($this->slavesConnection) === 0) {
             return $this->getMasterConnection();

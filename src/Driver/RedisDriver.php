@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace RedisProxy\Driver;
 
+use Predis\Client;
+use Redis;
 use RedisException;
 use RedisProxy\ConnectionFactory\RedisConnectionFactory;
 use RedisProxy\ConnectionFactory\Serializers;
@@ -60,6 +62,7 @@ class RedisDriver implements Driver
     /**
      * @throws RedisProxyException
      */
+
     /**
      * @param list<mixed> $params
      */
@@ -87,6 +90,7 @@ class RedisDriver implements Driver
     /**
      * @throws Throwable
      */
+
     /**
      * @param list<mixed> $params
      */
@@ -98,11 +102,11 @@ class RedisDriver implements Driver
 
         $conn = $this->connectionPool->getConnection('sentinel');
         if (method_exists($conn, 'rawcommand')) {
-            /** @var \Redis $conn */
+            /** @var Redis $conn */
             return $conn->rawcommand('sentinel', $command, ...$params);
         }
         if (method_exists($conn, 'executeRaw')) {
-            /** @var \Predis\Client $conn */
+            /** @var Client $conn */
             return $conn->executeRaw(['sentinel', $command, ...$params]);
         }
         return null;
@@ -135,12 +139,12 @@ class RedisDriver implements Driver
     {
         $conn = $this->connectionPool->getConnection('hexpire');
         if (method_exists($conn, 'rawcommand')) {
-            /** @var \Redis $conn */
+            /** @var Redis $conn */
             $res = $conn->rawcommand('hexpire', $key, $seconds, ...$fields);
             return is_array($res) ? $res : null;
         }
         if (method_exists($conn, 'executeRaw')) {
-            /** @var \Predis\Client $conn */
+            /** @var Client $conn */
             $res = $conn->executeRaw(['hexpire', $key, $seconds, ...$fields]);
             return is_array($res) ? $res : null;
         }
@@ -157,10 +161,10 @@ class RedisDriver implements Driver
         $result = null;
         if (is_object($connection)) {
             if (method_exists($connection, 'rawcommand')) {
-                /** @var \Redis $connection */
+                /** @var Redis $connection */
                 $result = $connection->rawcommand('role');
             } elseif (method_exists($connection, 'executeRaw')) {
-                /** @var \Predis\Client $connection */
+                /** @var Client $connection */
                 $result = $connection->executeRaw(['role']);
             }
         }

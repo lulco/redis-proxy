@@ -62,6 +62,7 @@ class PredisDriver implements Driver
     /**
      * @throws RedisProxyException
      */
+
     /**
      * @param list<mixed> $params
      */
@@ -90,6 +91,7 @@ class PredisDriver implements Driver
     /**
      * @throws Throwable
      */
+
     /**
      * @param list<mixed> $params
      */
@@ -100,7 +102,7 @@ class PredisDriver implements Driver
         }
 
         $conn = $this->connectionPool->getConnection('sentinel');
-        /** @var \Predis\Client $conn */
+        /** @var Client $conn */
         return $conn->executeRaw(['sentinel', $command, ...$params]);
     }
 
@@ -141,7 +143,7 @@ class PredisDriver implements Driver
     {
         $conn = $this->connectionPool->getConnection('hexpire');
         if (method_exists($conn, 'executeRaw')) {
-            /** @var \Predis\Client $conn */
+            /** @var Client $conn */
             $res = $conn->executeRaw(['hexpire', $key, $seconds, ...$fields]);
             return is_array($res) ? $res : null;
         }
@@ -255,7 +257,7 @@ class PredisDriver implements Driver
     {
         $conn = $this->connectionPool->getConnection('close');
         if (method_exists($conn, 'executeRaw')) {
-            /** @var \Predis\Client $conn */
+            /** @var Client $conn */
             $conn->executeRaw(['close']);
         }
     }

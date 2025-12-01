@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace RedisProxy\ConnectionPool;
 
+use Predis\Client;
+use Redis;
+
 interface ConnectionPool
 {
-    /**
-     * @return \Redis|\Predis\Client
-     */
-    public function getConnection(string $command): \Redis|\Predis\Client;
+    public function getConnection(string $command): Redis|Client;
 
     public function resetConnection(): void;
 

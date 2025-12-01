@@ -12,6 +12,7 @@ use RedisProxy\RedisProxyException;
 class SingleNodeConnectionPool implements ConnectionPool
 {
     private const MICRO_TO_SECONDS = 1000;
+
     private Driver $driver;
 
     private string $host;

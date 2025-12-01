@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace RedisProxy;
 
-use Redis;
+use InvalidArgumentException;
 use RedisProxy\ConnectionFactory\Serializers;
 use RedisProxy\ConnectionPool\MultiWriteConnectionPool;
 use RedisProxy\ConnectionPoolFactory\ConnectionPoolFactory;
@@ -598,7 +598,7 @@ class RedisProxy
         $keysStr = array_map(
             static function ($k): string {
                 if (!is_scalar($k) && $k !== null) {
-                    throw new \InvalidArgumentException('Expected scalar or null, ' . get_debug_type($k) . ' given.');
+                    throw new InvalidArgumentException('Expected scalar or null, ' . get_debug_type($k) . ' given.');
                 }
                 return (string) $k;
             },
@@ -772,7 +772,7 @@ class RedisProxy
         $fieldsStr = array_map(
             static function ($k): string {
                 if (!is_scalar($k) && $k !== null) {
-                    throw new \InvalidArgumentException('Expected scalar or null, ' . get_debug_type($k) . ' given.');
+                    throw new InvalidArgumentException('Expected scalar or null, ' . get_debug_type($k) . ' given.');
                 }
                 return (string) $k;
             },
@@ -996,7 +996,7 @@ class RedisProxy
             /** @var array<string, float|int> $map */
             $map = $dictionary[0];
             foreach ($map as $member => $score) {
-                $res = $this->  zadd($key, (float) $score, $member);
+                $res = $this-> zadd($key, (float) $score, $member);
                 $return += $res;
             }
             return $return;
@@ -1149,11 +1149,10 @@ class RedisProxy
             throw new RedisProxyException("Wrong number of arguments for $command command");
         }
 
-
         $keysStr = array_map(
             static function ($k): string {
                 if (!is_scalar($k) && $k !== null) {
-                    throw new \InvalidArgumentException('Expected scalar or null, ' . get_debug_type($k) . ' given.');
+                    throw new InvalidArgumentException('Expected scalar or null, ' . get_debug_type($k) . ' given.');
                 }
                 return (string) $k;
             },
@@ -1164,7 +1163,7 @@ class RedisProxy
         $valuesStr = array_map(
             static function ($k): string {
                 if (!is_scalar($k) && $k !== null) {
-                    throw new \InvalidArgumentException('Expected scalar or null, ' . get_debug_type($k) . ' given.');
+                    throw new InvalidArgumentException('Expected scalar or null, ' . get_debug_type($k) . ' given.');
                 }
                 return (string) $k;
             },
