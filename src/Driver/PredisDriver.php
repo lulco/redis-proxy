@@ -267,6 +267,18 @@ class PredisDriver implements Driver
         return $this->connectionSelect($this->connectionPool->getConnection('select'), $database);
     }
 
+    public function rawCommand(mixed ...$params): mixed
+    {
+        $result = null;
+        $connection = $this->connectionPool
+            ->getConnection('rawCommand');
+        if ($connection instanceof Client) {
+            $result = $connection->executeRaw($params);
+        }
+
+        return $this->transformResult($result);
+    }
+
     public function connectionRole(mixed $connection): string
     {
         $result = null;
@@ -282,7 +294,7 @@ class PredisDriver implements Driver
     public function connectionSelect(mixed $connection, int $database): bool
     {
         try {
-            if (!is_object($connection) || !method_exists($connection, 'select')) {
+            if (!is_object($connection) || !is_callable([$connection, 'select'])) {
                 throw new RedisProxyException('Invalid connection');
             }
             $result = $connection->select($database);
