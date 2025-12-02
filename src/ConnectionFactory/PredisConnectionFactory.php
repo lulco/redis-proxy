@@ -8,30 +8,18 @@ use Predis\Client;
 
 class PredisConnectionFactory implements ConnectionFactory
 {
-    private ?string $optSerializer = null;
+    private ?string $optSerializer;
 
     public function __construct(string $optSerializer = Serializers::NONE)
     {
-        switch ($optSerializer) {
-            case Serializers::NONE:
-                $this->optSerializer = null;
-                break;
-            case Serializers::PHP:
-                $this->optSerializer = 'php';
-                break;
-            case Serializers::JSON:
-                $this->optSerializer = 'json';
-                break;
-            case Serializers::MSGPACK:
-                $this->optSerializer = 'msgpack';
-                break;
-            case Serializers::IG_BINARY:
-                $this->optSerializer = 'igbinary';
-                break;
-            default:
-                $this->optSerializer = null;
-                break;
-        }
+        $this->optSerializer = match ($optSerializer) {
+            Serializers::NONE => null,
+            Serializers::PHP => 'php',
+            Serializers::JSON => 'json',
+            Serializers::MSGPACK => 'msgpack',
+            Serializers::IG_BINARY => 'igbinary',
+            default => null,
+        };
     }
 
     public function create(string $host, int $port, float $timeout = 0.0): Client

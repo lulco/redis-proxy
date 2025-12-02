@@ -92,17 +92,27 @@ class MultiWriteConnectionPool implements ConnectionPool
      */
     public function getConnection(string $command): Redis|Client
     {
-        if ($this->mastersConnection === []) {
-            if (!$this->loadConnections()) {
-                throw new RedisProxyException('Cannot load or establish connection to masters/replicas from configuration');
-            }
+        if ($this->mastersConnection === [] && $this->loadConnections() === false) {
+            throw new RedisProxyException(
+                'Cannot load or establish connection to masters/replicas from configuration'
+            );
         }
 
         if ($this->writeToReplicas && in_array($command, $this->getReadOnlyOperations(), true)) {
-            return $this->getReplicaConnection();
+            $replicaConnection = $this->getReplicaConnection();
+            if ($replicaConnection === false) {
+                throw new RedisProxyException('Cannot get replica connection');
+            }
+
+            return $replicaConnection;
         }
 
-        return $this->getMasterConnection();
+        $masterConnection = $this->getMasterConnection();
+        if ($masterConnection === false) {
+            throw new RedisProxyException('Cannot get master connection');
+        }
+
+        return $masterConnection;
     }
 
     public function resetConnection(): void
@@ -161,7 +171,10 @@ class MultiWriteConnectionPool implements ConnectionPool
         return $this->failedCount < $this->maxFails;
     }
 
-    private function getMasterConnection(): Redis|Client
+    /**
+     * @throws RedisProxyException
+     */
+    private function getMasterConnection(): Redis|Client|false
     {
         switch ($this->strategy) {
             case self::STRATEGY_ROUND_ROBIN:
@@ -170,27 +183,22 @@ class MultiWriteConnectionPool implements ConnectionPool
                     $masterConnection = reset($this->mastersConnection);
                 }
                 break;
-            case self::STRATEGY_RANDOM:
-                $masterConnection = $this->mastersConnection[array_rand($this->mastersConnection)];
-                break;
             default:
                 $masterConnection = $this->mastersConnection[array_rand($this->mastersConnection)];
                 break;
         }
-        if ($masterConnection === false) {
-            // fallback to first element, array is expected to be non-empty after loadConnections()
-            $masterConnection = $this->mastersConnection[0];
-        }
+
         if ($this->database !== 0) {
             $this->driver->connectionSelect($masterConnection, $this->database);
         }
+
         return $masterConnection;
     }
 
     /**
      * @throws RedisProxyException
      */
-    private function getReplicaConnection(): Redis|Client
+    private function getReplicaConnection(): Redis|Client|false
     {
         if (count($this->slavesConnection) === 0) {
             return $this->getMasterConnection();
@@ -201,9 +209,6 @@ class MultiWriteConnectionPool implements ConnectionPool
                 if ($slaveConnection === false) {
                     $slaveConnection = reset($this->slavesConnection);
                 }
-                break;
-            case self::STRATEGY_RANDOM:
-                $slaveConnection = $this->slavesConnection[array_rand($this->slavesConnection)];
                 break;
             default:
                 $slaveConnection = $this->slavesConnection[array_rand($this->slavesConnection)];
