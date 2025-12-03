@@ -166,21 +166,24 @@ class SentinelConnectionPool implements ConnectionPool
             }
             foreach ($replicasData as $replicaData) {
                 /** @var array<int, string> $replicaDataList */
-                $replicaDataList = array_map('strval', (array) $replicaData);
-                $normalizedRepolicaData = $this->normalizeResponze($replicaDataList);
-                if (isset($normalizedRepolicaData['flags']) &&
-                    empty(array_intersect(explode(',', $normalizedRepolicaData['flags']), ['s_down', 'o_down', 'disconnected'])) &&
-                    !empty($normalizedRepolicaData['ip']) &&
-                    !empty($normalizedRepolicaData['port'])
+                $replicaDataList = array_map(
+                    static fn (mixed $value): string => (string) $value,
+                    (array) $replicaData
+                );
+                $normalizedReplicaData = $this->normalizeResponze($replicaDataList);
+                if (isset($normalizedReplicaData['flags']) &&
+                    empty(array_intersect(explode(',', $normalizedReplicaData['flags']), ['s_down', 'o_down', 'disconnected'])) &&
+                    !empty($normalizedReplicaData['ip']) &&
+                    !empty($normalizedReplicaData['port'])
                 ) {
-                    $replicaKey = $normalizedRepolicaData['ip'] . ':' . $normalizedRepolicaData['port'];
+                    $replicaKey = $normalizedReplicaData['ip'] . ':' . $normalizedReplicaData['port'];
                     if (isset($this->replicasConnection[$replicaKey])) {
                         continue;
                     }
 
                     $this->replicas[$replicaKey] = [
-                        'ip' => $normalizedRepolicaData['ip'],
-                        'port' => (int) $normalizedRepolicaData['port'],
+                        'ip' => $normalizedReplicaData['ip'],
+                        'port' => (int) $normalizedReplicaData['port'],
                     ];
                 }
             }

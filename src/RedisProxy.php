@@ -493,9 +493,7 @@ class RedisProxy
     {
         $this->init();
         $result = $this->driver?->call('incrbyfloat', [$key, $increment]);
-        if (!is_float($result) && !is_int($result)) {
-            throw new RedisProxyException('Unexpected response type from INCRBYFLOAT command');
-        }
+
         return (float) $result;
     }
 
@@ -556,20 +554,11 @@ class RedisProxy
     public function mset(...$dictionary): bool
     {
         $this->init();
-
-        // mset(['k1' => 'v1', 'k2' => 'v2'])
-        if (isset($dictionary[0])) {
-            $result = $this->driver?->call('mset', [$dictionary[0]]);
-            return (bool) $result;
+        if (is_array($dictionary[0])) {
+            return $this->driver->call('mset', [...$dictionary]);
         }
-
-        // mset('k1', 'v1', 'k2', 'v2', ...)
-        /** @phpstan-var list<mixed> $dictionary */
-        $dictionary = $dictionary;
-
-        $prepared = $this->prepareKeyValue($dictionary, 'mset');
-        $result = $this->driver?->call('mset', [$prepared]);
-        return (bool) $result;
+        $dictionary = $this->prepareKeyValue($dictionary, 'mset');
+        return $this->driver->call('mset', [$dictionary]);
     }
 
     /**
@@ -687,9 +676,7 @@ class RedisProxy
     {
         $this->init();
         $result = $this->driver?->call('hincrbyfloat', [$key, $field, $increment]);
-        if (!is_float($result) && !is_int($result)) {
-            throw new RedisProxyException('Unexpected response type from HINCRBYFLOAT command');
-        }
+
         return (float) $result;
     }
 
@@ -704,18 +691,9 @@ class RedisProxy
     {
         $fields = $this->prepareArguments('hexpire', ...$fields);
         $this->init();
-        $result = $this->driver?->call('hexpire', [$key, $seconds, ...$fields]);
-
-        if ($result === null) {
-            return null;
-        }
-
-        if (!is_array($result)) {
-            throw new RedisProxyException('Unexpected response type from HEXPIRE command');
-        }
-
-        /** @var list<int> $result */
-        return array_values($result);
+        $result = $this->driver->call('hexpire', [$key, $seconds, ...$fields]);
+        var_dump($result);;
+        return $result;
     }
 
     /**
@@ -728,20 +706,11 @@ class RedisProxy
     public function hmset(string $key, ...$dictionary): bool
     {
         $this->init();
-
-        // hmset($key, ['f1' => 'v1', 'f2' => 'v2'])
-        if (isset($dictionary[0])) {
-            $result = $this->driver?->call('hmset', [$key, $dictionary[0]]);
-            return (bool) $result;
+        if (is_array($dictionary[0])) {
+            return $this->driver->call('hmset', [$key, ...$dictionary]);
         }
-
-        // hmset($key, 'f1', 'v1', 'f2', 'v2', ...)
-        /** @phpstan-var list<mixed> $dictionary */
-        $dictionary = $dictionary;
-
-        $prepared = $this->prepareKeyValue($dictionary, 'hmset');
-        $result = $this->driver?->call('hmset', [$key, $prepared]);
-        return (bool) $result;
+        $dictionary = $this->prepareKeyValue($dictionary, 'hmset');
+        return !!$this->driver->call('hmset', [$key, $dictionary]);
     }
 
     /**

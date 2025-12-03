@@ -59,7 +59,7 @@ class RedisProxyFactory
             /** @var list<array{host: string, port: int}> $sentinels */
             $sentinels = [];
             foreach ($sentinelStrings as $s) {
-                if (!is_string($s) || strpos($s, ':') === false) {
+                if (!str_contains($s, ':')) {
                     throw new RedisProxyException('Invalid sentinel address format, expected "host:port".');
                 }
                 [$host, $port] = explode(':', $s, 2);
@@ -82,16 +82,11 @@ class RedisProxyFactory
             return $proxy;
         }
 
-        if (array_key_exists('host', $config) && array_key_exists('port', $config)) {
-            return new RedisProxy(
-                $config['host'],
-                $config['port'],
-                array_key_exists('database', $config) ? $config['database'] : 0,
-                array_key_exists('timeout', $config) ? $config['timeout'] : 0
-            );
-        }
-
-        /** @phpstan-ignore-next-line  Unreachable by documented config union, but kept for runtime safety */
-        throw new RedisProxyException('Wrong configuration');
+        return new RedisProxy(
+            $config['host'],
+            $config['port'],
+            array_key_exists('database', $config) ? $config['database'] : 0,
+            array_key_exists('timeout', $config) ? $config['timeout'] : 0
+        );
     }
 }

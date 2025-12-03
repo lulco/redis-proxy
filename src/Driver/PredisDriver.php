@@ -68,6 +68,8 @@ class PredisDriver implements Driver
      */
     public function call(string $command, array $params = []): mixed
     {
+        /*var_dump($params);
+        var_dump($command);*/
         $attempt = 0;
         while (true) {
             try {
@@ -81,6 +83,7 @@ class PredisDriver implements Driver
             } catch (RedisProxyException $e) {
                 throw $e;
             } catch (Throwable $t) {
+                var_dump($t->getMessage());
                 if (!$t instanceof ConnectionException || !$this->connectionPool->handleFailed(++$attempt)) {
                     throw new RedisProxyException("Error for command '$command', use getPrevious() for more info", 1484162284, $t);
                 }
@@ -122,9 +125,6 @@ class PredisDriver implements Driver
         return (bool) $this->transformResult($result);
     }
 
-    /**
-     * @param array<int|string, mixed> $dictionary
-     */
     private function mset($dictionary): bool
     {
         $result = $this->connectionPool->getConnection('mset')->mset($dictionary);
@@ -141,20 +141,17 @@ class PredisDriver implements Driver
      */
     private function hexpire(string $key, int $seconds, string ...$fields): ?array
     {
-        $conn = $this->connectionPool->getConnection('hexpire');
-        if (method_exists($conn, 'executeRaw')) {
-            /** @var Client $conn */
-            $res = $conn->executeRaw(['hexpire', $key, $seconds, ...$fields]);
-            return is_array($res) ? $res : null;
-        }
-        return null;
+        return $this
+            ->connectionPool
+            ->getConnection('hexpire')
+            ->hexpire($key, $seconds, $fields);
     }
 
     /**
-     * @param null|string $iterator
+     * @param string|null $iterator
      * @return array<int, mixed>
      */
-    private function scan(&$iterator, ?string $pattern = null, ?int $count = null): array
+    private function scan(?string &$iterator, ?string $pattern = null, ?int $count = null): array
     {
         if ($iterator === null) {
             $iterator = '0';
@@ -168,10 +165,10 @@ class PredisDriver implements Driver
     }
 
     /**
-     * @param null|string $iterator
+     * @param string|null $iterator
      * @return array<int, mixed>
      */
-    private function hscan(string $key, &$iterator, ?string $pattern = null, int $count = 0): array
+    private function hscan(string $key, ?string &$iterator, ?string $pattern = null, int $count = 0): array
     {
         if ($iterator === null) {
             $iterator = '0';
@@ -185,11 +182,11 @@ class PredisDriver implements Driver
     }
 
     /**
-     * @param null|string $iterator
-     * @deprecated in PHP 8.4 implicit nullable defaults; using nullable types
+     * @param string|null $iterator
      * @return array<int, mixed>
+     * @deprecated in PHP 8.4 implicit nullable defaults; using nullable types
      */
-    private function sscan(string $key, &$iterator, ?string $pattern = null, ?int $count = null): array
+    private function sscan(string $key, ?string &$iterator, ?string $pattern = null, ?int $count = null): array
     {
         if ($iterator === null) {
             $iterator = '0';
