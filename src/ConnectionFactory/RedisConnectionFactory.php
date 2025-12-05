@@ -1,14 +1,12 @@
 <?php
 
-declare(strict_types=1);
-
 namespace RedisProxy\ConnectionFactory;
 
 use Redis;
 
 class RedisConnectionFactory implements ConnectionFactory
 {
-    private int $optSerializer;
+    private int $optSerializer = Redis::SERIALIZER_NONE;
 
     public function __construct(string $optSerializer = Serializers::NONE)
     {
@@ -20,8 +18,10 @@ class RedisConnectionFactory implements ConnectionFactory
             default => Redis::SERIALIZER_NONE,
         };
     }
-
-    public function create(string $host, int $port, float $timeout = 0.0): Redis
+    /**
+     * @return Redis
+     */
+    public function create(string $host, int $port, float $timeout = 0.0): mixed
     {
         $redis = new Redis();
         $redis->connect($host, $port, $timeout);

@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace RedisProxy\ConnectionPool;
 
 use Predis\Client;
@@ -11,8 +9,6 @@ use RedisProxy\RedisProxyException;
 
 class SingleNodeConnectionPool implements ConnectionPool
 {
-    private const MICRO_TO_SECONDS = 1000;
-
     private Driver $driver;
 
     private string $host;
@@ -25,7 +21,8 @@ class SingleNodeConnectionPool implements ConnectionPool
 
     private bool $autoSelectDb;
 
-    private Redis|Client|null $connection = null;
+    /** @var Redis|Client|null */
+    private $connection = null;
 
     private int $retryWait;
 
@@ -46,12 +43,14 @@ class SingleNodeConnectionPool implements ConnectionPool
     /**
      * @throws RedisProxyException
      */
-    public function getConnection(string $command): Redis|Client
+    public function getConnection(string $command): mixed
     {
         if ($this->connection !== null) {
             return $this->connection;
         }
-        $this->connection = $this->driver->getConnectionFactory()->create($this->host, $this->port, $this->timeout);
+        $connection = $this->driver->getConnectionFactory()->create($this->host, $this->port, $this->timeout);
+        /** @var \Predis\Client|\Redis $connection */
+        $this->connection = $connection;
 
         if ($this->autoSelectDb) {
             $this->driver->connectionSelect($this->connection, $this->database);
@@ -69,7 +68,7 @@ class SingleNodeConnectionPool implements ConnectionPool
     {
         $this->connection = null; // retry connection on fail
         if ($attempt < $this->maxFails) {
-            usleep($this->retryWait * self::MICRO_TO_SECONDS);
+            usleep($this->retryWait * 1000);
             return true;
         }
         return false;

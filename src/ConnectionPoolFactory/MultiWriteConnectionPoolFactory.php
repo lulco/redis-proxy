@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace RedisProxy\ConnectionPoolFactory;
 
 use RedisProxy\ConnectionPool\MultiWriteConnectionPool;
@@ -10,12 +8,12 @@ use RedisProxy\Driver\Driver;
 class MultiWriteConnectionPoolFactory implements ConnectionPoolFactory
 {
     /**
-     * @var list<array{host: string, port: int}>
+     * @var array<array{host: string, port: int}> $masters
      */
     private array $masters;
 
     /**
-     * @var list<array{host: string, port: int}>
+     * @var array<array{host: string, port: int}> $slaves
      */
     private array $slaves;
 
@@ -32,8 +30,8 @@ class MultiWriteConnectionPoolFactory implements ConnectionPoolFactory
     private string $strategy;
 
     /**
-     * @param list<array{host: string, port: int}> $masters
-     * @param list<array{host: string, port: int}> $slaves
+     * @param array<array{host: string, port: int}> $masters
+     * @param array<array{host: string, port: int}> $slaves
      */
     public function __construct(array $masters, array $slaves, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true, string $strategy = MultiWriteConnectionPool::STRATEGY_RANDOM)
     {
@@ -51,10 +49,10 @@ class MultiWriteConnectionPoolFactory implements ConnectionPoolFactory
     {
         $connectionPool = new MultiWriteConnectionPool($driver, $this->masters, $this->slaves, $this->database, $this->timeout, $this->strategy);
         $connectionPool->setWriteToReplicas($this->writeToReplicas);
-        if ($this->retryWait !== null) {
+        if ($this->retryWait) {
             $connectionPool->setRetryWait($this->retryWait);
         }
-        if ($this->maxFails !== null) {
+        if ($this->maxFails) {
             $connectionPool->setMaxFails($this->maxFails);
         }
         return $connectionPool;

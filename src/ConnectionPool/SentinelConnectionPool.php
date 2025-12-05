@@ -1,11 +1,7 @@
 <?php
 
-declare(strict_types=1);
-
 namespace RedisProxy\ConnectionPool;
 
-use Predis\Client;
-use Redis;
 use RedisProxy\ConnectionPoolFactory\SingleNodeConnectionPoolFactory;
 use RedisProxy\Driver\Driver;
 use RedisProxy\RedisProxyException;
@@ -13,19 +9,9 @@ use Throwable;
 
 class SentinelConnectionPool implements ConnectionPool
 {
-    public const MAX_FAILS = 3;
-    public const RETRY_WAIT = 1000;
-    private const MICRO_TO_SECONDS = 1000;
-    private const INDEX_EVEN = 0;
-    private const INDEX_ODD = 1;
-    private const MODULO_BASE = 2;
-    private const MASTER_ADDR_PARTS = 2;
-
     private Driver $driver;
 
-    /**
-     * @var list<array{host: string, port: int}>
-     */
+    /** @var array<array{host: string, port: int}> */
     private array $sentinels;
 
     private string $clusterId;
@@ -34,28 +20,24 @@ class SentinelConnectionPool implements ConnectionPool
 
     private float $timeout;
 
-    private Redis|Client|null $masterConnection = null;
+    private mixed $masterConnection = null;
 
-    /**
-     * @var array<string, array{ip: string, port: int}>
-     */
+    /** @var array<string, array{ip: string, port: int}> */
     private array $replicas = [];
 
-    /**
-     * @var list<Redis|Client>
-     */
+    /** @var array<mixed> */
     private array $replicasConnection = [];
 
     private int $failedCount = 0;
 
-    private int $maxFails = self::MAX_FAILS;
+    private int $maxFails = 3;
 
-    private int $retryWait = self::RETRY_WAIT;
+    private int $retryWait = 1000;
 
     private bool $writeToReplicas = true;
 
     /**
-     * @param list<array{host: string, port: int}> $sentinels
+     * @param array<array{host: string, port: int}> $sentinels
      */
     public function __construct(Driver $driver, array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0)
     {
@@ -89,15 +71,15 @@ class SentinelConnectionPool implements ConnectionPool
     /**
      * @throws RedisProxyException
      */
-    public function getConnection(string $command): Redis|Client
+    public function getConnection(string $command): mixed
     {
-        if ($this->masterConnection === null) {
+        if ($this->getMasterConnection() === null) {
             if (!$this->loadMasterReplicasDataFromSentinel()) {
                 throw new RedisProxyException('Cannot load or establish connection to master/replicas from sentinel configuration');
             }
         }
 
-        if ($this->writeToReplicas && in_array($command, $this->getReadOnlyOperations(), true)) {
+        if ($this->writeToReplicas && in_array($command, $this->getReadOnlyOperations())) {
             $connection = $this->getReplicaConnection();
             return $connection ?? $this->getMasterConnection();
         }
@@ -119,7 +101,7 @@ class SentinelConnectionPool implements ConnectionPool
             return true;
         }
 
-        usleep($this->retryWait * self::MICRO_TO_SECONDS);
+        usleep($this->retryWait * 1000);
         return $this->failedCount < $this->maxFails;
     }
 
@@ -142,14 +124,8 @@ class SentinelConnectionPool implements ConnectionPool
             }
 
             try {
-                if (!is_array($masterData) || count($masterData) < self::MASTER_ADDR_PARTS) {
-                    continue;
-                }
-                /** @var string $host */
-                $host = $masterData[0];
-                /** @var int $port */
-                $port = (int) $masterData[1];
-                $this->masterConnection = $this->driver->getConnectionFactory()->create($host, $port, $this->timeout);
+                /** @var array{0: string, 1: int} $masterData */
+                $this->masterConnection = $this->driver->getConnectionFactory()->create((string)$masterData[0], (int)$masterData[1], $this->timeout);
                 $this->driver->connectionSelect($this->masterConnection, $this->database);
                 $role = $this->driver->connectionRole($this->masterConnection);
                 if ($role !== 'master') {
@@ -161,29 +137,26 @@ class SentinelConnectionPool implements ConnectionPool
             } catch (Throwable $t) {
                 continue;
             }
-            if (!is_array($replicasData)) {
-                continue;
-            }
+            /** @var array<mixed> $replicasData */
             foreach ($replicasData as $replicaData) {
-                /** @var array<int, string> $replicaDataList */
-                $replicaDataList = array_map(
-                    static fn (mixed $value): string => (string) $value,
-                    (array) $replicaData
-                );
-                $normalizedReplicaData = $this->normalizeResponze($replicaDataList);
-                if (isset($normalizedReplicaData['flags']) &&
-                    empty(array_intersect(explode(',', $normalizedReplicaData['flags']), ['s_down', 'o_down', 'disconnected'])) &&
-                    !empty($normalizedReplicaData['ip']) &&
-                    !empty($normalizedReplicaData['port'])
+                /** @var array<mixed> $replicaData */
+                $normalizedRepolicaData = $this->normalizeResponze($replicaData);
+                if (isset($normalizedRepolicaData['flags']) &&
+                    is_string($normalizedRepolicaData['flags']) &&
+                    !array_intersect(explode(',', $normalizedRepolicaData['flags']), ['s_down', 'o_down', 'disconnected']) &&
+                    !empty($normalizedRepolicaData['ip']) &&
+                    is_string($normalizedRepolicaData['ip']) &&
+                    !empty($normalizedRepolicaData['port']) &&
+                    is_int($normalizedRepolicaData['port'])
                 ) {
-                    $replicaKey = $normalizedReplicaData['ip'] . ':' . $normalizedReplicaData['port'];
+                    $replicaKey = $normalizedRepolicaData['ip'] . ':' . $normalizedRepolicaData['port'];
                     if (isset($this->replicasConnection[$replicaKey])) {
                         continue;
                     }
 
                     $this->replicas[$replicaKey] = [
-                        'ip' => $normalizedReplicaData['ip'],
-                        'port' => (int) $normalizedReplicaData['port'],
+                        'ip' => $normalizedRepolicaData['ip'],
+                        'port' => $normalizedRepolicaData['port'],
                     ];
                 }
             }
@@ -195,18 +168,15 @@ class SentinelConnectionPool implements ConnectionPool
         return false;
     }
 
-    private function getMasterConnection(): Redis|Client
+    private function getMasterConnection(): mixed
     {
-        if ($this->masterConnection === null) {
-            throw new RedisProxyException('Master connection is not initialized');
-        }
         return $this->masterConnection;
     }
 
     /**
      * @throws RedisProxyException
      */
-    private function getReplicaConnection(): Redis|Client|null
+    private function getReplicaConnection(): mixed
     {
         if (count($this->replicas) > 0) {
             while ($replica = array_shift($this->replicas)) {
@@ -252,30 +222,37 @@ class SentinelConnectionPool implements ConnectionPool
     }
 
     /**
-     * @param array<int, string> $arr
-     * @return array<string, string>
+     * @param array<mixed> $arr
+     * @return array<string, mixed>
      */
     private function normalizeResponze(array $arr): array
     {
         $keys = array_values(array_filter($arr, function ($key) {
-            return $key % self::MODULO_BASE === self::INDEX_EVEN;
+            return $key % 2 == 0;
         }, ARRAY_FILTER_USE_KEY));
         $values = array_values(array_filter($arr, function ($key) {
-            return $key % self::MODULO_BASE === self::INDEX_ODD;
+            return $key % 2 == 1;
         }, ARRAY_FILTER_USE_KEY));
 
-        if (count($keys) !== count($values)) {
+        if (count($keys) != count($values)) {
             throw new RedisProxyException('Wrong number of arguments');
         }
-        /** @var list<string> $keys */
-        /** @var list<string> $values */
-        /** @var array<string, string> $combined */
-        $combined = array_combine($keys, $values) ?: [];
-        return $combined;
+        /** @var array<string> $stringKeys */
+        $stringKeys = [];
+        foreach ($keys as $key) {
+            if (is_string($key)) {
+                $stringKeys[] = $key;
+            } else {
+                /** @var int|float|bool|null $key */
+                $stringKeys[] = (string)$key;
+            }
+        }
+        /** @var array<string, mixed> */
+        return array_combine($stringKeys, $values);
     }
 
     /**
-     * @return list<string>
+     * @return array<string>
      */
     private function getReadOnlyOperations(): array
     {

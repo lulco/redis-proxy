@@ -1,15 +1,10 @@
 <?php
 
-declare(strict_types=1);
-
 namespace RedisProxy\ConnectionPool;
-
-use Predis\Client;
-use Redis;
 
 interface ConnectionPool
 {
-    public function getConnection(string $command): Redis|Client;
+    public function getConnection(string $command): mixed;
 
     public function resetConnection(): void;
 

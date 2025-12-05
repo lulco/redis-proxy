@@ -1,10 +1,7 @@
 <?php
 
-declare(strict_types=1);
-
 namespace RedisProxy\Driver;
 
-use Predis\Client;
 use Predis\Connection\ConnectionException;
 use Predis\Response\Status;
 use RedisProxy\ConnectionFactory\PredisConnectionFactory;
@@ -26,9 +23,7 @@ class PredisDriver implements Driver
 
     private string $optSerializer = Serializers::NONE;
 
-    /**
-     * @var array<string, string>
-     */
+    /** @var array<string, string> */
     private array $typeMap = [
         'string' => RedisProxy::TYPE_STRING,
         'set' => RedisProxy::TYPE_SET,
@@ -60,30 +55,29 @@ class PredisDriver implements Driver
     }
 
     /**
+     * @param array<mixed> $params
      * @throws RedisProxyException
-     */
-
-    /**
-     * @param list<mixed> $params
      */
     public function call(string $command, array $params = []): mixed
     {
-        /*var_dump($params);
-        var_dump($command);*/
         $attempt = 0;
         while (true) {
             try {
                 if (method_exists($this, $command)) {
-                    return $this->$command(...$params);
+                    /** @var callable $callable */
+                    $callable = [$this, $command];
+                    return call_user_func_array($callable, $params);
                 }
 
+                /** @var \Predis\Client $connection */
                 $connection = $this->connectionPool->getConnection($command);
-                $result = $connection->$command(...$params);
+                /** @var callable $callable */
+                $callable = [$connection, $command];
+                $result = call_user_func_array($callable, $params);
                 return $this->transformResult($result);
             } catch (RedisProxyException $e) {
                 throw $e;
             } catch (Throwable $t) {
-                var_dump($t->getMessage());
                 if (!$t instanceof ConnectionException || !$this->connectionPool->handleFailed(++$attempt)) {
                     throw new RedisProxyException("Error for command '$command', use getPrevious() for more info", 1484162284, $t);
                 }
@@ -92,171 +86,186 @@ class PredisDriver implements Driver
     }
 
     /**
+     * @param array<mixed> $params
      * @throws Throwable
-     */
-
-    /**
-     * @param list<mixed> $params
      */
     public function callSentinel(string $command, array $params = []): mixed
     {
         if (method_exists($this, $command)) {
-            return $this->$command(...$params);
+            /** @var callable $callable */
+            $callable = [$this, $command];
+            return call_user_func_array($callable, $params);
         }
 
-        $conn = $this->connectionPool->getConnection('sentinel');
-        /** @var Client $conn */
-        return $conn->executeRaw(['sentinel', $command, ...$params]);
+        /** @var \Predis\Client $connection */
+        $connection = $this->connectionPool->getConnection('sentinel');
+        return $connection->executeRaw(['sentinel', $command, ...$params]);
     }
 
     private function type(string $key): ?string
     {
-        $result = $this->connectionPool->getConnection('type')->type($key);
+        /** @var \Predis\Client $connection */
+        $connection = $this->connectionPool->getConnection('type');
+        $result = $connection->type($key);
         $result = $result instanceof Status ? $result->getPayload() : $result;
+        /** @var string $result */
         return $this->typeMap[$result] ?? null;
     }
 
     private function psetex(string $key, int $milliseconds, string $value): bool
     {
-        $result = $this->connectionPool->getConnection('type')->psetex($key, $milliseconds, $value);
+        /** @var \Predis\Client $connection */
+        $connection = $this->connectionPool->getConnection('psetex');
+        $result = $connection->psetex($key, $milliseconds, $value);
         if ($result == '+OK') {
             return true;
         }
-        return (bool) $this->transformResult($result);
+        return !!$this->transformResult($result);
     }
 
-    private function mset($dictionary): bool
+    private function mset(mixed $dictionary): bool
     {
-        $result = $this->connectionPool->getConnection('mset')->mset($dictionary);
-        return (bool) $this->transformResult($result);
+        /** @var \Predis\Client $connection */
+        $connection = $this->connectionPool->getConnection('mset');
+        /** @var array<mixed> $dictionary */
+        $result = $connection->mset($dictionary);
+        /** @var bool $result */
+        $result = $this->transformResult($result);
+        return $result;
     }
 
     private function hexists(string $key, string $field): bool
     {
-        return (bool)$this->connectionPool->getConnection('hexists')->hexists($key, $field);
+        /** @var \Predis\Client $connection */
+        $connection = $this->connectionPool->getConnection('hexists');
+        return (bool)$connection->hexists($key, $field);
     }
 
     /**
-     * @return int[]|null
+     * @return array<int>|null
      */
     private function hexpire(string $key, int $seconds, string ...$fields): ?array
     {
-        return $this
-            ->connectionPool
-            ->getConnection('hexpire')
-            ->hexpire($key, $seconds, $fields);
+        /** @var \Predis\Client $connection */
+        $connection = $this->connectionPool->getConnection('hexpire');
+        $result = $connection->hexpire($key, $seconds, $fields);
+        /** @var array<int>|null $result */
+        return $result;
     }
 
-    /**
-     * @param string|null $iterator
-     * @return array<int, mixed>
-     */
-    private function scan(?string &$iterator, ?string $pattern = null, ?int $count = null): array
+    private function scan(mixed &$iterator, ?string $pattern = null, ?int $count = null): mixed
     {
         if ($iterator === null) {
             $iterator = '0';
         }
-        $returned = $this->connectionPool->getConnection('scan')->scan($iterator, ['match' => $pattern, 'count' => $count]);
-        if (!is_array($returned) || !isset($returned[0], $returned[1])) {
-            return [];
+        /** @var \Predis\Client $connection */
+        $connection = $this->connectionPool->getConnection('scan');
+        $returned = $connection->scan($iterator, ['match' => $pattern, 'count' => $count]);
+        $iterator = $returned[0];
+        return $returned[1];
+    }
+
+    private function hscan(string $key, mixed &$iterator, ?string $pattern = null, int $count = 0): mixed
+    {
+        if ($iterator === null) {
+            $iterator = '0';
         }
+        /** @var \Predis\Client $connection */
+        $connection = $this->connectionPool->getConnection('hscan');
+        $returned = $connection->hscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
+        $iterator = $returned[0];
+        return $returned[1];
+    }
+
+    private function sscan(string $key, mixed &$iterator, ?string $pattern = null, ?int $count = null): mixed
+    {
+        if ($iterator === null) {
+            $iterator = '0';
+        }
+        /** @var \Predis\Client $connection */
+        $connection = $this->connectionPool->getConnection('sscan');
+        if (is_int($iterator)) {
+            $iteratorValue = $iterator;
+        } else {
+            /** @var string|float|bool|null $iterator */
+            $iteratorValue = (int)$iterator;
+        }
+        $returned = $connection->sscan($key, $iteratorValue, ['match' => $pattern, 'count' => $count]);
+        $iterator = $returned[0];
+        return $returned[1];
+    }
+
+    private function zscan(string $key, mixed &$iterator, ?string $pattern = null, ?int $count = null): mixed
+    {
+        if ($iterator === null) {
+            $iterator = '0';
+        }
+        /** @var \Predis\Client $connection */
+        $connection = $this->connectionPool->getConnection('zscan');
+        if (is_int($iterator)) {
+            $iteratorValue = $iterator;
+        } else {
+            /** @var string|float|bool|null $iterator */
+            $iteratorValue = (int)$iterator;
+        }
+        $returned = $connection->zscan($key, $iteratorValue, ['match' => $pattern, 'count' => $count]);
         $iterator = $returned[0];
         return $returned[1];
     }
 
     /**
-     * @param string|null $iterator
-     * @return array<int, mixed>
-     */
-    private function hscan(string $key, ?string &$iterator, ?string $pattern = null, int $count = 0): array
-    {
-        if ($iterator === null) {
-            $iterator = '0';
-        }
-        $returned = $this->connectionPool->getConnection('hscan')->hscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
-        if (!is_array($returned) || !isset($returned[0], $returned[1])) {
-            return [];
-        }
-        $iterator = $returned[0];
-        return $returned[1];
-    }
-
-    /**
-     * @param string|null $iterator
-     * @return array<int, mixed>
-     * @deprecated in PHP 8.4 implicit nullable defaults; using nullable types
-     */
-    private function sscan(string $key, ?string &$iterator, ?string $pattern = null, ?int $count = null): array
-    {
-        if ($iterator === null) {
-            $iterator = '0';
-        }
-        $returned = $this->connectionPool->getConnection('sscan')->sscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
-        if (!is_array($returned) || !isset($returned[0], $returned[1])) {
-            return [];
-        }
-        $iterator = $returned[0];
-        return $returned[1];
-    }
-
-    /**
-     * @param null|string $iterator
-     * @return array<int, mixed>
-     */
-    private function zscan(string $key, &$iterator, ?string $pattern = null, ?int $count = null): array
-    {
-        if ($iterator === null) {
-            $iterator = '0';
-        }
-        $returned = $this->connectionPool->getConnection('zscan')->zscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
-        if (!is_array($returned) || !isset($returned[0], $returned[1])) {
-            return [];
-        }
-        $iterator = $returned[0];
-        return $returned[1];
-    }
-
-    /**
-     * @return array<int|string, mixed>
+     * @return array<mixed>
      */
     private function zrange(string $key, int $start, int $stop, bool $withscores = false): array
     {
-        return $this->connectionPool->getConnection('zrange')->zrange($key, $start, $stop, ['WITHSCORES' => $withscores]);
+        /** @var \Predis\Client $connection */
+        $connection = $this->connectionPool->getConnection('zrange');
+        $result = $connection->zrange($key, $start, $stop, ['WITHSCORES' => $withscores]);
+        /** @var array<mixed> $result */
+        return $result;
     }
 
     /**
-     * @return array<int, mixed>
+     * @return array<mixed>
      */
     private function zpopmin(string $key, int $count = 1): array
     {
-        $res = $this->connectionPool->getConnection('zpopmin')->zpopmin($key, $count);
-        return is_array($res) ? $res : [];
+        /** @var \Predis\Client $connection */
+        $connection = $this->connectionPool->getConnection('zpopmin');
+        $result = $connection->zpopmin($key, $count);
+        /** @var array<mixed> $result */
+        return $result;
     }
 
     /**
-     * @return array<int, mixed>
+     * @return array<mixed>
      */
     private function zpopmax(string $key, int $count = 1): array
     {
-        $res = $this->connectionPool->getConnection('zpopmax')->zpopmax($key, $count);
-        return is_array($res) ? $res : [];
+        /** @var \Predis\Client $connection */
+        $connection = $this->connectionPool->getConnection('zpopmax');
+        $result = $connection->zpopmax($key, $count);
+        /** @var array<mixed> $result */
+        return $result;
     }
 
     /**
-     * @return array<int|string, mixed>
+     * @return array<mixed>
      */
     public function zrevrange(string $key, int $start, int $stop, bool $withscores = false): array
     {
-        return $this->connectionPool->getConnection('zrevrange')->zrevrange($key, $start, $stop, ['WITHSCORES' => $withscores]);
+        /** @var \Predis\Client $connection */
+        $connection = $this->connectionPool->getConnection('zrevrange');
+        $result = $connection->zrevrange($key, $start, $stop, ['WITHSCORES' => $withscores]);
+        /** @var array<mixed> $result */
+        return $result;
     }
 
-    public function close(): void
+    public function close(): mixed
     {
-        $conn = $this->connectionPool->getConnection('close');
-        if (method_exists($conn, 'executeRaw')) {
-            /** @var Client $conn */
-            $conn->executeRaw(['close']);
-        }
+        /** @var \Predis\Client $connection */
+        $connection = $this->connectionPool->getConnection('close');
+        return $connection->executeRaw(['close']);
     }
 
     public function select(int $database): bool
@@ -264,25 +273,16 @@ class PredisDriver implements Driver
         return $this->connectionSelect($this->connectionPool->getConnection('select'), $database);
     }
 
-    public function rawCommand(mixed ...$params): mixed
-    {
-        $result = null;
-        $connection = $this->connectionPool
-            ->getConnection('rawCommand');
-        if ($connection instanceof Client) {
-            $result = $connection->executeRaw($params);
-        }
-
-        return $this->transformResult($result);
-    }
-
     public function connectionRole(mixed $connection): string
     {
-        $result = null;
-        if ($connection instanceof Client) {
-            $result = $connection->executeRaw(['role']);
+        /** @var \Predis\Client $connection */
+        $result = $connection->executeRaw(['role']);
+        if (is_array($result) && isset($result[0])) {
+            /** @var string|int|float $firstElement */
+            $firstElement = $result[0];
+            return is_string($firstElement) ? $firstElement : (string)$firstElement;
         }
-        return is_array($result) ? $result[0] : '';
+        return '';
     }
 
     /**
@@ -291,9 +291,7 @@ class PredisDriver implements Driver
     public function connectionSelect(mixed $connection, int $database): bool
     {
         try {
-            if (!is_object($connection) || !is_callable([$connection, 'select'])) {
-                throw new RedisProxyException('Invalid connection');
-            }
+            /** @var \Predis\Client $connection */
             $result = $connection->select($database);
         } catch (Throwable $t) {
             throw new RedisProxyException('Invalid DB index');
@@ -315,7 +313,7 @@ class PredisDriver implements Driver
      * @param mixed $result
      * @return mixed
      */
-    private function transformResult(mixed $result): mixed
+    private function transformResult($result)
     {
         if ($result instanceof Status) {
             $result = $result->getPayload() === 'OK';

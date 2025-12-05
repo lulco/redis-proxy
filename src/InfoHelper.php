@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace RedisProxy;
 
 class InfoHelper
@@ -50,8 +48,8 @@ class InfoHelper
     ];
 
     /**
-     * @param array<string, mixed> $result
-     * @return array<string, mixed>
+     * @param array<mixed> $result
+     * @return array<mixed>
      */
     public static function createInfoArray(RedisProxy $redisProxy, array $result, ?int $databases = null): array
     {
@@ -64,7 +62,7 @@ class InfoHelper
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array<mixed>
      */
     private static function initializeKeyspace(?int $databases = null): array
     {
@@ -84,48 +82,43 @@ class InfoHelper
     }
 
     /**
-     * @param array<string, mixed> $result
-     * @param array<string, mixed> $groupedResult
-     * @return array<string, mixed>
+     * @param array<mixed> $result
+     * @param array<mixed> $groupedResult
+     * @return array<mixed>
      */
     private static function createInfoForPredis(array $result, array $groupedResult): array
     {
         $result = array_change_key_case($result, CASE_LOWER);
-
-        if (isset($groupedResult['keyspace'], $result['keyspace'])
-            && is_array($groupedResult['keyspace'])
-            && is_array($result['keyspace'])
-        ) {
-            /** @var array<string, mixed> $groupedKeyspace */
+        if (isset($groupedResult['keyspace']) && isset($result['keyspace'])) {
+            /** @var array<mixed> $keyspace */
+            $keyspace = $result['keyspace'];
+            /** @var array<mixed> $groupedKeyspace */
             $groupedKeyspace = $groupedResult['keyspace'];
-            /** @var array<string, mixed> $resultKeyspace */
-            $resultKeyspace = $result['keyspace'];
-
-            $groupedResult['keyspace'] = array_merge($groupedKeyspace, $resultKeyspace);
+            /** @var array<mixed> $mergedKeyspace */
+            $mergedKeyspace = array_merge($groupedKeyspace, $keyspace);
+            $groupedResult['keyspace'] = $mergedKeyspace;
             unset($result['keyspace']);
         }
-
-        /** @var array<string, mixed> $merged */
-        $merged = array_merge($groupedResult, $result);
-        return $merged;
+        return array_merge($groupedResult, $result);
     }
 
     /**
-     * @param array<string, mixed> $result
-     * @param array<string, mixed> $groupedResult
-     * @return array<string, mixed>
+     * @param array<mixed> $result
+     * @param array<mixed> $groupedResult
+     * @return array<mixed>
      */
     private static function createInfoForRedis(array $result, array $groupedResult): array
     {
         foreach ($result as $key => $value) {
+            if (!is_string($key)) {
+                continue;
+            }
             if (isset(self::$keyToSectionMap[$key])) {
                 $section = self::$keyToSectionMap[$key];
-
-                if (!isset($groupedResult[$section]) || !is_array($groupedResult[$section])) {
+                if (!isset($groupedResult[$section])) {
                     $groupedResult[$section] = [];
                 }
-
-                /** @var array<string, mixed> $sectionArray */
+                /** @var array<mixed> $sectionArray */
                 $sectionArray = $groupedResult[$section];
                 $sectionArray[$key] = $value;
                 $groupedResult[$section] = $sectionArray;
@@ -133,40 +126,35 @@ class InfoHelper
             }
 
             foreach (self::$keyStartToSectionMap as $keyStart => $targetSection) {
-                if ($keyStart === 'db' && str_starts_with($key, $keyStart)) {
-                    if (!is_string($value)) {
-                        continue;
-                    }
+                if (strpos($key, $keyStart) === 0 && $keyStart === 'db') {
                     $value = self::createKeyspaceInfo($value);
                 }
-
-                if (str_starts_with($key, $keyStart)) {
-                    if (!isset($groupedResult[$targetSection]) || !is_array($groupedResult[$targetSection])) {
+                if (strpos($key, $keyStart) === 0) {
+                    if (!isset($groupedResult[$targetSection])) {
                         $groupedResult[$targetSection] = [];
                     }
-
-                    /** @var array<string, mixed> $sectionArray */
-                    $sectionArray = $groupedResult[$targetSection];
-                    $sectionArray[$key] = $value;
-                    $groupedResult[$targetSection] = $sectionArray;
+                    /** @var array<mixed> $targetArray */
+                    $targetArray = $groupedResult[$targetSection];
+                    $targetArray[$key] = $value;
+                    $groupedResult[$targetSection] = $targetArray;
                     continue;
                 }
             }
         }
-
         return $groupedResult;
     }
 
     /**
-     * @return array{keys: int, expires: int|null, avg_ttl: int|null}
+     * @return array<string, mixed>
      */
-    private static function createKeyspaceInfo(string $keyspaceInfo): array
+    private static function createKeyspaceInfo(mixed $keyspaceInfo): array
     {
+        /** @var string $keyspaceInfo */
         [$keys, $expires, $avgTtl] = explode(',', $keyspaceInfo);
         return [
-            'keys' => str_contains($keys, '=') ? (int) explode('=', $keys)[1] : 0,
-            'expires' => str_contains($expires, '=') ? (int) explode('=', $expires)[1] : null,
-            'avg_ttl' => str_contains($avgTtl, '=') ? (int) explode('=', $avgTtl)[1] : null,
+            'keys' => strpos($keys, '=') !== false ? explode('=', $keys)[1] : 0,
+            'expires' => strpos($expires, '=') !== false ? explode('=', $expires)[1] : null,
+            'avg_ttl' => strpos($avgTtl, '=') !== false ? explode('=', $avgTtl)[1] : null,
         ];
     }
 }

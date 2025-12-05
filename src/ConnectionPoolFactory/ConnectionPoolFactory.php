@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace RedisProxy\ConnectionPoolFactory;
 
 use RedisProxy\ConnectionPool\ConnectionPool;

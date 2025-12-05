@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace RedisProxy\Driver;
 
 use RedisProxy\ConnectionFactory\ConnectionFactory;
@@ -11,12 +9,12 @@ use RedisProxy\RedisProxyException;
 interface Driver
 {
     /**
-     * @param list<mixed> $params
+     * @param array<mixed> $params
      */
     public function call(string $command, array $params = []): mixed;
 
     /**
-     * @param list<mixed> $params
+     * @param array<mixed> $params
      */
     public function callSentinel(string $command, array $params = []): mixed;
 

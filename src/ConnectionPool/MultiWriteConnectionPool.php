@@ -1,11 +1,7 @@
 <?php
 
-declare(strict_types=1);
-
 namespace RedisProxy\ConnectionPool;
 
-use Predis\Client;
-use Redis;
 use RedisProxy\Driver\Driver;
 use RedisProxy\RedisProxyException;
 use Throwable;
@@ -23,12 +19,12 @@ class MultiWriteConnectionPool implements ConnectionPool
     private const MICRO_TO_SECONDS = 1000;
 
     /**
-     * @var list<array{host: string, port: int}> $masters
+     * @var array<array{host: string, port: int}> $masters
      */
     private array $masters;
 
     /**
-     * @var list<array{host: string, port: int}> $slaves
+     * @var array<array{host: string, port: int}> $slaves
      */
     private array $slaves;
 
@@ -38,10 +34,10 @@ class MultiWriteConnectionPool implements ConnectionPool
 
     private Driver $driver;
 
-    /** @var list<Redis|Client> */
+    /** @var array<mixed> */
     private array $mastersConnection = [];
 
-    /** @var list<Redis|Client> */
+    /** @var array<mixed> */
     private array $slavesConnection = [];
 
     private int $failedCount = 0;
@@ -55,8 +51,8 @@ class MultiWriteConnectionPool implements ConnectionPool
     private string $strategy;
 
     /**
-     * @param list<array{host: string, port: int}> $masters
-     * @param list<array{host: string, port: int}> $slaves
+     * @param array<array{host: string, port: int}> $masters
+     * @param array<array{host: string, port: int}> $slaves
      * @param string $strategy Implemented strategies: 'random', 'round-robin'
      */
     public function __construct(Driver $driver, array $masters, array $slaves, int $database = 0, float $timeout = 0.0, string $strategy = self::STRATEGY_RANDOM)
@@ -90,29 +86,19 @@ class MultiWriteConnectionPool implements ConnectionPool
     /**
      * @throws RedisProxyException
      */
-    public function getConnection(string $command): Redis|Client
+    public function getConnection(string $command): mixed
     {
-        if ($this->mastersConnection === [] && $this->loadConnections() === false) {
-            throw new RedisProxyException(
-                'Cannot load or establish connection to masters/replicas from configuration'
-            );
+        if ($this->mastersConnection === []) {
+            if (!$this->loadConnections()) {
+                throw new RedisProxyException('Cannot load or establish connection to masters/replicas from configuration');
+            }
         }
 
         if ($this->writeToReplicas && in_array($command, $this->getReadOnlyOperations(), true)) {
-            $replicaConnection = $this->getReplicaConnection();
-            if ($replicaConnection === false) {
-                throw new RedisProxyException('Cannot get replica connection');
-            }
-
-            return $replicaConnection;
+            return $this->getReplicaConnection();
         }
 
-        $masterConnection = $this->getMasterConnection();
-        if ($masterConnection === false) {
-            throw new RedisProxyException('Cannot get master connection');
-        }
-
-        return $masterConnection;
+        return $this->getMasterConnection();
     }
 
     public function resetConnection(): void
@@ -171,10 +157,7 @@ class MultiWriteConnectionPool implements ConnectionPool
         return $this->failedCount < $this->maxFails;
     }
 
-    /**
-     * @throws RedisProxyException
-     */
-    private function getMasterConnection(): Redis|Client|false
+    private function getMasterConnection(): mixed
     {
         switch ($this->strategy) {
             case self::STRATEGY_ROUND_ROBIN:
@@ -187,18 +170,16 @@ class MultiWriteConnectionPool implements ConnectionPool
                 $masterConnection = $this->mastersConnection[array_rand($this->mastersConnection)];
                 break;
         }
-
-        if ($this->database !== 0) {
+        if ($this->database) {
             $this->driver->connectionSelect($masterConnection, $this->database);
         }
-
         return $masterConnection;
     }
 
     /**
      * @throws RedisProxyException
      */
-    private function getReplicaConnection(): Redis|Client|false
+    private function getReplicaConnection(): mixed
     {
         if (count($this->slavesConnection) === 0) {
             return $this->getMasterConnection();
@@ -215,7 +196,7 @@ class MultiWriteConnectionPool implements ConnectionPool
                 break;
         }
 
-        if ($this->database !== 0) {
+        if ($this->database) {
             $this->driver->connectionSelect($slaveConnection, $this->database);
         }
 
@@ -229,7 +210,7 @@ class MultiWriteConnectionPool implements ConnectionPool
     }
 
     /**
-     * @return list<string>
+     * @return array<string>
      */
     private function getReadOnlyOperations(): array
     {

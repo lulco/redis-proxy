@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace RedisProxy\ConnectionPoolFactory;
 
 use RedisProxy\ConnectionPool\MultiConnectionPool;
@@ -15,7 +13,7 @@ class MultiConnectionPoolFactory implements ConnectionPoolFactory
     private array $master;
 
     /**
-     * @var list<array{host: string, port: int}>
+     * @var array{array{host: string, port: int}} $slaves
      */
     private array $slaves;
 
@@ -31,7 +29,7 @@ class MultiConnectionPoolFactory implements ConnectionPoolFactory
 
     /**
      * @param array{host: string, port: int} $master
-     * @param list<array{host: string, port: int}> $slaves
+     * @param array{array{host: string, port: int}} $slaves
      */
     public function __construct(array $master, array $slaves, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true)
     {
@@ -48,10 +46,10 @@ class MultiConnectionPoolFactory implements ConnectionPoolFactory
     {
         $connectionPool = new MultiConnectionPool($driver, $this->master, $this->slaves, $this->database, $this->timeout);
         $connectionPool->setWriteToReplicas($this->writeToReplicas);
-        if ($this->retryWait !== null) {
+        if ($this->retryWait) {
             $connectionPool->setRetryWait($this->retryWait);
         }
-        if ($this->maxFails !== null) {
+        if ($this->maxFails) {
             $connectionPool->setMaxFails($this->maxFails);
         }
         return $connectionPool;

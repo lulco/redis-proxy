@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace RedisProxy;
 
 class RedisProxyFactory
@@ -10,83 +8,66 @@ class RedisProxyFactory
      * <code>
      * Single node configuration
      * $config = [
-     *     'host' => <string>, // mandatory
-     *     'port' => <int>, // mandatory
-     *     'database' => <int>, // optional (default: 0)
-     *     'timeout' => <float>, // optional (default: 0.0)
+     *      'host' => <string>, # mandatory
+     *      'port' => <int>, # mandatory
+     *      'database' => <int>, # optional (default: 0)
+     *      'timeout' => <float>, # optional (default: 0.0)
      * ];
      *
      * Sentinel configuration
      * $config = [
-     *     'sentinel' => [
-     *         'sentinels' => <array> ['IP:PORT', 'IP:PORT', ...], // mandatory
-     *         'clusterId' => <string>, // mandatory
-     *         'database' => <int>, // optional (default: 0)
-     *         'timeout' => <float>, // optional (default: 0.0)
-     *         'retryWait' => <int|null>, // optional (default: null)
-     *         'maxFails' => <int|null>, // optional (default: null)
-     *         'writeToReplicas' => <bool>, // optional (default: false)
-     *     ],
+     *      'sentinel' => [
+     *          'sentinels' => <array> ['IP:PORT', 'IP:PORT', ...], # mandatory
+     *          'clusterId' => <string>, # mandatory
+     *          'database' => <int>, # optional (default: 0)
+     *          'timeout' => <float>, # optional (default: 0.0)
+     *          'retryWait' => <int|null>, # optional (default: null)
+     *          'maxFails' => <int|null>, # optional (default: null)
+     *          'writeToReplicas' => <bool>, # optional (default: false)
+     *      ]
      * ];
      * </code>
      *
-     * @param array{
-     *     host: string,
-     *     port: int,
-     *     database?: int,
-     *     timeout?: float
-     * }|array{
-     *     sentinel: array{
-     *         sentinels: array<string>,
-     *         clusterId: string,
-     *         database?: int,
-     *         timeout?: float,
-     *         retryWait?: int|null,
-     *         maxFails?: int|null,
-     *         writeToReplicas?: bool
-     *     }
-     * } $config
+     * @param array<mixed> $config
      * @throws RedisProxyException
      */
     public function createFromConfig(array $config): RedisProxy
     {
         if (array_key_exists('sentinel', $config)) {
+            /** @var array<mixed> $sentinelConfig */
             $sentinelConfig = $config['sentinel'];
-
-            /** @var array<int, string> $sentinelStrings */
-            $sentinelStrings = $sentinelConfig['sentinels'];
-
-            /** @var list<array{host: string, port: int}> $sentinels */
-            $sentinels = [];
-            foreach ($sentinelStrings as $s) {
-                if (!str_contains($s, ':')) {
-                    throw new RedisProxyException('Invalid sentinel address format, expected "host:port".');
-                }
-                [$host, $port] = explode(':', $s, 2);
-                $sentinels[] = [
-                    'host' => $host,
-                    'port' => (int) $port,
-                ];
-            }
-
             $proxy = new RedisProxy();
+            /** @var array<array{host: string, port: int}> $sentinels */
+            $sentinels = $sentinelConfig['sentinels'];
+            /** @var string $clusterId */
+            $clusterId = $sentinelConfig['clusterId'];
+            $database = array_key_exists('database', $sentinelConfig) && is_int($sentinelConfig['database']) ? $sentinelConfig['database'] : 0;
+            $timeout = array_key_exists('timeout', $sentinelConfig) && (is_float($sentinelConfig['timeout']) || is_int($sentinelConfig['timeout'])) ? (float)$sentinelConfig['timeout'] : 0.0;
+            $retryWait = array_key_exists('retryWait', $sentinelConfig) && is_int($sentinelConfig['retryWait']) ? $sentinelConfig['retryWait'] : null;
+            $maxFails = array_key_exists('maxFails', $sentinelConfig) && is_int($sentinelConfig['maxFails']) ? $sentinelConfig['maxFails'] : null;
+            $writeToReplicas = array_key_exists('writeToReplicas', $sentinelConfig) ? (bool)$sentinelConfig['writeToReplicas'] : true;
+
             $proxy->setSentinelConnectionPool(
                 $sentinels,
-                $sentinelConfig['clusterId'],
-                array_key_exists('database', $sentinelConfig) ? $sentinelConfig['database'] : 0,
-                array_key_exists('timeout', $sentinelConfig) ? $sentinelConfig['timeout'] : 0.0,
-                array_key_exists('retryWait', $sentinelConfig) ? $sentinelConfig['retryWait'] : null,
-                array_key_exists('maxFails', $sentinelConfig) ? $sentinelConfig['maxFails'] : null,
-                array_key_exists('writeToReplicas', $sentinelConfig) ? $sentinelConfig['writeToReplicas'] : true,
+                $clusterId,
+                $database,
+                $timeout,
+                $retryWait,
+                $maxFails,
+                $writeToReplicas,
             );
             return $proxy;
         }
 
-        return new RedisProxy(
-            $config['host'],
-            $config['port'],
-            array_key_exists('database', $config) ? $config['database'] : 0,
-            array_key_exists('timeout', $config) ? $config['timeout'] : 0
-        );
+        if (array_key_exists('host', $config) && array_key_exists('port', $config)) {
+            $host = is_string($config['host']) ? $config['host'] : '127.0.0.1';
+            $port = is_int($config['port']) ? $config['port'] : 6379;
+            $database = array_key_exists('database', $config) && is_int($config['database']) ? $config['database'] : 0;
+            $timeout = array_key_exists('timeout', $config) && (is_float($config['timeout']) || is_int($config['timeout'])) ? (float)$config['timeout'] : 0.0;
+
+            return new RedisProxy($host, $port, $database, $timeout);
+        }
+
+        throw new RedisProxyException('Wrong configuration');
     }
 }
