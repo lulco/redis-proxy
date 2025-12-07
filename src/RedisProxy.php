@@ -24,31 +24,31 @@ use RedisProxy\Driver\RedisDriver;
  * @method boolean setex(string $key, int $seconds, string $value) Set the value and expiration of a key
  * @method int ttl(string $key) Get the time to live for a key, returns TTL in seconds, -2 if the key does not exist, -1 if the key exists but has no associated expire
  * @method int pttl(string $key) Get the time to live for a key in milliseconds, returns TTL in miliseconds, -2 if the key does not exist, -1 if the key exists but has no associated expire
- * @method array keys(string $pattern) Find all keys matching the given pattern
+ * @method array<mixed> keys(string $pattern) Find all keys matching the given pattern
  * @method int hset(string $key, string $field, string $value) Set the string value of a hash field
- * @method array hkeys(string $key) Get all fields in a hash (without values)
- * @method array hgetall(string $key) Get all fields and values in a hash
+ * @method array<string> hkeys(string $key) Get all fields in a hash (without values)
+ * @method array<mixed> hgetall(string $key) Get all fields and values in a hash
  * @method int hlen(string $key) Get the number of fields in a hash
  * @method bool hexists(string $key, string $field) Check if <i>$field</i> exists in hash <i>$key</i>
  * @method int hstrlen(string $key, string $field) Get the length of the string field, 0 if field does not exist
- * @method array smembers(string $key) Get all the members in a set
+ * @method array<string> smembers(string $key) Get all the members in a set
  * @method int scard(string $key) Get the number of members in a set
  * @method int sismember(string $key, string $member) Returns if member is a member of the set stored at key
  * @method int llen(string $key) Get the length of a list
  * @method bool lset(string $key, string $index, string $value) Sets the list element at index to value
- * @method array lrange(string $key, int $start, int $stop) Get a range of elements from a list
+ * @method array<string> lrange(string $key, int $start, int $stop) Get a range of elements from a list
  * @method int lrem(string $key, string $value) Removes the first count occurrences of elements equal to value from the list stored at key
  * @method int zcard(string $key) Get the number of members in a sorted set
  * @method int zscore(string $key, string $member) Returns the score of member in the sorted set at key
  * @method boolean flushall() Remove all keys from all databases
  * @method boolean flushdb() Remove all keys from the current database
- * @method array zrange(string $key, int $start, int $stop, bool $withscores = false) Return a range of members in a sorted set, by index
- * @method array zrangebyscore(string $key, $start, $stop, array $options = []) Returns all the elements in the sorted set at key with a score between min and max (including elements with score equal to min or max). The elements are considered to be ordered from low to high scores
- * @method array zpopmin(string $key, int $count = 1)
- * @method array zpopmax(string $key, int $count = 1)
- * @method array zrevrange(string $key, int $start, int $stop, bool $withscores = false) Return a range of members in a sorted set, by index, with scores ordered from high to low
+ * @method array<mixed> zrange(string $key, int $start, int $stop, bool $withscores = false) Return a range of members in a sorted set, by index
+ * @method array<mixed> zrangebyscore(string $key, $start, $stop, array<mixed> $options = []) Returns all the elements in the sorted set at key with a score between min and max (including elements with score equal to min or max). The elements are considered to be ordered from low to high scores
+ * @method array<mixed> zpopmin(string $key, int $count = 1)
+ * @method array<mixed> zpopmax(string $key, int $count = 1)
+ * @method array<mixed> zrevrange(string $key, int $start, int $stop, bool $withscores = false) Return a range of members in a sorted set, by index, with scores ordered from high to low
  * @method float zincrby(string $key, float $increment, string $member) Increment or decrement member of key by the given value (decrement when negative value is passed)
- * @method array publish(string $channel, string $message) Posts a message to the given channel
+ * @method array<mixed> publish(string $channel, string $message) Posts a message to the given channel
  * @method mixed rawCommand(string $command, mixed ...$params) Run raw command with paramters
  */
 class RedisProxy
@@ -71,10 +71,12 @@ class RedisProxy
 
     private ?Driver $driver = null;
 
+    /** @var array<string> */
     private array $driversOrder;
 
     private string $optSerializer = Serializers::NONE;
 
+    /** @var array<string> */
     private array $supportedDrivers = [
         self::DRIVER_REDIS,
         self::DRIVER_PREDIS,
@@ -93,7 +95,10 @@ class RedisProxy
         $this->optSerializer = $optSerializer;
     }
 
-    public function setSentinelConnectionPool(array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true)
+    /**
+     * @param array<array{host: string, port: int}> $sentinels
+     */
+    public function setSentinelConnectionPool(array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true): void
     {
         $this->connectionPoolFactory = new SentinelConnectionPoolFactory($sentinels, $clusterId, $database, $timeout, $retryWait, $maxFails, $writeToReplicas);
     }
@@ -108,8 +113,8 @@ class RedisProxy
     }
 
     /**
-     * @param array{host: string, port: int} $masters
-     * @param array{array{host: string, port: int}} $slaves
+     * @param array<array{host: string, port: int}> $masters
+     * @param array<array{host: string, port: int}> $slaves
      */
     public function setMultiWriteConnectionPool(array $masters, array $slaves, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true, string $strategy = MultiWriteConnectionPool::STRATEGY_RANDOM): void
     {
@@ -147,15 +152,15 @@ class RedisProxy
 
     /**
      * Set driver priorities - default is 1. redis, 2. predis
-     * @param array $driversOrder
+     * @param array<string> $driversOrder
      * @return RedisProxy
      * @throws RedisProxyException if some driver is not supported
      */
     public function setDriversOrder(array $driversOrder): self
     {
         foreach ($driversOrder as $driver) {
-            if (!in_array($driver, $this->supportedDrivers)) {
-                throw new RedisProxyException('Driver "' . $driver . '" is not supported');
+            if (!in_array($driver, $this->supportedDrivers, true)) {
+                throw new RedisProxyException('Driver "' . (string)$driver . '" is not supported');
             }
         }
         $this->driversOrder = $driversOrder;
@@ -182,13 +187,23 @@ class RedisProxy
     }
 
     /**
+     * @param mixed $name
+     * @param mixed $arguments
      * @throws RedisProxyException
      */
-    public function __call($name, $arguments)
+    public function __call($name, $arguments): mixed
     {
         $this->init();
-        $name = strtolower($name);
-        return $this->driver->call($name, $arguments);
+        assert($this->driver !== null);
+
+        if (is_string($name)) {
+            $command = strtolower($name);
+        } else {
+            /** @var int|float|bool|null $name */
+            $command = strtolower((string)$name);
+        }
+        /** @var array<mixed> $arguments */
+        return $this->driver->call($command, $arguments);
     }
 
     /**
@@ -198,30 +213,39 @@ class RedisProxy
      */
     public function select(int $database): bool
     {
+        $this->init();
+        assert($this->driver !== null);
         $result = $this->driver->call('select', [$database]);
         return (bool) $result;
     }
 
     /**
+     * @return array<mixed>
      * @throws RedisProxyException
      */
     public function info(?string $section = null): array
     {
         $this->init();
+        assert($this->driver !== null);
+        
         $section = $section ? strtolower($section) : $section;
         $result = $section === null ? $this->driver->call('info') : $this->driver->call('info', [$section]);
 
         if ($result !== false) {
-            $databases = $section === null || $section === 'keyspace' ? $this->config(
-                'get',
-                'databases'
-            )['databases'] : null;
+            $configResult = $this->config('get', 'databases');
+            /** @var array<mixed> $configResult */
+            /** @var int|string|float $dbValue */
+            $dbValue = $configResult['databases'] ?? 0;
+            $databases = ($section === null || $section === 'keyspace') && isset($configResult['databases']) ? (int)$dbValue : null;
+            /** @var array<mixed> $result */
             $groupedResult = InfoHelper::createInfoArray($this, $result, $databases);
             if ($section === null) {
                 return $groupedResult;
             }
             if (isset($groupedResult[$section])) {
-                return $groupedResult[$section];
+                /** @var array<mixed> $sectionResult */
+                $sectionResult = $groupedResult[$section];
+                return $sectionResult;
             }
         }
         throw new RedisProxyException('Info section "' . $section . '" doesn\'t exist');
@@ -234,6 +258,8 @@ class RedisProxy
     public function exists(string $key): bool
     {
         $this->init();
+        assert($this->driver !== null);
+        
         $result = $this->driver->call('exists', [$key]);
         return (bool) $result;
     }
@@ -247,8 +273,12 @@ class RedisProxy
     public function get(string $key): ?string
     {
         $this->init();
+        assert($this->driver !== null);
+
         $result = $this->driver->call('get', [$key]);
-        return $this->convertFalseToNull($result);
+        $result = $this->convertFalseToNull($result);
+        /** @var string|null $result */
+        return $result;
     }
 
     /**
@@ -261,8 +291,12 @@ class RedisProxy
     public function getset(string $key, string $value): ?string
     {
         $this->init();
+        assert($this->driver !== null);
+
         $result = $this->driver->call('getset', [$key, $value]);
-        return $this->convertFalseToNull($result);
+        $result = $this->convertFalseToNull($result);
+        /** @var string|null $result */
+        return $result;
     }
 
     /**
@@ -275,6 +309,8 @@ class RedisProxy
     public function expire(string $key, int $seconds): bool
     {
         $this->init();
+        assert($this->driver !== null);
+        
         $result = $this->driver->call('expire', [$key, $seconds]);
         return (bool) $result;
     }
@@ -289,6 +325,8 @@ class RedisProxy
     public function pexpire(string $key, int $milliseconds): bool
     {
         $this->init();
+        assert($this->driver !== null);
+        
         $result = $this->driver->call('pexpire', [$key, $milliseconds]);
         return (bool) $result;
     }
@@ -303,6 +341,8 @@ class RedisProxy
     public function expireat(string $key, int $timestamp): bool
     {
         $this->init();
+        assert($this->driver !== null);
+        
         $result = $this->driver->call('expireat', [$key, $timestamp]);
         return (bool) $result;
     }
@@ -317,6 +357,8 @@ class RedisProxy
     public function pexpireat(string $key, int $millisecondsTimestamp): bool
     {
         $this->init();
+        assert($this->driver !== null);
+        
         $result = $this->driver->call('pexpireat', [$key, $millisecondsTimestamp]);
         return (bool) $result;
     }
@@ -330,6 +372,7 @@ class RedisProxy
     public function persist(string $key): bool
     {
         $this->init();
+        assert($this->driver !== null);
         $result = $this->driver->call('persist', [$key]);
         return (bool) $result;
     }
@@ -344,6 +387,7 @@ class RedisProxy
     public function setnx(string $key, string $value): bool
     {
         $this->init();
+        assert($this->driver !== null);
         $result = $this->driver->call('setnx', [$key, $value]);
         return (bool) $result;
     }
@@ -358,7 +402,10 @@ class RedisProxy
     {
         $keys = $this->prepareArguments('del', ...$keys);
         $this->init();
-        return $this->driver->call('del', [...$keys]);
+        assert($this->driver !== null);
+        $result = $this->driver->call('del', [...$keys]);
+        /** @var int|string|float $result */
+        return (int) $result;
     }
 
     /**
@@ -381,7 +428,10 @@ class RedisProxy
     public function incr(string $key): int
     {
         $this->init();
-        return $this->driver->call('incr', [$key]);
+        assert($this->driver !== null);
+        $result = $this->driver->call('incr', [$key]);
+        /** @var int|string|float $result */
+        return (int) $result;
     }
 
     /**
@@ -394,7 +444,10 @@ class RedisProxy
     public function incrby(string $key, int $increment = 1): int
     {
         $this->init();
-        return $this->driver->call('incrby', [$key, $increment]);
+        assert($this->driver !== null);
+        $result = $this->driver->call('incrby', [$key, $increment]);
+        /** @var int|string|float $result */
+        return (int) $result;
     }
 
     /**
@@ -407,7 +460,10 @@ class RedisProxy
     public function incrbyfloat(string $key, float $increment = 1.0): float
     {
         $this->init();
-        return (float) $this->driver->call('incrbyfloat', [$key, $increment]);
+        assert($this->driver !== null);
+        $result = $this->driver->call('incrbyfloat', [$key, $increment]);
+        /** @var int|string|float $result */
+        return (float) $result;
     }
 
     /**
@@ -419,7 +475,10 @@ class RedisProxy
     public function decr(string $key): int
     {
         $this->init();
-        return $this->driver->call('decr', [$key]);
+        assert($this->driver !== null);
+        $result = $this->driver->call('decr', [$key]);
+        /** @var int|string|float $result */
+        return (int) $result;
     }
 
     /**
@@ -432,7 +491,10 @@ class RedisProxy
     public function decrby(string $key, int $decrement = 1): int
     {
         $this->init();
-        return $this->driver->call('decrby', [$key, $decrement]);
+        assert($this->driver !== null);
+        $result = $this->driver->call('decrby', [$key, $decrement]);
+        /** @var int|string|float $result */
+        return (int) $result;
     }
 
     /**
@@ -456,41 +518,63 @@ class RedisProxy
     public function dump(string $key): ?string
     {
         $this->init();
+        assert($this->driver !== null);
         $result = $this->driver->call('dump', [$key]);
-        return $this->convertFalseToNull($result);
+        $result = $this->convertFalseToNull($result);
+        /** @var string|null $result */
+        return $result;
     }
 
     /**
      * Set multiple values to multiple keys
-     * @param array $dictionary
+     * @param mixed ...$dictionary
      * @return boolean true on success
      * @throws RedisProxyException if number of arguments is wrong
      */
     public function mset(...$dictionary): bool
     {
         $this->init();
+        assert($this->driver !== null);
         if (is_array($dictionary[0])) {
-            return $this->driver->call('mset', [...$dictionary]);
+            /** @var bool $result */
+            $result = $this->driver->call('mset', [...$dictionary]);
+            return $result;
         }
         $dictionary = $this->prepareKeyValue($dictionary, 'mset');
-        return $this->driver->call('mset', [$dictionary]);
+        /** @var bool $result */
+        $result = $this->driver->call('mset', [$dictionary]);
+        return $result;
     }
 
     /**
      * Multi get
      * @param string|string[] ...$keys
-     * @return array Returns the values for all specified keys. For every key that does not hold a string value or does not exist, null is returned
+     * @return array<string, string|null> Returns the values for all specified keys. For every key that does not hold a string value or does not exist, null is returned
      * @throws RedisProxyException
      */
     public function mget(...$keys): array
     {
         $keys = array_unique($this->prepareArguments('mget', ...$keys));
         $this->init();
+        assert($this->driver !== null);
         $values = [];
-        foreach ($this->driver->call('mget', [$keys]) as $value) {
+        $result = $this->driver->call('mget', [$keys]);
+        /** @var array<mixed> $result */
+        foreach ($result as $value) {
             $values[] = $this->convertFalseToNull($value);
         }
-        return array_combine($keys, $values);
+        /** @var array<string> $stringKeys */
+        $stringKeys = [];
+        foreach ($keys as $key) {
+            if (is_string($key)) {
+                $stringKeys[] = $key;
+            } else {
+                /** @var int|float|bool|null $key */
+                $stringKeys[] = (string)$key;
+            }
+        }
+        /** @var array<string, string|null> */
+        return array_combine($stringKeys, $values);
     }
 
     /**
@@ -498,16 +582,20 @@ class RedisProxy
      * @param mixed       $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
      * @param string|null $pattern pattern for keys, use * as wild card
      * @param int|null    $count
-     * @return array|boolean|null list of found keys, returns null if $iterator is 0 or '0'
+     * @return array<mixed>|bool|null list of found keys, returns null if $iterator is 0 or '0'
      * @throws RedisProxyException
      */
-    public function scan(&$iterator, ?string $pattern = null, ?int $count = null)
+    public function scan(mixed &$iterator, ?string $pattern = null, ?int $count = null): mixed
     {
+        /** @var string|int|float|null $iterator */
         if ((string) $iterator === '0') {
             return null;
         }
         $this->init();
-        return $this->driver->call('scan', [&$iterator, $pattern, $count]);
+        assert($this->driver !== null);
+        $result = $this->driver->call('scan', [&$iterator, $pattern, $count]);
+        /** @var array<mixed>|bool|null $result */
+        return $result;
     }
 
     /**
@@ -521,8 +609,11 @@ class RedisProxy
     public function hget(string $key, string $field): ?string
     {
         $this->init();
+        assert($this->driver !== null);
         $result = $this->driver->call('hget', [$key, $field]);
-        return $this->convertFalseToNull($result);
+        $result = $this->convertFalseToNull($result);
+        /** @var string|null $result */
+        return $result;
     }
 
     /**
@@ -534,7 +625,10 @@ class RedisProxy
     {
         $fields = $this->prepareArguments('hdel', ...$fields);
         $this->init();
-        return (int) $this->driver->call('hdel', [$key, ...$fields]);
+        assert($this->driver !== null);
+        $result = $this->driver->call('hdel', [$key, ...$fields]);
+        /** @var int|string|float $result */
+        return (int) $result;
     }
 
     /**
@@ -544,7 +638,10 @@ class RedisProxy
     public function hincrby(string $key, string $field, int $increment = 1): int
     {
         $this->init();
-        return (int) $this->driver->call('hincrby', [$key, $field, $increment]);
+        assert($this->driver !== null);
+        $result = $this->driver->call('hincrby', [$key, $field, $increment]);
+        /** @var int|string|float $result */
+        return (int) $result;
     }
 
     /**
@@ -554,7 +651,10 @@ class RedisProxy
     public function hincrbyfloat(string $key, string $field, float $increment = 1.0): float
     {
         $this->init();
-        return (float) $this->driver->call('hincrbyfloat', [$key, $field, $increment]);
+        assert($this->driver !== null);
+        $result = $this->driver->call('hincrbyfloat', [$key, $field, $increment]);
+        /** @var int|string|float $result */
+        return (float) $result;
     }
 
     /**
@@ -568,21 +668,27 @@ class RedisProxy
     {
         $fields = $this->prepareArguments('hexpire', ...$fields);
         $this->init();
-        return $this->driver->call('hexpire', [$key, $seconds, ...$fields]);
+        assert($this->driver !== null);
+        $result = $this->driver->call('hexpire', [$key, $seconds, ...$fields]);
+        /** @var array<int>|null $result */
+        return $result;
     }
 
     /**
      * Set multiple values to multiple hash fields
      * @param string $key
-     * @param array  $dictionary
+     * @param mixed ...$dictionary
      * @return boolean true on success
      * @throws RedisProxyException if number of arguments is wrong
      */
     public function hmset(string $key, ...$dictionary): bool
     {
         $this->init();
+        assert($this->driver !== null);
         if (is_array($dictionary[0])) {
-            return $this->driver->call('hmset', [$key, ...$dictionary]);
+            /** @var bool $result */
+            $result = $this->driver->call('hmset', [$key, ...$dictionary]);
+            return $result;
         }
         $dictionary = $this->prepareKeyValue($dictionary, 'hmset');
         return !!$this->driver->call('hmset', [$key, $dictionary]);
@@ -592,52 +698,69 @@ class RedisProxy
      * Multi hash get
      * @param string $key
      * @param string|string[] ...$fields
-     * @return array Returns the values for all specified fields. For every field that does not hold a string value or does not exist, null is returned
-     * @throws RedisProxyException
-     * @throws RedisProxyException
+     * @return array<string, string|null> Returns the values for all specified fields. For every field that does not hold a string value or does not exist, null is returned
      * @throws RedisProxyException
      */
     public function hmget(string $key, ...$fields): array
     {
         $fields = array_unique($this->prepareArguments('hmget', ...$fields));
         $this->init();
+        assert($this->driver !== null);
         $values = [];
-        foreach ($this->driver->call('hmget', [$key, $fields]) as $value) {
+        $result = $this->driver->call('hmget', [$key, $fields]);
+        /** @var array<mixed> $result */
+        foreach ($result as $value) {
             $values[] = $this->convertFalseToNull($value);
         }
-        return array_combine($fields, $values);
+        /** @var array<string> $stringFields */
+        $stringFields = [];
+        foreach ($fields as $field) {
+            if (is_string($field)) {
+                $stringFields[] = $field;
+            } else {
+                /** @var int|float|bool|null $field */
+                $stringFields[] = (string)$field;
+            }
+        }
+        /** @var array<string, string|null> */
+        return array_combine($stringFields, $values);
     }
 
     /**
      * Incrementally iterate hash fields and associated values
      * @param mixed       $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
      * @param string|null $pattern pattern for fields, use * as wild card
-     * @return array|boolean|null list of found fields with associated values, returns null if $iterator is 0 or '0'
+     * @return array<mixed>|bool|null list of found fields with associated values, returns null if $iterator is 0 or '0'
      * @throws RedisProxyException
      */
-    public function hscan(string $key, &$iterator, ?string $pattern = null, int $count = 0)
+    public function hscan(string $key, mixed &$iterator, ?string $pattern = null, int $count = 0): mixed
     {
+        /** @var string|int|float|null $iterator */
         if ((string) $iterator === '0') {
             return null;
         }
         $this->init();
-        return $this->driver->call('hscan', [$key, &$iterator, $pattern, $count]);
+        assert($this->driver !== null);
+        $result = $this->driver->call('hscan', [$key, &$iterator, $pattern, $count]);
+        /** @var array<mixed>|bool|null $result */
+        return $result;
     }
 
     /**
      * Add one or more members to a set
      * @param string $key
-     * @param array  $members
+     * @param array<mixed>  $members
      * @return int number of new members added to set
-     * @throws RedisProxyException
-     * @throws RedisProxyException
      * @throws RedisProxyException
      */
     public function sadd(string $key, ...$members): int
     {
         $members = $this->prepareArguments('sadd', ...$members);
         $this->init();
-        return (int) $this->driver->call('sadd', [$key, ...$members]);
+        assert($this->driver !== null);
+        $result = $this->driver->call('sadd', [$key, ...$members]);
+        /** @var int|string|float $result */
+        return (int) $result;
     }
 
     /**
@@ -649,6 +772,7 @@ class RedisProxy
     public function spop(string $key, ?int $count = 1)
     {
         $this->init();
+        assert($this->driver !== null);
         if ($count == 1 || $count === null) {
             $result = $this->driver->call('spop', [$key]);
             return $this->convertFalseToNull($result);
@@ -671,29 +795,37 @@ class RedisProxy
      * @param mixed       $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
      * @param string|null $pattern pattern for member's values, use * as wild card
      * @param int|null    $count
-     * @return array|boolean|null list of found members, returns null if $iterator is 0 or '0'
+     * @return array<mixed>|bool|null list of found members, returns null if $iterator is 0 or '0'
      * @throws RedisProxyException
      */
-    public function sscan(string $key, &$iterator, string $pattern = null, int $count = null)
+    public function sscan(string $key, mixed &$iterator, ?string $pattern = null, ?int $count = null): mixed
     {
+        /** @var string|int|float|null $iterator */
         if ((string) $iterator === '0') {
             return null;
         }
         $this->init();
-        return $this->driver->call('sscan', [$key, &$iterator, $pattern, $count]);
+        assert($this->driver !== null);
+        $result = $this->driver->call('sscan', [$key, &$iterator, $pattern, $count]);
+        /** @var array<mixed>|bool|null $result */
+        return $result;
     }
 
     /**
      * Remove the specified members from the set stored at key. Non-existing members are ignored
      * @param string $key
-     * @param string|array ...$members
+     * @param string|array<mixed> ...$members
      * @return int
      * @throws RedisProxyException
      */
     public function srem(string $key, ...$members): int
     {
         $members = $this->prepareArguments('srem', ...$members);
-        return (int) $this->driver->call('srem', [$key, ...$members]);
+        $this->init();
+        assert($this->driver !== null);
+        $result = $this->driver->call('srem', [$key, ...$members]);
+        /** @var int|string|float $result */
+        return (int) $result;
     }
 
     /**
@@ -707,7 +839,10 @@ class RedisProxy
     {
         $elements = $this->prepareArguments('lpush', ...$elements);
         $this->init();
-        return (int) $this->driver->call('lpush', [$key, ...$elements]);
+        assert($this->driver !== null);
+        $result = $this->driver->call('lpush', [$key, ...$elements]);
+        /** @var int|string|float $result */
+        return (int) $result;
     }
 
     /**
@@ -723,7 +858,10 @@ class RedisProxy
     {
         $elements = $this->prepareArguments('rpush', ...$elements);
         $this->init();
-        return (int) $this->driver->call('rpush', [$key, ...$elements]);
+        assert($this->driver !== null);
+        $result = $this->driver->call('rpush', [$key, ...$elements]);
+        /** @var int|string|float $result */
+        return (int) $result;
     }
 
     /**
@@ -735,6 +873,7 @@ class RedisProxy
     public function lpop(string $key)
     {
         $this->init();
+        assert($this->driver !== null);
         $result = $this->driver->call('lpop', [$key]);
         return $this->convertFalseToNull($result);
     }
@@ -743,9 +882,10 @@ class RedisProxy
      * Remove and get the last element in a list
      * @throws RedisProxyException
      */
-    public function rpop(string $key)
+    public function rpop(string $key): mixed
     {
         $this->init();
+        assert($this->driver !== null);
         $result = $this->driver->call('rpop', [$key]);
         return $this->convertFalseToNull($result);
     }
@@ -760,6 +900,7 @@ class RedisProxy
     public function lindex(string $key, int $index = 0)
     {
         $this->init();
+        assert($this->driver !== null);
         $result = $this->driver->call('lindex', [$key, $index]);
         return $this->convertFalseToNull($result);
     }
@@ -767,13 +908,14 @@ class RedisProxy
     /**
      * Add one or more members to a sorted set, or update its score if it already exists
      * @param string $key
-     * @param array  $dictionary (score1, member1[, score2, member2]) or associative array: [member1 => score1, member2 => score2]
+     * @param mixed ...$dictionary (score1, member1[, score2, member2]) or associative array: [member1 => score1, member2 => score2]
      * @return int
      * @throws RedisProxyException
      */
     public function zadd(string $key, ...$dictionary): int
     {
         $this->init();
+        assert($this->driver !== null);
         if (is_array($dictionary[0])) {
             $return = 0;
             foreach ($dictionary[0] as $member => $score) {
@@ -782,20 +924,26 @@ class RedisProxy
             }
             return $return;
         }
-        return (int) $this->driver->call('zadd', [$key, ...$dictionary]);
+        $result = $this->driver->call('zadd', [$key, ...$dictionary]);
+        /** @var int|string|float $result */
+        return (int) $result;
     }
 
     /**
      * Removes the specified members from the sorted set stored at key. Non-existing members are ignored
      * @param string $key
-     * @param string|array ...$members
+     * @param string|array<mixed> ...$members
      * @return int
      * @throws RedisProxyException
      */
     public function zrem(string $key, ...$members): int
     {
         $members = $this->prepareArguments('zrem', ...$members);
-        return (int) $this->driver->call('zrem', [$key, ...$members]);
+        $this->init();
+        assert($this->driver !== null);
+        $result = $this->driver->call('zrem', [$key, ...$members]);
+        /** @var int|string|float $result */
+        return (int) $result;
     }
 
     /**
@@ -804,16 +952,20 @@ class RedisProxy
      * @param mixed       $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
      * @param string|null $pattern pattern for member's values, use * as wild card
      * @param int|null    $count
-     * @return array|boolean|null list of found members with their values, returns null if $iterator is 0 or '0'
+     * @return array<mixed>|bool|null list of found members with their values, returns null if $iterator is 0 or '0'
      * @throws RedisProxyException
      */
-    public function zscan(string $key, &$iterator, ?string $pattern = null, ?int $count = null)
+    public function zscan(string $key, mixed &$iterator, ?string $pattern = null, ?int $count = null): mixed
     {
+        /** @var string|int|float|null $iterator */
         if ((string) $iterator === '0') {
             return null;
         }
         $this->init();
-        return $this->driver->call('zscan', [$key, &$iterator, $pattern, $count]);
+        assert($this->driver !== null);
+        $result = $this->driver->call('zscan', [$key, &$iterator, $pattern, $count]);
+        /** @var array<mixed>|bool|null $result */
+        return $result;
     }
 
     /**
@@ -824,8 +976,11 @@ class RedisProxy
     public function zrank(string $key, string $member): ?int
     {
         $this->init();
+        assert($this->driver !== null);
         $result = $this->driver->call('zrank', [$key, $member]);
-        return $this->convertFalseToNull($result);
+        $result = $this->convertFalseToNull($result);
+        /** @var int|null $result */
+        return $result;
     }
 
     /**
@@ -838,8 +993,11 @@ class RedisProxy
     public function zrevrank(string $key, string $member): ?int
     {
         $this->init();
+        assert($this->driver !== null);
         $result = $this->driver->call('zrevrank', [$key, $member]);
-        return $this->convertFalseToNull($result);
+        $result = $this->convertFalseToNull($result);
+        /** @var int|null $result */
+        return $result;
     }
 
     /**
@@ -848,31 +1006,36 @@ class RedisProxy
     public function rename(string $key, string $newKey): bool
     {
         $this->init();
+        assert($this->driver !== null);
         try {
             $result = $this->driver->call('rename', [$key, $newKey]);
         } catch (RedisProxyException $exception) {
             return false;
         }
-        return $result;
+        return (bool) $result;
     }
 
     /**
      * Subscribes the client to the specified channels
-     * @param string|array ...$channels
+     * @param string|array<mixed> ...$channels
+     * @return array<mixed>
      * @throws RedisProxyException
      */
     public function subscribe(callable $callback, ...$channels): array
     {
         $channels = $this->prepareArguments('subscribe', $channels);
         $this->init();
-        return $this->driver->call('subscribe', [...$channels, $callback]);
+        assert($this->driver !== null);
+        $result = $this->driver->call('subscribe', [...$channels, $callback]);
+        /** @var array<mixed> $result */
+        return $result;
     }
 
     /**
      * Create array from input array - odd keys are used as keys, even keys are used as values
-     * @param array  $dictionary
+     * @param array<mixed>  $dictionary
      * @param string $command
-     * @return array
+     * @return array<string, mixed>
      * @throws RedisProxyException if number of keys is not the same as number of values
      */
     private function prepareKeyValue(array $dictionary, string $command): array
@@ -887,13 +1050,24 @@ class RedisProxy
         if (count($keys) != count($values)) {
             throw new RedisProxyException("Wrong number of arguments for $command command");
         }
-        return array_combine($keys, $values);
+        /** @var array<string> $stringKeys */
+        $stringKeys = [];
+        foreach ($keys as $key) {
+            if (is_string($key)) {
+                $stringKeys[] = $key;
+            } else {
+                /** @var int|float|bool|null $key */
+                $stringKeys[] = (string)$key;
+            }
+        }
+        /** @var array<string, mixed> */
+        return array_combine($stringKeys, $values);
     }
 
     /**
      * @param string $command
      * @param mixed  ...$params
-     * @return array
+     * @return array<mixed>
      * @throws RedisProxyException
      */
     private function prepareArguments(string $command, ...$params): array
@@ -912,7 +1086,7 @@ class RedisProxy
      * @param mixed $result
      * @return mixed
      */
-    private function convertFalseToNull($result)
+    private function convertFalseToNull(mixed $result): mixed
     {
         return $result === false ? null : $result;
     }

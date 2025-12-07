@@ -7,6 +7,7 @@ use RedisProxy\Driver\Driver;
 
 class SentinelConnectionPoolFactory implements ConnectionPoolFactory
 {
+    /** @var array<array{host: string, port: int}> */
     private array $sentinels;
 
     private string $clusterId;
@@ -21,6 +22,9 @@ class SentinelConnectionPoolFactory implements ConnectionPoolFactory
 
     private bool $writeToReplicas;
 
+    /**
+     * @param array<array{host: string, port: int}> $sentinels
+     */
     public function __construct(array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true)
     {
         $this->sentinels = $sentinels;
