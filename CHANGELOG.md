@@ -2,6 +2,9 @@
 
 ## [Unreleased][unreleased]
 
+### Added
+- Basic Stream support (xadd, xlen, xrange, xdel)
+
 ## [1.6.0] - 2025-05-20
 ### Added
 - Multi write connections support

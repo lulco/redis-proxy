@@ -3,6 +3,7 @@
 namespace RedisProxy;
 
 use Redis;
+use RedisException;
 use RedisProxy\ConnectionFactory\Serializers;
 use RedisProxy\ConnectionPool\MultiWriteConnectionPool;
 use RedisProxy\ConnectionPoolFactory\ConnectionPoolFactory;
@@ -50,6 +51,9 @@ use RedisProxy\Driver\RedisDriver;
  * @method float zincrby(string $key, float $increment, string $member) Increment or decrement member of key by the given value (decrement when negative value is passed)
  * @method array publish(string $channel, string $message) Posts a message to the given channel
  * @method mixed rawCommand(string $command, mixed ...$params) Run raw command with paramters
+ * @method int xlen(string $key) Returns the number of entries inside a stream
+ * @method array xrange(string $key, string $start, string $end, ?int $count = null) The command returns the stream entries matching a given range of IDs
+ * @method int xdel(string $key, array $ids) Removes the specified entries from a stream
  */
 class RedisProxy
 {
@@ -866,6 +870,31 @@ class RedisProxy
         $channels = $this->prepareArguments('subscribe', $channels);
         $this->init();
         return $this->driver->call('subscribe', [...$channels, $callback]);
+    }
+
+    /**
+     * Append a message to a stream.
+     *
+     * @param string $key
+     * @param string $id The ID for the message we want to add. This can be the special value '*'
+     *                            which means Redis will generate the ID that appends the message to the
+     *                            end of the stream. It can also be a value in the form <ms>-* which will
+     *                            generate an ID that appends to the end ot entries with the same <ms> value (if any exist).
+     * @param array $messages
+     * @param int $maxLen If specified Redis will append the new message but trim any number of the
+     *                            oldest messages in the stream until the length is <= $maxlen.
+     * @param bool $isApproximate Used in conjunction with `$maxlen`, this flag tells Redis to trim the stream
+     *                            but in a more efficient way, meaning the trimming may not be exactly to `$maxlen` values.
+     * @param bool $nomkstream If passed as `TRUE`, the stream must exist for Redis to append the message.
+     *
+     * @return string The added message ID
+     *
+     * @throws RedisProxyException
+     */
+    public function xadd(string $key, string $id, array $messages, int $maxLen = 0, bool $isApproximate = false, bool $nomkstream = false): string
+    {
+        $this->init();
+        return $this->driver->call('xadd', [$key, $id, $messages, $maxLen, $isApproximate, $nomkstream]);
     }
 
     /**
