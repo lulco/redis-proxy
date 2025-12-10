@@ -187,6 +187,16 @@ class PredisDriver implements Driver
         return $this->connectionPool->getConnection('zrevrange')->zrevrange($key, $start, $stop, ['WITHSCORES' => $withscores]);
     }
 
+    public function xadd(string $key, string $id, array $messages, int $maxLen = 0, bool $isApproximate = false, bool $nomkstream = false): string
+    {
+        $options = ['nomkstream' => $nomkstream];
+        if ($maxLen > 0) {
+            $options['trim'] = ['MAXLEN', $isApproximate ? '~' : '=', $maxLen];
+        }
+
+        return $this->connectionPool->getConnection('xadd')->xadd($key, $messages, $id, $options);
+    }
+
     public function close()
     {
         return $this->connectionPool->getConnection('close')->executeRaw(['close']);
