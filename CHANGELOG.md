@@ -2,6 +2,7 @@
 
 ## [Unreleased][unreleased]
 
+## [1.7.0] - 2025-12-10
 ### Added
 - Basic Stream support (xadd, xlen, xrange, xdel)
 
@@ -117,7 +118,8 @@
 ### Added
 - Wrapper for \Redis
 
-[unreleased]: https://github.com/lulco/redis-proxy/compare/1.6.0...HEAD
+[unreleased]: https://github.com/lulco/redis-proxy/compare/1.7.0...HEAD
+[1.7.0]: https://github.com/lulco/redis-proxy/compare/1.6.0...1.7.0
 [1.6.0]: https://github.com/lulco/redis-proxy/compare/1.5.0...1.6.0
 [1.5.0]: https://github.com/lulco/redis-proxy/compare/1.4.0...1.5.0
 [1.4.0]: https://github.com/lulco/redis-proxy/compare/1.3.1...1.4.0
