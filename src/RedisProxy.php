@@ -3,7 +3,6 @@
 namespace RedisProxy;
 
 use Redis;
-use RedisException;
 use RedisProxy\ConnectionFactory\Serializers;
 use RedisProxy\ConnectionPool\MultiWriteConnectionPool;
 use RedisProxy\ConnectionPoolFactory\ConnectionPoolFactory;
@@ -646,11 +645,10 @@ class RedisProxy
      * Incrementally iterate Set elements
      * @param mixed       $iterator iterator / cursor, use $iterator = null for start scanning, when $iterator is changed to 0 or '0', scanning is finished
      * @param string|null $pattern pattern for member's values, use * as wild card
-     * @param int|null    $count
      * @return array|boolean|null list of found members, returns null if $iterator is 0 or '0'
      * @throws RedisProxyException
      */
-    public function sscan(string $key, &$iterator, string $pattern = null, int $count = null)
+    public function sscan(string $key, &$iterator, ?string $pattern, ?int $count)
     {
         if ((string) $iterator === '0') {
             return null;
@@ -864,8 +862,8 @@ class RedisProxy
      */
     private function prepareKeyValue(array $dictionary, string $command): array
     {
-        $keys = array_values(array_filter($dictionary, fn($key): bool => $key % 2 == 0, ARRAY_FILTER_USE_KEY));
-        $values = array_values(array_filter($dictionary, fn($key): bool => $key % 2 == 1, ARRAY_FILTER_USE_KEY));
+        $keys = array_values(array_filter($dictionary, fn ($key): bool => $key % 2 == 0, ARRAY_FILTER_USE_KEY));
+        $values = array_values(array_filter($dictionary, fn ($key): bool => $key % 2 == 1, ARRAY_FILTER_USE_KEY));
 
         if (count($keys) != count($values)) {
             throw new RedisProxyException(sprintf('Wrong number of arguments for %s command', $command));
