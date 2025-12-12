@@ -42,6 +42,7 @@ class PredisDriver implements Driver
         if ($this->connectionFactory === null) {
             $this->connectionFactory = new PredisConnectionFactory($this->optSerializer);
         }
+
         return $this->connectionFactory;
     }
 
@@ -50,6 +51,7 @@ class PredisDriver implements Driver
         if ($this->driverFactory === null) {
             $this->driverFactory = new PredisDriverFactory();
         }
+
         return $this->driverFactory;
     }
 
@@ -71,7 +73,7 @@ class PredisDriver implements Driver
                 throw $e;
             } catch (Throwable $t) {
                 if (!$t instanceof ConnectionException || !$this->connectionPool->handleFailed(++$attempt)) {
-                    throw new RedisProxyException("Error for command '$command', use getPrevious() for more info", 1484162284, $t);
+                    throw new RedisProxyException(sprintf("Error for command '%s', use getPrevious() for more info", $command), 1484162284, $t);
                 }
             }
         }
@@ -102,6 +104,7 @@ class PredisDriver implements Driver
         if ($result == '+OK') {
             return true;
         }
+
         return !!$this->transformResult($result);
     }
 
@@ -132,6 +135,7 @@ class PredisDriver implements Driver
         if ($iterator === null) {
             $iterator = '0';
         }
+
         $returned = $this->connectionPool->getConnection('scan')->scan($iterator, ['match' => $pattern, 'count' => $count]);
         $iterator = $returned[0];
         return $returned[1];
@@ -142,6 +146,7 @@ class PredisDriver implements Driver
         if ($iterator === null) {
             $iterator = '0';
         }
+
         $returned = $this->connectionPool->getConnection('hscan')->hscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
         $iterator = $returned[0];
         return $returned[1];
@@ -152,6 +157,7 @@ class PredisDriver implements Driver
         if ($iterator === null) {
             $iterator = '0';
         }
+
         $returned = $this->connectionPool->getConnection('sscan')->sscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
         $iterator = $returned[0];
         return $returned[1];
@@ -162,6 +168,7 @@ class PredisDriver implements Driver
         if ($iterator === null) {
             $iterator = '0';
         }
+
         $returned = $this->connectionPool->getConnection('zscan')->zscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
         $iterator = $returned[0];
         return $returned[1];
@@ -220,13 +227,15 @@ class PredisDriver implements Driver
     {
         try {
             $result = $connection->select($database);
-        } catch (Throwable $t) {
+        } catch (Throwable $throwable) {
             throw new RedisProxyException('Invalid DB index');
         }
+
         $result = $this->transformResult($result);
         if ($result === false) {
             throw new RedisProxyException('Invalid DB index');
         }
+
         return (bool) $result;
     }
 
@@ -245,6 +254,7 @@ class PredisDriver implements Driver
         if ($result instanceof Status) {
             $result = $result->getPayload() === 'OK';
         }
+
         return $result;
     }
 }

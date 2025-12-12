@@ -121,6 +121,7 @@ class MultiWriteConnectionPool implements ConnectionPool
                 continue;
             }
         }
+
         // load replicas
         if ($this->writeToReplicas) {
             foreach ($this->slaves as $slave) {
@@ -163,17 +164,18 @@ class MultiWriteConnectionPool implements ConnectionPool
                 if ($masterConnection === false) {
                     $masterConnection = reset($this->mastersConnection);
                 }
+
                 break;
             case self::STRATEGY_RANDOM:
-                $masterConnection = $this->mastersConnection[array_rand($this->mastersConnection)];
-                break;
             default:
                 $masterConnection = $this->mastersConnection[array_rand($this->mastersConnection)];
                 break;
         }
+
         if ($this->database) {
             $this->driver->connectionSelect($masterConnection, $this->database);
         }
+
         return $masterConnection;
     }
 
@@ -182,19 +184,19 @@ class MultiWriteConnectionPool implements ConnectionPool
      */
     private function getReplicaConnection()
     {
-        if (count($this->slavesConnection) === 0) {
+        if ($this->slavesConnection === []) {
             return $this->getMasterConnection();
         }
+
         switch ($this->strategy) {
             case self::STRATEGY_ROUND_ROBIN:
                 $slaveConnection = next($this->slavesConnection);
                 if ($slaveConnection === false) {
                     $slaveConnection = reset($this->slavesConnection);
                 }
+
                 break;
             case self::STRATEGY_RANDOM:
-                $slaveConnection = $this->slavesConnection[array_rand($this->slavesConnection)];
-                break;
             default:
                 $slaveConnection = $this->slavesConnection[array_rand($this->slavesConnection)];
                 break;

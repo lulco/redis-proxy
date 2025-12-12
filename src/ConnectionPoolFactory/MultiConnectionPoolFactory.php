@@ -49,9 +49,11 @@ class MultiConnectionPoolFactory implements ConnectionPoolFactory
         if ($this->retryWait) {
             $connectionPool->setRetryWait($this->retryWait);
         }
+
         if ($this->maxFails) {
             $connectionPool->setMaxFails($this->maxFails);
         }
+
         return $connectionPool;
     }
 }

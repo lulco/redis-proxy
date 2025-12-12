@@ -12,6 +12,7 @@ class RedisConnectionFactory implements ConnectionFactory
     {
         switch ($optSerializer) {
             case Serializers::NONE:
+            default:
                 $this->optSerializer = Redis::SERIALIZER_NONE;
                 break;
             case Serializers::PHP:
@@ -26,15 +27,10 @@ class RedisConnectionFactory implements ConnectionFactory
             case Serializers::IG_BINARY:
                 $this->optSerializer = Redis::SERIALIZER_IGBINARY;
                 break;
-            default:
-                $this->optSerializer = Redis::SERIALIZER_NONE;
-                break;
         }
     }
-    /**
-     * @return Redis
-     */
-    public function create(string $host, int $port, float $timeout = 0.0)
+
+    public function create(string $host, int $port, float $timeout = 0.0): \Redis
     {
         $redis = new Redis();
         $redis->connect($host, $port, $timeout);

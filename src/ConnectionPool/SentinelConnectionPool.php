@@ -130,6 +130,7 @@ class SentinelConnectionPool implements ConnectionPool
             } catch (Throwable $t) {
                 continue;
             }
+
             foreach ($replicasData as $replicaData) {
                 $normalizedRepolicaData = $this->normalizeResponze($replicaData);
                 if (isset($normalizedRepolicaData['flags']) &&
@@ -148,6 +149,7 @@ class SentinelConnectionPool implements ConnectionPool
                     ];
                 }
             }
+
             $this->failedCount = 0;
             $sentinelConnection->call('close');
             return true;
@@ -166,7 +168,7 @@ class SentinelConnectionPool implements ConnectionPool
      */
     private function getReplicaConnection()
     {
-        if (count($this->replicas) > 0) {
+        if ($this->replicas !== []) {
             while ($replica = array_shift($this->replicas)) {
                 try {
                     $replicaConnection = $this->driver->getConnectionFactory()->create($replica['ip'], $replica['port'], $this->timeout);
@@ -187,7 +189,7 @@ class SentinelConnectionPool implements ConnectionPool
             }
         }
 
-        if (count($this->replicasConnection) === 0) {
+        if ($this->replicasConnection === []) {
             return null;
         }
 
@@ -209,16 +211,13 @@ class SentinelConnectionPool implements ConnectionPool
 
     private function normalizeResponze(array $arr): array
     {
-        $keys = array_values(array_filter($arr, function ($key) {
-            return $key % 2 == 0;
-        }, ARRAY_FILTER_USE_KEY));
-        $values = array_values(array_filter($arr, function ($key) {
-            return $key % 2 == 1;
-        }, ARRAY_FILTER_USE_KEY));
+        $keys = array_values(array_filter($arr, fn($key): bool => $key % 2 == 0, ARRAY_FILTER_USE_KEY));
+        $values = array_values(array_filter($arr, fn($key): bool => $key % 2 == 1, ARRAY_FILTER_USE_KEY));
 
         if (count($keys) != count($values)) {
             throw new RedisProxyException('Wrong number of arguments');
         }
+
         return array_combine($keys, $values);
     }
 

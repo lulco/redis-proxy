@@ -27,10 +27,10 @@ class InfoHelperTest extends TestCase
         self::assertArrayHasKey('keyspace', $info);
         self::assertCount(5, $info['keyspace']);
         for ($i = 0; $i < 5; ++$i) {
-            self::assertArrayHasKey("db$i", $info['keyspace']);
-            self::assertEquals(0, $info['keyspace']["db$i"]['keys']);
-            self::assertNull($info['keyspace']["db$i"]['expires']);
-            self::assertNull($info['keyspace']["db$i"]['avg_ttl']);
+            self::assertArrayHasKey('db' . $i, $info['keyspace']);
+            self::assertEquals(0, $info['keyspace']['db' . $i]['keys']);
+            self::assertNull($info['keyspace']['db' . $i]['expires']);
+            self::assertNull($info['keyspace']['db' . $i]['avg_ttl']);
         }
     }
 
@@ -53,10 +53,10 @@ class InfoHelperTest extends TestCase
         self::assertArrayHasKey('keyspace', $info);
         self::assertCount(5, $info['keyspace']);
         for ($i = 0; $i < 5; ++$i) {
-            self::assertArrayHasKey("db$i", $info['keyspace']);
-            self::assertEquals(0, $info['keyspace']["db$i"]['keys']);
-            self::assertNull($info['keyspace']["db$i"]['expires']);
-            self::assertNull($info['keyspace']["db$i"]['avg_ttl']);
+            self::assertArrayHasKey('db' . $i, $info['keyspace']);
+            self::assertEquals(0, $info['keyspace']['db' . $i]['keys']);
+            self::assertNull($info['keyspace']['db' . $i]['expires']);
+            self::assertNull($info['keyspace']['db' . $i]['avg_ttl']);
         }
     }
 }

@@ -47,12 +47,6 @@ class InfoHelper
         'master_repl_offset' => 'replication',
     ];
 
-    /**
-     * @param RedisProxy $redisProxy
-     * @param array $result
-     * @param integer|null $databases
-     * @return array
-     */
     public static function createInfoArray(RedisProxy $redisProxy, array $result, ?int $databases = null): array
     {
         $groupedResult = self::initializeKeyspace($databases);
@@ -69,14 +63,16 @@ class InfoHelper
         if ($databases === null) {
             return $groupedResult;
         }
+
         $groupedResult['keyspace'] = [];
         for ($db = 0; $db < $databases; ++$db) {
-            $groupedResult['keyspace']["db$db"] = [
+            $groupedResult['keyspace']['db' . $db] = [
                 'keys' => 0,
                 'expires' => null,
                 'avg_ttl' => null,
             ];
         }
+
         return $groupedResult;
     }
 
@@ -87,6 +83,7 @@ class InfoHelper
             $groupedResult['keyspace'] = array_merge($groupedResult['keyspace'], $result['keyspace']);
             unset($result['keyspace']);
         }
+
         return array_merge($groupedResult, $result);
     }
 
@@ -102,12 +99,14 @@ class InfoHelper
                 if (strpos($key, $keyStart) === 0 && $keyStart === 'db') {
                     $value = self::createKeyspaceInfo($value);
                 }
+
                 if (strpos($key, $keyStart) === 0) {
                     $groupedResult[$targetSection][$key] = $value;
                     continue;
                 }
             }
         }
+
         return $groupedResult;
     }
 

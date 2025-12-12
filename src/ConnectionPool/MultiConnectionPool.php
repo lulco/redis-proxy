@@ -87,6 +87,7 @@ class MultiConnectionPool implements ConnectionPool
         if ($this->writeToReplicas && in_array($command, $this->getReadOnlyOperations(), true)) {
             return $this->getReplicaConnection();
         }
+
         return $this->getMasterConnection();
     }
 
@@ -108,6 +109,7 @@ class MultiConnectionPool implements ConnectionPool
             throw $e;
         } catch (Throwable $t) {
         }
+
         // load replicas
         if ($this->writeToReplicas) {
             foreach ($this->slaves as $slave) {
@@ -147,6 +149,7 @@ class MultiConnectionPool implements ConnectionPool
         if ($this->database) {
             $this->driver->connectionSelect($this->masterConnection, $this->database);
         }
+
         return $this->masterConnection;
     }
 
@@ -155,9 +158,10 @@ class MultiConnectionPool implements ConnectionPool
      */
     private function getReplicaConnection()
     {
-        if (count($this->slavesConnection) === 0) {
+        if ($this->slavesConnection === []) {
             return $this->masterConnection;
         }
+
         $slaveConnection = $this->slavesConnection[array_rand($this->slavesConnection)];
 
         if ($this->database) {
