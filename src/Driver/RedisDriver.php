@@ -41,6 +41,7 @@ class RedisDriver implements Driver
         if ($this->connectionFactory === null) {
             $this->connectionFactory = new RedisConnectionFactory($this->optSerializer);
         }
+
         return $this->connectionFactory;
     }
 
@@ -49,6 +50,7 @@ class RedisDriver implements Driver
         if ($this->driverFactory === null) {
             $this->driverFactory = new RedisDriverFactory();
         }
+
         return $this->driverFactory;
     }
 
@@ -69,7 +71,7 @@ class RedisDriver implements Driver
                 throw $e;
             } catch (Throwable $t) {
                 if (!$t instanceof RedisException || !$this->connectionPool->handleFailed(++$attempt)) {
-                    throw new RedisProxyException("Error for command '$command', use getPrevious() for more info", 1484162284, $t);
+                    throw new RedisProxyException(sprintf("Error for command '%s', use getPrevious() for more info", $command), 1484162284, $t);
                 }
             }
         }
@@ -104,6 +106,7 @@ class RedisDriver implements Driver
         if ($result == '+OK') {
             return true;
         }
+
         return !!$result;
     }
 
@@ -136,12 +139,14 @@ class RedisDriver implements Driver
     {
         try {
             $result = $connection->select($database);
-        } catch (Throwable $t) {
+        } catch (Throwable $throwable) {
             throw new RedisProxyException('Invalid DB index');
         }
+
         if ($result === false) {
             throw new RedisProxyException('Invalid DB index');
         }
+
         return (bool) $result;
     }
 

@@ -48,6 +48,7 @@ class SingleNodeConnectionPool implements ConnectionPool
         if ($this->connection !== null) {
             return $this->connection;
         }
+
         $this->connection = $this->driver->getConnectionFactory()->create($this->host, $this->port, $this->timeout);
 
         if ($this->autoSelectDb) {
@@ -69,6 +70,7 @@ class SingleNodeConnectionPool implements ConnectionPool
             usleep($this->retryWait * 1000);
             return true;
         }
+
         return false;
     }
 

@@ -24,7 +24,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertTrue($this->redisProxy->select(getenv('REDIS_PROXY_REDIS_DATABASE_2')));
     }
 
-    public function testSelectInvalidDatabase()
+    public function testSelectInvalidDatabase(): void
     {
         $this->expectExceptionMessage("Invalid DB index");
         $this->expectException(RedisProxyException::class);
@@ -81,6 +81,7 @@ abstract class BaseDriverTest extends TestCase
             self::assertArrayHasKey('expires', $dbValues);
             self::assertArrayHasKey('avg_ttl', $dbValues);
         }
+
         self::assertArrayHasKey('db0', $keyspaceInfo);
         self::assertEquals(1, $keyspaceInfo['db0']['keys']);
         self::assertEquals(0, $keyspaceInfo['db0']['expires']);
@@ -107,8 +108,9 @@ abstract class BaseDriverTest extends TestCase
         self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
         self::assertEquals(1, $this->redisProxy->dbsize());
         for ($i = 0; $i < 9; ++$i) {
-            self::assertTrue($this->redisProxy->set("my_key_$i", "my_value$i"));
+            self::assertTrue($this->redisProxy->set('my_key_' . $i, 'my_value' . $i));
         }
+
         self::assertEquals(10, $this->redisProxy->dbsize());
         $keys = $this->redisProxy->keys('*');
         self::assertEquals(count($keys), $this->redisProxy->dbsize());
@@ -133,7 +135,7 @@ abstract class BaseDriverTest extends TestCase
         $this->redisProxy->keys();
     }
 
-    public function testSetAndGet()
+    public function testSetAndGet(): void
     {
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertTrue($this->redisProxy->set('my_key', 'my_value'));
@@ -430,9 +432,9 @@ abstract class BaseDriverTest extends TestCase
         self::assertNull($this->redisProxy->get('my_key'));
         self::assertEquals(1, $this->redisProxy->incr('my_key'));
         self::assertEquals(1, $this->redisProxy->get('my_key'));
-        self::assertEquals(2, $this->redisProxy->incr('my_key', 5));
+        self::assertEquals(2, $this->redisProxy->incr('my_key'));
         self::assertEquals(2, $this->redisProxy->get('my_key'));
-        self::assertEquals(3, $this->redisProxy->incr('my_key', -4.1234));
+        self::assertEquals(3, $this->redisProxy->incr('my_key'));
         self::assertEquals(3, $this->redisProxy->get('my_key'));
     }
 
@@ -473,9 +475,9 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(10, $this->redisProxy->get('my_key'));
         self::assertEquals(9, $this->redisProxy->decr('my_key'));
         self::assertEquals(9, $this->redisProxy->get('my_key'));
-        self::assertEquals(8, $this->redisProxy->decr('my_key', 5));
+        self::assertEquals(8, $this->redisProxy->decr('my_key'));
         self::assertEquals(8, $this->redisProxy->get('my_key'));
-        self::assertEquals(7, $this->redisProxy->decr('my_key', -4.1234));
+        self::assertEquals(7, $this->redisProxy->decr('my_key'));
         self::assertEquals(7, $this->redisProxy->get('my_key'));
     }
 
@@ -518,8 +520,9 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(0, $this->redisProxy->dbsize());
         $keys = [];
         for ($i = 0; $i < 1000; ++$i) {
-            $keys["my_key_$i"] = "my_value_$i";
+            $keys['my_key_' . $i] = 'my_value_' . $i;
         }
+
         self::assertTrue($this->redisProxy->mset($keys));
         self::assertEquals(1000, $this->redisProxy->dbsize());
 
@@ -531,6 +534,7 @@ abstract class BaseDriverTest extends TestCase
                 self::assertTrue(strpos($key, 'my_key_') === 0);
             }
         }
+
         self::assertEquals(1000, $count);
         self::assertEquals(0, $iterator);
 
@@ -542,6 +546,7 @@ abstract class BaseDriverTest extends TestCase
                 self::assertTrue(strpos($key, 'my_key_1') === 0);
             }
         }
+
         self::assertEquals(111, $count);
         self::assertEquals(0, $iterator);
 
@@ -553,6 +558,7 @@ abstract class BaseDriverTest extends TestCase
                 self::assertTrue(strpos($key, '1') !== false);
             }
         }
+
         self::assertEquals(271, $count);
         self::assertEquals(0, $iterator);
     }
@@ -799,8 +805,9 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(0, $this->redisProxy->hlen('my_hash_key'));
         $members = [];
         for ($i = 0; $i < 1000; ++$i) {
-            $members["my_field_$i"] = "my_value_$i";
+            $members['my_field_' . $i] = 'my_value_' . $i;
         }
+
         self::assertTrue($this->redisProxy->hmset('my_hash_key', $members));
         self::assertEquals(1000, $this->redisProxy->hlen('my_hash_key'));
 
@@ -813,6 +820,7 @@ abstract class BaseDriverTest extends TestCase
                 self::assertTrue(strpos($value, 'my_value_') === 0);
             }
         }
+
         self::assertEquals(1000, $count);
         self::assertEquals(0, $iterator);
 
@@ -825,6 +833,7 @@ abstract class BaseDriverTest extends TestCase
                 self::assertTrue(strpos($value, 'my_value_1') === 0);
             }
         }
+
         self::assertEquals(111, $count);
         self::assertEquals(0, $iterator);
 
@@ -837,6 +846,7 @@ abstract class BaseDriverTest extends TestCase
                 self::assertTrue(strpos($value, '1') !== false);
             }
         }
+
         self::assertEquals(271, $count);
         self::assertEquals(0, $iterator);
     }
@@ -909,8 +919,9 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(0, $this->redisProxy->scard('my_set_key'));
         $members = [];
         for ($i = 0; $i < 1000; ++$i) {
-            $members[] = "member_$i";
+            $members[] = 'member_' . $i;
         }
+
         self::assertEquals(1000, $this->redisProxy->sadd('my_set_key', $members));
         self::assertEquals(1000, $this->redisProxy->scard('my_set_key'));
 
@@ -922,6 +933,7 @@ abstract class BaseDriverTest extends TestCase
                 self::assertTrue(strpos($sscanMember, 'member_') === 0);
             }
         }
+
         self::assertEquals(1000, $count);
         self::assertEquals(0, $iterator);
 
@@ -933,6 +945,7 @@ abstract class BaseDriverTest extends TestCase
                 self::assertTrue(strpos($sscanMember, 'member_1') === 0);
             }
         }
+
         self::assertEquals(111, $count);
         self::assertEquals(0, $iterator);
 
@@ -944,6 +957,7 @@ abstract class BaseDriverTest extends TestCase
                 self::assertTrue(strpos($sscanMember, '1') !== false);
             }
         }
+
         self::assertEquals(271, $count);
         self::assertEquals(0, $iterator);
     }
@@ -1277,8 +1291,9 @@ abstract class BaseDriverTest extends TestCase
 
         $members = [];
         for ($i = 0; $i < 1000; ++$i) {
-            $members["member_$i"] = mt_rand(0, 1000);
+            $members['member_' . $i] = mt_rand(0, 1000);
         }
+
         self::assertEquals(1000, $this->redisProxy->zadd('my_sorted_set_key', $members));
         self::assertEquals(1000, $this->redisProxy->zcard('my_sorted_set_key'));
 
@@ -1290,6 +1305,7 @@ abstract class BaseDriverTest extends TestCase
                 self::assertTrue(strpos($zscanMember, 'member_') === 0);
             }
         }
+
         self::assertEquals(1000, $count);
         self::assertEquals(0, $iterator);
 
@@ -1301,6 +1317,7 @@ abstract class BaseDriverTest extends TestCase
                 self::assertTrue(strpos($zscanMember, 'member_1') === 0);
             }
         }
+
         self::assertEquals(111, $count);
         self::assertEquals(0, $iterator);
 
@@ -1313,6 +1330,7 @@ abstract class BaseDriverTest extends TestCase
                 self::assertTrue(strpos($zscanMember, '1') !== false);
             }
         }
+
         self::assertEquals(271, $count);
         self::assertEquals(0, $iterator);
     }
@@ -1402,19 +1420,19 @@ abstract class BaseDriverTest extends TestCase
         self::assertTrue($this->redisProxy->rename('new_key', 'new_new_key'));
     }
 
-    public function testWrongRename()
+    public function testWrongRename(): void
     {
         self::assertFalse($this->redisProxy->rename('my_keyaaa', 'new_key'));
     }
 
-    public function testEmptySubscribe()
+    public function testEmptySubscribe(): void
     {
         $this->expectExceptionMessage("Error for command 'subscribe', use getPrevious() for more info");
         $this->expectException(RedisProxyException::class);
-        $this->redisProxy->subscribe(function (){});
+        $this->redisProxy->subscribe(function (): void{});
     }
 
-    public function testPublish()
+    public function testPublish(): void
     {
         self::assertEquals(0, $this->redisProxy->publish('test', 'aaaa'));
     }
