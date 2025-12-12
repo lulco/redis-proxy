@@ -166,7 +166,6 @@ class MultiWriteConnectionPool implements ConnectionPool
                 }
 
                 break;
-            case self::STRATEGY_RANDOM:
             default:
                 $masterConnection = $this->mastersConnection[array_rand($this->mastersConnection)];
                 break;
@@ -196,7 +195,6 @@ class MultiWriteConnectionPool implements ConnectionPool
                 }
 
                 break;
-            case self::STRATEGY_RANDOM:
             default:
                 $slaveConnection = $this->slavesConnection[array_rand($this->slavesConnection)];
                 break;
