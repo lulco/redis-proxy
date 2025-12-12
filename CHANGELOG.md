@@ -1,6 +1,7 @@
 # Change Log
 
 ## [Unreleased][unreleased]
+- PHP 8.4 support with small refatoring
 
 ## [1.7.0] - 2025-12-10
 ### Added
