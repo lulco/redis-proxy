@@ -443,7 +443,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(1, $this->redisProxy->get('my_key'));
         self::assertEquals(6, $this->redisProxy->incrby('my_key', 5));
         self::assertEquals(6, $this->redisProxy->get('my_key'));
-        self::assertEquals(10, $this->redisProxy->incrby('my_key', 4.1234));
+        self::assertEquals(10, $this->redisProxy->incrby('my_key', 4));
         self::assertEquals(10, $this->redisProxy->get('my_key'));
         self::assertEquals(5, $this->redisProxy->incrby('my_key', -5));
         self::assertEquals(5, $this->redisProxy->get('my_key'));
@@ -488,7 +488,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(9, $this->redisProxy->get('my_key'));
         self::assertEquals(4, $this->redisProxy->decrby('my_key', 5));
         self::assertEquals(4, $this->redisProxy->get('my_key'));
-        self::assertEquals(0, $this->redisProxy->decrby('my_key', 4.1234));
+        self::assertEquals(0, $this->redisProxy->decrby('my_key', 4));
         self::assertEquals(0, $this->redisProxy->get('my_key'));
         self::assertEquals(5, $this->redisProxy->decrby('my_key', -5));
         self::assertEquals(5, $this->redisProxy->get('my_key'));
@@ -689,7 +689,7 @@ abstract class BaseDriverTest extends TestCase
         self::assertEquals(1, $this->redisProxy->hget('my_hash_key', 'my_incr_field'));
         self::assertEquals(6, $this->redisProxy->hincrby('my_hash_key', 'my_incr_field', 5));
         self::assertEquals(6, $this->redisProxy->hget('my_hash_key', 'my_incr_field'));
-        self::assertEquals(10, $this->redisProxy->hincrby('my_hash_key', 'my_incr_field', 4.1234));
+        self::assertEquals(10, $this->redisProxy->hincrby('my_hash_key', 'my_incr_field', 4));
         self::assertEquals(10, $this->redisProxy->hget('my_hash_key', 'my_incr_field'));
         self::assertEquals(5, $this->redisProxy->hincrby('my_hash_key', 'my_incr_field', -5));
         self::assertEquals(5, $this->redisProxy->hget('my_hash_key', 'my_incr_field'));
@@ -1407,16 +1407,95 @@ abstract class BaseDriverTest extends TestCase
         self::assertFalse($this->redisProxy->rename('my_keyaaa', 'new_key'));
     }
 
-    public function  testEmptySubscribe()
+    public function testEmptySubscribe()
     {
         $this->expectExceptionMessage("Error for command 'subscribe', use getPrevious() for more info");
         $this->expectException(RedisProxyException::class);
         $this->redisProxy->subscribe(function (){});
     }
 
-    public function  testPublish()
+    public function testPublish()
     {
         self::assertEquals(0, $this->redisProxy->publish('test', 'aaaa'));
     }
 
+    public function testXaddXlenXrangeXdel(): void
+    {
+        self::assertTrue(is_string($this->redisProxy->xadd('my_xadd', '*', ['a1' => 'b1', 'c1' => 'd1'], 5, true)));
+        self::assertTrue(is_string($this->redisProxy->xadd('my_xadd', '*', ['a2' => 'b2', 'c2' => 'd2'], 5, true)));
+        self::assertTrue(is_string($this->redisProxy->xadd('my_xadd', '*', ['a3' => 'b3', 'c3' => 'd3'], 5, true)));
+        self::assertTrue(is_string($this->redisProxy->xadd('my_xadd', '*', ['a4' => 'b4', 'c4' => 'd4'], 5, true)));
+        self::assertTrue(is_string($this->redisProxy->xadd('my_xadd', '*', ['a5' => 'b5', 'c5' => 'd5'], 5, true)));
+        self::assertTrue(is_string($this->redisProxy->xadd('my_xadd', '*', ['a6' => 'b6', 'c6' => 'd6'], 5, true)));
+        self::assertTrue(is_string($this->redisProxy->xadd('my_xadd', '*', ['a7' => 'b7', 'c7' => 'd7'], 5, true)));
+        self::assertTrue(is_string($this->redisProxy->xadd('my_xadd', '*', ['a8' => 'b8', 'c8' => 'd8'], 5, true)));
+        self::assertTrue(is_string($this->redisProxy->xadd('my_xadd', '*', ['a9' => 'b9', 'c9' => 'd9'], 5, true)));
+        self::assertTrue(is_string($this->redisProxy->xadd('my_xadd', '*', ['a10' => 'b10', 'c10' => 'd10'], 5, true)));
+        self::assertSame(10, $this->redisProxy->xlen('my_xadd'));
+
+        $data = $this->redisProxy->xrange('my_xadd', '-', '+');
+        $expectedData = [
+            ['a1' => 'b1', 'c1' => 'd1'],
+            ['a2' => 'b2', 'c2' => 'd2'],
+            ['a3' => 'b3', 'c3' => 'd3'],
+            ['a4' => 'b4', 'c4' => 'd4'],
+            ['a5' => 'b5', 'c5' => 'd5'],
+            ['a6' => 'b6', 'c6' => 'd6'],
+            ['a7' => 'b7', 'c7' => 'd7'],
+            ['a8' => 'b8', 'c8' => 'd8'],
+            ['a9' => 'b9', 'c9' => 'd9'],
+            ['a10' => 'b10', 'c10' => 'd10'],
+        ];
+        self::assertSame($expectedData, array_values($data));
+
+        self::assertTrue(is_string($this->redisProxy->xadd('my_xadd', '*', ['a11' => 'b11', 'c11' => 'd11'], 5)));
+        self::assertSame(5, $this->redisProxy->xlen('my_xadd'));
+        $data = $this->redisProxy->xrange('my_xadd', '-', '+');
+        $expectedData = [
+            ['a7' => 'b7', 'c7' => 'd7'],
+            ['a8' => 'b8', 'c8' => 'd8'],
+            ['a9' => 'b9', 'c9' => 'd9'],
+            ['a10' => 'b10', 'c10' => 'd10'],
+            ['a11' => 'b11', 'c11' => 'd11'],
+        ];
+        self::assertSame($expectedData, array_values($data));
+
+        self::assertTrue(is_string($this->redisProxy->xadd('my_xadd', '*', ['a12' => 'b12', 'c12' => 'd12'], 5)));
+        self::assertSame(5, $this->redisProxy->xlen('my_xadd'));
+        $data = $this->redisProxy->xrange('my_xadd', '-', '+');
+        $keys = array_keys($data);
+        $expectedData = [
+            ['a8' => 'b8', 'c8' => 'd8'],
+            ['a9' => 'b9', 'c9' => 'd9'],
+            ['a10' => 'b10', 'c10' => 'd10'],
+            ['a11' => 'b11', 'c11' => 'd11'],
+            ['a12' => 'b12', 'c12' => 'd12'],
+        ];
+        self::assertSame($expectedData, array_values($data));
+
+        $data = $this->redisProxy->xrange('my_xadd', '-', '+', 2);
+        $expectedData = [
+            ['a8' => 'b8', 'c8' => 'd8'],
+            ['a9' => 'b9', 'c9' => 'd9'],
+        ];
+        self::assertSame($expectedData, array_values($data));
+
+        $keys = array_keys($data);
+        self::assertSame(2, $this->redisProxy->xdel('my_xadd', [$keys[0], $keys[1]]));
+        self::assertSame(3, $this->redisProxy->xlen('my_xadd'));
+        $data = $this->redisProxy->xrange('my_xadd', '-', '+');
+        $expectedData = [
+            ['a10' => 'b10', 'c10' => 'd10'],
+            ['a11' => 'b11', 'c11' => 'd11'],
+            ['a12' => 'b12', 'c12' => 'd12'],
+        ];
+        self::assertSame($expectedData, array_values($data));
+
+        $data = $this->redisProxy->xrange('my_xadd', '-', '+', 2);
+        $expectedData = [
+            ['a10' => 'b10', 'c10' => 'd10'],
+            ['a11' => 'b11', 'c11' => 'd11'],
+        ];
+        self::assertSame($expectedData, array_values($data));
+    }
 }

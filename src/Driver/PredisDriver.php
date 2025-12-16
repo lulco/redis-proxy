@@ -261,7 +261,19 @@ class PredisDriver implements Driver
         return $result;
     }
 
-    public function close(): mixed
+    public function xadd(string $key, string $id, array $messages, int $maxLen = 0, bool $isApproximate = false, bool $nomkstream = false): string
+    {
+        $options = ['nomkstream' => $nomkstream];
+        if ($maxLen > 0) {
+            $options['trim'] = ['MAXLEN', $isApproximate ? '~' : '=', $maxLen];
+        }
+
+        /** @var \Predis\Client $connection */
+        $connection = $this->connectionPool->getConnection('xadd');
+        return $connection->xadd($key, $messages, $id, $options);
+    }
+
+    public function close()
     {
         /** @var \Predis\Client $connection */
         $connection = $this->connectionPool->getConnection('close');
