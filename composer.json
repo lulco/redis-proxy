@@ -15,8 +15,7 @@
     },
     "require-dev": {
         "predis/predis": "^3.0.1",
-        "phpunit/phpunit": "^9.5.20",
-        "psr/http-message": "^2.0"
+        "phpunit/phpunit": "^12"
     },
     "suggest": {
         "ext-redis": "Native PHP extension for Redis connectivity.",
