@@ -5,7 +5,7 @@ namespace RedisProxy\Tests;
 use Composer\InstalledVersions;
 use RedisProxy\RedisProxy;
 
-class PredisDriverTest extends BaseDriverTest
+class PredisDriverTest extends BaseDriverTestCase
 {
     protected function initializeDriver(): RedisProxy
     {

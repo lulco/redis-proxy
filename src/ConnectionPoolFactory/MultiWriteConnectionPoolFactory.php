@@ -8,12 +8,12 @@ use RedisProxy\Driver\Driver;
 class MultiWriteConnectionPoolFactory implements ConnectionPoolFactory
 {
     /**
-     * @var array{array{host: string, port: int}} $master
+     * @var array<array{host: string, port: int}> $masters
      */
     private array $masters;
 
     /**
-     * @var array{array{host: string, port: int}} $slaves
+     * @var array<array{host: string, port: int}> $slaves
      */
     private array $slaves;
 
@@ -30,8 +30,8 @@ class MultiWriteConnectionPoolFactory implements ConnectionPoolFactory
     private string $strategy;
 
     /**
-     * @param array{array{host: string, port: int}} $masters
-     * @param array{array{host: string, port: int}} $slaves
+     * @param array<array{host: string, port: int}> $masters
+     * @param array<array{host: string, port: int}> $slaves
      */
     public function __construct(array $masters, array $slaves, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true, string $strategy = MultiWriteConnectionPool::STRATEGY_RANDOM)
     {

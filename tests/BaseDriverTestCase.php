@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
 use RedisProxy\RedisProxy;
 use RedisProxy\RedisProxyException;
 
-abstract class BaseDriverTest extends TestCase
+abstract class BaseDriverTestCase extends TestCase
 {
     protected RedisProxy $redisProxy;
 

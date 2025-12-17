@@ -43,12 +43,14 @@ class SingleNodeConnectionPool implements ConnectionPool
     /**
      * @throws RedisProxyException
      */
-    public function getConnection(string $command)
+    public function getConnection(string $command): mixed
     {
         if ($this->connection !== null) {
             return $this->connection;
         }
-        $this->connection = $this->driver->getConnectionFactory()->create($this->host, $this->port, $this->timeout);
+        $connection = $this->driver->getConnectionFactory()->create($this->host, $this->port, $this->timeout);
+        /** @var Client|\Redis $connection */
+        $this->connection = $connection;
 
         if ($this->autoSelectDb) {
             $this->driver->connectionSelect($this->connection, $this->database);

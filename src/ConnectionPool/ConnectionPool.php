@@ -4,7 +4,7 @@ namespace RedisProxy\ConnectionPool;
 
 interface ConnectionPool
 {
-    public function getConnection(string $command);
+    public function getConnection(string $command): mixed;
 
     public function resetConnection(): void;
 
