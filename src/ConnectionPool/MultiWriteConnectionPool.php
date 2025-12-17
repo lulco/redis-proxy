@@ -2,6 +2,7 @@
 
 namespace RedisProxy\ConnectionPool;
 
+use Predis\Client;
 use RedisProxy\Driver\Driver;
 use RedisProxy\RedisProxyException;
 use Throwable;
@@ -157,7 +158,7 @@ class MultiWriteConnectionPool implements ConnectionPool
         return $this->failedCount < $this->maxFails;
     }
 
-    private function getMasterConnection(): \Redis|\Predis\Client
+    private function getMasterConnection(): \Redis|Client
     {
         switch ($this->strategy) {
             case self::STRATEGY_ROUND_ROBIN:
@@ -170,7 +171,7 @@ class MultiWriteConnectionPool implements ConnectionPool
                 $masterConnection = $this->mastersConnection[array_rand($this->mastersConnection)];
                 break;
         }
-        assert($masterConnection instanceof \Redis || $masterConnection instanceof \Predis\Client);
+        assert($masterConnection instanceof \Redis || $masterConnection instanceof Client);
         if ($this->database) {
             $this->driver->connectionSelect($masterConnection, $this->database);
         }

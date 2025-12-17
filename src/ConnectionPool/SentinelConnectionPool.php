@@ -2,6 +2,7 @@
 
 namespace RedisProxy\ConnectionPool;
 
+use Predis\Client;
 use RedisProxy\ConnectionPoolFactory\SingleNodeConnectionPoolFactory;
 use RedisProxy\Driver\Driver;
 use RedisProxy\RedisProxyException;
@@ -20,7 +21,7 @@ class SentinelConnectionPool implements ConnectionPool
 
     private float $timeout;
 
-    private \Redis|\Predis\Client|null $masterConnection = null;
+    private \Redis|Client|null $masterConnection = null;
 
     /** @var array<string, array{ip: string, port: int}> */
     private array $replicas = [];
@@ -168,7 +169,7 @@ class SentinelConnectionPool implements ConnectionPool
         return false;
     }
 
-    private function getMasterConnection(): \Redis|\Predis\Client|null
+    private function getMasterConnection(): \Redis|Client|null
     {
         return $this->masterConnection;
     }

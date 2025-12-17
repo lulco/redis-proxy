@@ -2,6 +2,7 @@
 
 namespace RedisProxy\Driver;
 
+use Predis\Client;
 use Predis\Connection\ConnectionException;
 use Predis\Response\Status;
 use RedisProxy\ConnectionFactory\PredisConnectionFactory;
@@ -69,7 +70,7 @@ class PredisDriver implements Driver
                     return call_user_func_array($callable, $params);
                 }
 
-                /** @var \Predis\Client $connection */
+                /** @var Client $connection */
                 $connection = $this->connectionPool->getConnection($command);
                 /** @var callable $callable */
                 $callable = [$connection, $command];
@@ -97,14 +98,14 @@ class PredisDriver implements Driver
             return call_user_func_array($callable, $params);
         }
 
-        /** @var \Predis\Client $connection */
+        /** @var Client $connection */
         $connection = $this->connectionPool->getConnection('sentinel');
         return $connection->executeRaw(['sentinel', $command, ...$params]);
     }
 
     private function type(string $key): ?string
     {
-        /** @var \Predis\Client $connection */
+        /** @var Client $connection */
         $connection = $this->connectionPool->getConnection('type');
         $result = $connection->type($key);
         $result = $result instanceof Status ? $result->getPayload() : $result;
@@ -114,7 +115,7 @@ class PredisDriver implements Driver
 
     private function psetex(string $key, int $milliseconds, string $value): bool
     {
-        /** @var \Predis\Client $connection */
+        /** @var Client $connection */
         $connection = $this->connectionPool->getConnection('psetex');
         $result = $connection->psetex($key, $milliseconds, $value);
         if ($result == '+OK') {
@@ -125,7 +126,7 @@ class PredisDriver implements Driver
 
     private function mset(mixed $dictionary): bool
     {
-        /** @var \Predis\Client $connection */
+        /** @var Client $connection */
         $connection = $this->connectionPool->getConnection('mset');
         /** @var array<mixed> $dictionary */
         $result = $connection->mset($dictionary);
@@ -136,7 +137,7 @@ class PredisDriver implements Driver
 
     private function hexists(string $key, string $field): bool
     {
-        /** @var \Predis\Client $connection */
+        /** @var Client $connection */
         $connection = $this->connectionPool->getConnection('hexists');
         return (bool)$connection->hexists($key, $field);
     }
@@ -146,7 +147,7 @@ class PredisDriver implements Driver
      */
     private function hexpire(string $key, int $seconds, string ...$fields): ?array
     {
-        /** @var \Predis\Client $connection */
+        /** @var Client $connection */
         $connection = $this->connectionPool->getConnection('hexpire');
         $result = $connection->hexpire($key, $seconds, $fields);
         /** @var array<int>|null $result */
@@ -158,7 +159,7 @@ class PredisDriver implements Driver
         if ($iterator === null) {
             $iterator = '0';
         }
-        /** @var \Predis\Client $connection */
+        /** @var Client $connection */
         $connection = $this->connectionPool->getConnection('scan');
         $returned = $connection->scan($iterator, ['match' => $pattern, 'count' => $count]);
         $iterator = $returned[0];
@@ -170,7 +171,7 @@ class PredisDriver implements Driver
         if ($iterator === null) {
             $iterator = '0';
         }
-        /** @var \Predis\Client $connection */
+        /** @var Client $connection */
         $connection = $this->connectionPool->getConnection('hscan');
         $returned = $connection->hscan($key, $iterator, ['match' => $pattern, 'count' => $count]);
         $iterator = $returned[0];
@@ -182,7 +183,7 @@ class PredisDriver implements Driver
         if ($iterator === null) {
             $iterator = '0';
         }
-        /** @var \Predis\Client $connection */
+        /** @var Client $connection */
         $connection = $this->connectionPool->getConnection('sscan');
         if (is_int($iterator)) {
             $iteratorValue = $iterator;
@@ -200,7 +201,7 @@ class PredisDriver implements Driver
         if ($iterator === null) {
             $iterator = '0';
         }
-        /** @var \Predis\Client $connection */
+        /** @var Client $connection */
         $connection = $this->connectionPool->getConnection('zscan');
         if (is_int($iterator)) {
             $iteratorValue = $iterator;
@@ -218,7 +219,7 @@ class PredisDriver implements Driver
      */
     private function zrange(string $key, int $start, int $stop, bool $withscores = false): array
     {
-        /** @var \Predis\Client $connection */
+        /** @var Client $connection */
         $connection = $this->connectionPool->getConnection('zrange');
         $result = $connection->zrange($key, $start, $stop, ['WITHSCORES' => $withscores]);
         /** @var array<mixed> $result */
@@ -230,7 +231,7 @@ class PredisDriver implements Driver
      */
     private function zpopmin(string $key, int $count = 1): array
     {
-        /** @var \Predis\Client $connection */
+        /** @var Client $connection */
         $connection = $this->connectionPool->getConnection('zpopmin');
         $result = $connection->zpopmin($key, $count);
         /** @var array<mixed> $result */
@@ -242,7 +243,7 @@ class PredisDriver implements Driver
      */
     private function zpopmax(string $key, int $count = 1): array
     {
-        /** @var \Predis\Client $connection */
+        /** @var Client $connection */
         $connection = $this->connectionPool->getConnection('zpopmax');
         $result = $connection->zpopmax($key, $count);
         /** @var array<mixed> $result */
@@ -254,7 +255,7 @@ class PredisDriver implements Driver
      */
     public function zrevrange(string $key, int $start, int $stop, bool $withscores = false): array
     {
-        /** @var \Predis\Client $connection */
+        /** @var Client $connection */
         $connection = $this->connectionPool->getConnection('zrevrange');
         $result = $connection->zrevrange($key, $start, $stop, ['WITHSCORES' => $withscores]);
         /** @var array<mixed> $result */
@@ -271,14 +272,14 @@ class PredisDriver implements Driver
             $options['trim'] = ['MAXLEN', $isApproximate ? '~' : '=', $maxLen];
         }
 
-        /** @var \Predis\Client $connection */
+        /** @var Client $connection */
         $connection = $this->connectionPool->getConnection('xadd');
         return $connection->xadd($key, $messages, $id, $options);
     }
 
     public function close(): mixed
     {
-        /** @var \Predis\Client $connection */
+        /** @var Client $connection */
         $connection = $this->connectionPool->getConnection('close');
         return $connection->executeRaw(['close']);
     }
@@ -290,7 +291,7 @@ class PredisDriver implements Driver
 
     public function connectionRole(mixed $connection): string
     {
-        /** @var \Predis\Client $connection */
+        /** @var Client $connection */
         $result = $connection->executeRaw(['role']);
         if (is_array($result) && isset($result[0])) {
             /** @var string|int|float $firstElement */
@@ -306,7 +307,7 @@ class PredisDriver implements Driver
     public function connectionSelect(mixed $connection, int $database): bool
     {
         try {
-            /** @var \Predis\Client $connection */
+            /** @var Client $connection */
             $result = $connection->select($database);
         } catch (Throwable $t) {
             throw new RedisProxyException('Invalid DB index');

@@ -49,7 +49,7 @@ class SingleNodeConnectionPool implements ConnectionPool
             return $this->connection;
         }
         $connection = $this->driver->getConnectionFactory()->create($this->host, $this->port, $this->timeout);
-        /** @var \Predis\Client|\Redis $connection */
+        /** @var Client|\Redis $connection */
         $this->connection = $connection;
 
         if ($this->autoSelectDb) {
