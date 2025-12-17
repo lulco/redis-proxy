@@ -20,7 +20,7 @@ class SentinelConnectionPool implements ConnectionPool
 
     private float $timeout;
 
-    private mixed $masterConnection = null;
+    private \Redis|\Predis\Client|null $masterConnection = null;
 
     /** @var array<string, array{ip: string, port: int}> */
     private array $replicas = [];
@@ -168,7 +168,7 @@ class SentinelConnectionPool implements ConnectionPool
         return false;
     }
 
-    private function getMasterConnection(): mixed
+    private function getMasterConnection(): \Redis|\Predis\Client|null
     {
         return $this->masterConnection;
     }

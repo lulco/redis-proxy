@@ -30,7 +30,7 @@ class MultiConnectionPool implements ConnectionPool
 
     private Driver $driver;
 
-    private mixed $masterConnection = null;
+    private \Redis|\Predis\Client|null $masterConnection = null;
 
     /** @var array<mixed> */
     private array $slavesConnection = [];
@@ -143,8 +143,9 @@ class MultiConnectionPool implements ConnectionPool
         return $this->failedCount < $this->maxFails;
     }
 
-    private function getMasterConnection(): mixed
+    private function getMasterConnection(): \Redis|\Predis\Client
     {
+        assert($this->masterConnection !== null);
         if ($this->database) {
             $this->driver->connectionSelect($this->masterConnection, $this->database);
         }
