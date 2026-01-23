@@ -4,6 +4,9 @@
 ### Added
 - Read/write operation timeout config
 
+### Changed
+- Throw RedisProxyException as original exception from database select command
+
 ## [1.7.0] - 2025-12-10
 ### Added
 - Basic Stream support (xadd, xlen, xrange, xdel)

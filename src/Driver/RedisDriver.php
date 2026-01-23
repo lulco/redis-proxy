@@ -137,7 +137,7 @@ class RedisDriver implements Driver
         try {
             $result = $connection->select($database);
         } catch (Throwable $t) {
-            throw new RedisProxyException('Invalid DB index');
+            throw new RedisProxyException($t->getMessage(), $t->getCode(), $t);
         }
         if ($result === false) {
             throw new RedisProxyException('Invalid DB index');
