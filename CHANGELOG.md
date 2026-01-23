@@ -2,6 +2,7 @@
 
 ## [Unreleased][unreleased]
 
+## [1.8.1] - 2026-01-23
 ### Fixed
 - Fixed missing init() call in zrem and srem
 
@@ -128,7 +129,8 @@
 ### Added
 - Wrapper for \Redis
 
-[unreleased]: https://github.com/lulco/redis-proxy/compare/1.8.0...HEAD
+[unreleased]: https://github.com/lulco/redis-proxy/compare/1.8.1...HEAD
+[1.8.1]: https://github.com/lulco/redis-proxy/compare/1.8.0...1.8.1
 [1.8.0]: https://github.com/lulco/redis-proxy/compare/1.7.0...1.8.0
 [1.7.0]: https://github.com/lulco/redis-proxy/compare/1.6.0...1.7.0
 [1.6.0]: https://github.com/lulco/redis-proxy/compare/1.5.0...1.6.0
