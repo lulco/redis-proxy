@@ -2,6 +2,9 @@
 
 ## [Unreleased][unreleased]
 
+### Fixed
+- Fixed missing init() call in zrem and srem
+
 ## [1.8.0] - 2026-01-23
 ### Added
 - Read/write operation timeout config

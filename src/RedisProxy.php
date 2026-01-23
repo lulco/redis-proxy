@@ -696,6 +696,7 @@ class RedisProxy
     public function srem(string $key, ...$members): int
     {
         $members = $this->prepareArguments('srem', ...$members);
+        $this->init();
         return (int) $this->driver->call('srem', [$key, ...$members]);
     }
 
@@ -798,6 +799,7 @@ class RedisProxy
     public function zrem(string $key, ...$members): int
     {
         $members = $this->prepareArguments('zrem', ...$members);
+        $this->init();
         return (int) $this->driver->call('zrem', [$key, ...$members]);
     }
 
