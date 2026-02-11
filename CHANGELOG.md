@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased][unreleased]
+### Changed
+- Normalized nullable parameter type declarations (potential BC if methods are overridden)
 
 ## [1.8.1] - 2026-01-23
 ### Fixed

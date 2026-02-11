@@ -677,7 +677,7 @@ class RedisProxy
      * @return array|boolean|null list of found members, returns null if $iterator is 0 or '0'
      * @throws RedisProxyException
      */
-    public function sscan(string $key, &$iterator, string $pattern = null, int $count = null)
+    public function sscan(string $key, &$iterator, ?string $pattern = null, ?int $count = null)
     {
         if ((string) $iterator === '0') {
             return null;
