@@ -30,6 +30,8 @@ class MultiConnectionPool implements ConnectionPool
 
     private ?float $operationTimeout;
 
+    private string $connectMode;
+
     private Driver $driver;
 
     private $masterConnection = null;
@@ -48,7 +50,7 @@ class MultiConnectionPool implements ConnectionPool
      * @param array{host: string, port: int} $master
      * @param array{array{host: string, port: int}} $slaves
      */
-    public function __construct(Driver $driver, array $master, array $slaves, int $database = 0, float $timeout = 0.0, ?float $operationTimeout = null)
+    public function __construct(Driver $driver, array $master, array $slaves, int $database = 0, float $timeout = 0.0, ?float $operationTimeout = null, string $connectMode = 'connect')
     {
         $this->driver = $driver;
         $this->master = $master;
@@ -56,6 +58,7 @@ class MultiConnectionPool implements ConnectionPool
         $this->database = $database;
         $this->timeout = $timeout;
         $this->operationTimeout = $operationTimeout;
+        $this->connectMode = $connectMode;
     }
 
     public function setRetryWait(int $retryWait): MultiConnectionPool
@@ -106,7 +109,7 @@ class MultiConnectionPool implements ConnectionPool
         $this->reset();
         // load master
         try {
-            $this->masterConnection = $this->driver->getConnectionFactory()->create($this->master['host'], $this->master['port'], $this->timeout, $this->operationTimeout);
+            $this->masterConnection = $this->driver->getConnectionFactory()->create($this->master['host'], $this->master['port'], $this->timeout, $this->operationTimeout, $this->connectMode);
         } catch (RedisProxyException $e) {
             throw $e;
         } catch (Throwable $t) {
@@ -115,7 +118,7 @@ class MultiConnectionPool implements ConnectionPool
         if ($this->writeToReplicas) {
             foreach ($this->slaves as $slave) {
                 try {
-                    $replicaConnection = $this->driver->getConnectionFactory()->create($slave['host'], $slave['port'], $this->timeout, $this->operationTimeout);
+                    $replicaConnection = $this->driver->getConnectionFactory()->create($slave['host'], $slave['port'], $this->timeout, $this->operationTimeout, $this->connectMode);
                     $this->slavesConnection[] = $replicaConnection;
                 } catch (RedisProxyException $e) {
                     throw $e;

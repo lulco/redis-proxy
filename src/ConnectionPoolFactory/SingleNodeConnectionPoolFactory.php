@@ -23,7 +23,9 @@ class SingleNodeConnectionPoolFactory implements ConnectionPoolFactory
 
     private ?int $maxFails;
 
-    public function __construct(string $host, int $port, int $database = 0, float $timeout = 0.0, bool $autoSelectDb = true, ?int $retryWait = null, ?int $maxFails = null, ?float $operationTimeout = null)
+    private string $connectMode;
+
+    public function __construct(string $host, int $port, int $database = 0, float $timeout = 0.0, bool $autoSelectDb = true, ?int $retryWait = null, ?int $maxFails = null, ?float $operationTimeout = null, string $connectMode = 'connect')
     {
         $this->host = $host;
         $this->port = $port;
@@ -33,10 +35,11 @@ class SingleNodeConnectionPoolFactory implements ConnectionPoolFactory
         $this->autoSelectDb = $autoSelectDb;
         $this->retryWait = $retryWait;
         $this->maxFails = $maxFails;
+        $this->connectMode = $connectMode;
     }
 
     public function create(Driver $driver): SingleNodeConnectionPool
     {
-        return new SingleNodeConnectionPool($driver, $this->host, $this->port, $this->database, $this->timeout, $this->autoSelectDb, $this->retryWait, $this->maxFails, $this->operationTimeout);
+        return new SingleNodeConnectionPool($driver, $this->host, $this->port, $this->database, $this->timeout, $this->autoSelectDb, $this->retryWait, $this->maxFails, $this->operationTimeout, $this->connectMode);
     }
 }

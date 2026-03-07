@@ -30,7 +30,25 @@ The fastest way to install Redis proxy is to add it to your project using Compos
 ## Usage
 ### Single redis node
 ```php
-$redis = new \RedisProxy\RedisProxy($host, $port);
+$database = 0;
+$timeout = 0.0;
+$retryWait = null;
+$maxFails = null;
+$optSerializer = \RedisProxy\ConnectionFactory\Serializers::NONE;
+$operationTimeout = null;
+$connectMode = \RedisProxy\RedisProxy::CONNECT_MODE_CONNECT; // or CONNECT_MODE_PCONNECT
+
+$redis = new \RedisProxy\RedisProxy(
+    $host,
+    $port,
+    $database,
+    $timeout,
+    $retryWait,
+    $maxFails,
+    $optSerializer,
+    $operationTimeout,
+    $connectMode
+);
 
 // Call redis methods
 $redis->select($database);
@@ -41,6 +59,14 @@ $redis->hgetall($key);
 ...
 ```
 
+### Connection parameters
+- `timeout`: timeout for establishing connection in seconds (`0.0` = unlimited)
+- `operationTimeout`: read/write timeout in seconds (`null` = default driver behavior)
+- `retryWait`: delay before retry in milliseconds
+- `maxFails`: number of attempts (`1` = one attempt, no retry)
+- `optSerializer`: `none`, `php`, `json`, `msgpack`, `igbinary`
+- `connectMode`: `connect` or `pconnect`
+
 ### Sentinel
 ```php
 $sentinels = [
@@ -49,9 +75,26 @@ $sentinels = [
     ['host' => '172.19.0.7', 'port' => 26379],
 ];
 $clusterId = 'mymaster';
+$database = 0;
+$timeout = 0.0;
+$retryWait = null;
+$maxFails = null;
+$writeToReplicas = true;
+$operationTimeout = null;
+$connectMode = \RedisProxy\RedisProxy::CONNECT_MODE_CONNECT; // or CONNECT_MODE_PCONNECT
 
 $redis = new \RedisProxy\RedisProxy();
-$redis->setSentinelConnectionPool($sentinels, $clusterId, $database);
+$redis->setSentinelConnectionPool(
+    $sentinels,
+    $clusterId,
+    $database,
+    $timeout,
+    $retryWait,
+    $maxFails,
+    $writeToReplicas,
+    $operationTimeout,
+    $connectMode
+);
 
 // Call redis methods
 $redis->hset($key, $field, $value);
@@ -70,10 +113,26 @@ $slaves = [
     ['host' => '172.19.0.6', 'port' => 26379],
     ['host' => '172.19.0.7', 'port' => 26379],
 ];
-$clusterId = 'mymaster';
+$database = 0;
+$timeout = 0.0;
+$retryWait = null;
+$maxFails = null;
+$writeToReplicas = true;
+$operationTimeout = null;
+$connectMode = \RedisProxy\RedisProxy::CONNECT_MODE_CONNECT; // or CONNECT_MODE_PCONNECT
 
 $redis = new \RedisProxy\RedisProxy();
-$redis->setMultiConnectionPool($master, $slaves);
+$redis->setMultiConnectionPool(
+    $master,
+    $slaves,
+    $database,
+    $timeout,
+    $retryWait,
+    $maxFails,
+    $writeToReplicas,
+    $operationTimeout,
+    $connectMode
+);
 ```
 
 ### Multi write connection
@@ -90,8 +149,66 @@ $slaves = [
     ['host' => '172.19.0.6', 'port' => 26379],
     ['host' => '172.19.0.7', 'port' => 26379],
 ];
-$clusterId = 'mymaster';
+$database = 0;
+$timeout = 0.0;
+$retryWait = null;
+$maxFails = null;
+$writeToReplicas = true;
+$strategy = \RedisProxy\ConnectionPool\MultiWriteConnectionPool::STRATEGY_RANDOM;
+$operationTimeout = null;
+$connectMode = \RedisProxy\RedisProxy::CONNECT_MODE_CONNECT; // or CONNECT_MODE_PCONNECT
 
 $redis = new \RedisProxy\RedisProxy();
-$redis->setMultiWriteConnectionPool($masters, $slaves);
+$redis->setMultiWriteConnectionPool(
+    $masters,
+    $slaves,
+    $database,
+    $timeout,
+    $retryWait,
+    $maxFails,
+    $writeToReplicas,
+    $strategy,
+    $operationTimeout,
+    $connectMode
+);
+```
+
+### RedisProxyFactory config
+Single node:
+```php
+$config = [
+    'host' => '127.0.0.1',
+    'port' => 6379,
+    'database' => 0,
+    'timeout' => 0.0,
+    'retryWait' => null,
+    'maxFails' => null,
+    'operationTimeout' => null,
+    'connectMode' => 'connect', // or 'pconnect'
+    'optSerializer' => 'none', // or 'php', 'json', 'msgpack', 'igbinary'
+];
+
+$redis = (new \RedisProxy\RedisProxyFactory())->createFromConfig($config);
+```
+
+Sentinel:
+```php
+$config = [
+    'sentinel' => [
+        'sentinels' => [
+            ['host' => '172.19.0.5', 'port' => 26379],
+            ['host' => '172.19.0.6', 'port' => 26379],
+        ],
+        'clusterId' => 'mymaster',
+        'database' => 0,
+        'timeout' => 0.0,
+        'retryWait' => null,
+        'maxFails' => null,
+        'writeToReplicas' => true,
+        'operationTimeout' => null,
+        'connectMode' => 'connect', // or 'pconnect'
+    ],
+];
+
+$redis = (new \RedisProxy\RedisProxyFactory())->createFromConfig($config);
 ```

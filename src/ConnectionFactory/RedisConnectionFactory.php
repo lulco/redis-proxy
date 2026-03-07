@@ -35,10 +35,14 @@ class RedisConnectionFactory implements ConnectionFactory
     /**
      * @return Redis
      */
-    public function create(string $host, int $port, float $timeout = 0.0, ?float $operationTimeout = null)
+    public function create(string $host, int $port, float $timeout = 0.0, ?float $operationTimeout = null, string $connectMode = 'connect')
     {
         $redis = new Redis();
-        $redis->connect($host, $port, $timeout);
+        if (strtolower($connectMode) === 'pconnect') {
+            $redis->pconnect($host, $port, $timeout);
+        } else {
+            $redis->connect($host, $port, $timeout);
+        }
         $redis->setOption(Redis::OPT_SERIALIZER, $this->optSerializer);
         if ($operationTimeout !== null) {
             $redis->setOption(Redis::OPT_READ_TIMEOUT, $operationTimeout);
