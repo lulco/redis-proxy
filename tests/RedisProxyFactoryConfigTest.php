@@ -95,7 +95,7 @@ class RedisProxyFactoryConfigTest extends TestCase
         self::assertSame(RedisProxy::CONNECT_MODE_PCONNECT, $this->readPrivate($connectionPoolFactory, 'connectMode'));
     }
 
-    private function readPrivate(object $object, string $property): mixed
+    private function readPrivate(object $object, string $property)
     {
         $reflection = new ReflectionClass($object);
         $prop = $reflection->getProperty($property);
@@ -103,4 +103,3 @@ class RedisProxyFactoryConfigTest extends TestCase
         return $prop->getValue($object);
     }
 }
-

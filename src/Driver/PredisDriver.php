@@ -147,7 +147,7 @@ class PredisDriver implements Driver
         return $returned[1];
     }
 
-    private function sscan(string $key, &$iterator, string $pattern = null, int $count = null)
+    private function sscan(string $key, &$iterator, ?string $pattern = null, ?int $count = null)
     {
         if ($iterator === null) {
             $iterator = '0';
