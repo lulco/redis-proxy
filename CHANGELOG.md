@@ -4,6 +4,9 @@
 ### Changed
 - Normalized nullable parameter type declarations (potential BC if methods are overridden)
 
+### Added
+- Support for pconnect
+
 ## [1.8.1] - 2026-01-23
 ### Fixed
 - Fixed missing init() call in zrem and srem

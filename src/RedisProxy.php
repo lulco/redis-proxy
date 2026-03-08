@@ -55,6 +55,10 @@ use RedisProxy\Driver\RedisDriver;
  */
 class RedisProxy
 {
+    public const CONNECT_MODE_CONNECT = 'connect';
+
+    public const CONNECT_MODE_PCONNECT = 'pconnect';
+
     public const DRIVER_REDIS = 'redis';
 
     public const DRIVER_PREDIS = 'predis';
@@ -88,34 +92,34 @@ class RedisProxy
      * @param int|null $maxFails 1 = no retries, one attempt (default)
      *                           2 = one retry, two attempts, ...
      */
-    public function __construct(string $host = '127.0.0.1', int $port = 6379, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, string $optSerializer = Serializers::NONE, ?float $operationTimeout = null)
+    public function __construct(string $host = '127.0.0.1', int $port = 6379, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, string $optSerializer = Serializers::NONE, ?float $operationTimeout = null, string $connectMode = self::CONNECT_MODE_CONNECT)
     {
-        $this->connectionPoolFactory = new SingleNodeConnectionPoolFactory($host, $port, $database, $timeout, true, $retryWait, $maxFails, $operationTimeout);
+        $this->connectionPoolFactory = new SingleNodeConnectionPoolFactory($host, $port, $database, $timeout, true, $retryWait, $maxFails, $operationTimeout, $connectMode);
         $this->driversOrder = $this->supportedDrivers;
         $this->optSerializer = $optSerializer;
     }
 
-    public function setSentinelConnectionPool(array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true, ?float $operationTimeout = null)
+    public function setSentinelConnectionPool(array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true, ?float $operationTimeout = null, string $connectMode = self::CONNECT_MODE_CONNECT)
     {
-        $this->connectionPoolFactory = new SentinelConnectionPoolFactory($sentinels, $clusterId, $database, $timeout, $retryWait, $maxFails, $writeToReplicas, $operationTimeout);
+        $this->connectionPoolFactory = new SentinelConnectionPoolFactory($sentinels, $clusterId, $database, $timeout, $retryWait, $maxFails, $writeToReplicas, $operationTimeout, $connectMode);
     }
 
     /**
      * @param array{host: string, port: int} $master
      * @param array{array{host: string, port: int}} $slaves
      */
-    public function setMultiConnectionPool(array $master, array $slaves, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true, ?float $operationTimeout = null): void
+    public function setMultiConnectionPool(array $master, array $slaves, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true, ?float $operationTimeout = null, string $connectMode = self::CONNECT_MODE_CONNECT): void
     {
-        $this->connectionPoolFactory = new MultiConnectionPoolFactory($master, $slaves, $database, $timeout, $retryWait, $maxFails, $writeToReplicas, $operationTimeout);
+        $this->connectionPoolFactory = new MultiConnectionPoolFactory($master, $slaves, $database, $timeout, $retryWait, $maxFails, $writeToReplicas, $operationTimeout, $connectMode);
     }
 
     /**
      * @param array{array{host: string, port: int}} $masters
      * @param array{array{host: string, port: int}} $slaves
      */
-    public function setMultiWriteConnectionPool(array $masters, array $slaves, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true, string $strategy = MultiWriteConnectionPool::STRATEGY_RANDOM, ?float $operationTimeout = null): void
+    public function setMultiWriteConnectionPool(array $masters, array $slaves, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true, string $strategy = MultiWriteConnectionPool::STRATEGY_RANDOM, ?float $operationTimeout = null, string $connectMode = self::CONNECT_MODE_CONNECT): void
     {
-        $this->connectionPoolFactory = new MultiWriteConnectionPoolFactory($masters, $slaves, $database, $timeout, $retryWait, $maxFails, $writeToReplicas, $strategy, $operationTimeout);
+        $this->connectionPoolFactory = new MultiWriteConnectionPoolFactory($masters, $slaves, $database, $timeout, $retryWait, $maxFails, $writeToReplicas, $strategy, $operationTimeout, $connectMode);
     }
 
     public function resetConnectionPool(): void
