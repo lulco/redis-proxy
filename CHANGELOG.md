@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased][unreleased]
+
+## [1.9.0] - 2026-03-08
 ### Changed
 - Normalized nullable parameter type declarations (potential BC if methods are overridden)
 
@@ -134,7 +136,8 @@
 ### Added
 - Wrapper for \Redis
 
-[unreleased]: https://github.com/lulco/redis-proxy/compare/1.8.1...HEAD
+[unreleased]: https://github.com/lulco/redis-proxy/compare/1.9.0...HEAD
+[1.9.0]: https://github.com/lulco/redis-proxy/compare/1.8.1...1.9.0
 [1.8.1]: https://github.com/lulco/redis-proxy/compare/1.8.0...1.8.1
 [1.8.0]: https://github.com/lulco/redis-proxy/compare/1.7.0...1.8.0
 [1.7.0]: https://github.com/lulco/redis-proxy/compare/1.6.0...1.7.0
