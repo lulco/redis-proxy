@@ -2,6 +2,9 @@
 
 ## [Unreleased][unreleased]
 
+### Added
+- Added support for php 8.4, 8.5, 8.6
+
 ## [1.9.0] - 2026-03-08
 ### Changed
 - Normalized nullable parameter type declarations (potential BC if methods are overridden)
