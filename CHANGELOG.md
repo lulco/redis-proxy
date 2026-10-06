@@ -2,6 +2,7 @@
 
 ## [Unreleased][unreleased]
 
+## [1.10.0] - 2026-10-06
 ### Added
 - Added support for php 8.4, 8.5, 8.6
 - Added support for rawCommand to PredisDriver
@@ -140,7 +141,8 @@
 ### Added
 - Wrapper for \Redis
 
-[unreleased]: https://github.com/lulco/redis-proxy/compare/1.9.0...HEAD
+[unreleased]: https://github.com/lulco/redis-proxy/compare/1.10.0...HEAD
+[1.10.0]: https://github.com/lulco/redis-proxy/compare/1.9.0...1.10.0
 [1.9.0]: https://github.com/lulco/redis-proxy/compare/1.8.1...1.9.0
 [1.8.1]: https://github.com/lulco/redis-proxy/compare/1.8.0...1.8.1
 [1.8.0]: https://github.com/lulco/redis-proxy/compare/1.7.0...1.8.0
