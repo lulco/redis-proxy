@@ -5,6 +5,7 @@ namespace RedisProxy\Driver;
 use Predis\Connection\ConnectionException;
 use Predis\Response\Status;
 use RedisProxy\ConnectionFactory\PredisConnectionFactory;
+use RedisProxy\ConnectionFactory\Serializers;
 use RedisProxy\ConnectionPool\ConnectionPool;
 use RedisProxy\ConnectionPoolFactory\ConnectionPoolFactory;
 use RedisProxy\DriverFactory\PredisDriverFactory;
@@ -20,6 +21,8 @@ class PredisDriver implements Driver
 
     private ?PredisDriverFactory $driverFactory = null;
 
+    private string $optSerializer = Serializers::NONE;
+
     private array $typeMap = [
         'string' => RedisProxy::TYPE_STRING,
         'set' => RedisProxy::TYPE_SET,
@@ -28,15 +31,16 @@ class PredisDriver implements Driver
         'hash' => RedisProxy::TYPE_HASH,
     ];
 
-    public function __construct(ConnectionPoolFactory $connectionPollFactory)
+    public function __construct(ConnectionPoolFactory $connectionPollFactory, string $optSerializer = Serializers::NONE)
     {
         $this->connectionPool = $connectionPollFactory->create($this);
+        $this->optSerializer = $optSerializer;
     }
 
     public function getConnectionFactory(): PredisConnectionFactory
     {
         if ($this->connectionFactory === null) {
-            $this->connectionFactory = new PredisConnectionFactory();
+            $this->connectionFactory = new PredisConnectionFactory($this->optSerializer);
         }
         return $this->connectionFactory;
     }
@@ -143,7 +147,7 @@ class PredisDriver implements Driver
         return $returned[1];
     }
 
-    private function sscan(string $key, &$iterator, string $pattern = null, int $count = null)
+    private function sscan(string $key, &$iterator, ?string $pattern = null, ?int $count = null)
     {
         if ($iterator === null) {
             $iterator = '0';
@@ -183,6 +187,16 @@ class PredisDriver implements Driver
         return $this->connectionPool->getConnection('zrevrange')->zrevrange($key, $start, $stop, ['WITHSCORES' => $withscores]);
     }
 
+    public function xadd(string $key, string $id, array $messages, int $maxLen = 0, bool $isApproximate = false, bool $nomkstream = false): string
+    {
+        $options = ['nomkstream' => $nomkstream];
+        if ($maxLen > 0) {
+            $options['trim'] = ['MAXLEN', $isApproximate ? '~' : '=', $maxLen];
+        }
+
+        return $this->connectionPool->getConnection('xadd')->xadd($key, $messages, $id, $options);
+    }
+
     public function close()
     {
         return $this->connectionPool->getConnection('close')->executeRaw(['close']);
@@ -214,6 +228,11 @@ class PredisDriver implements Driver
             throw new RedisProxyException('Invalid DB index');
         }
         return (bool) $result;
+    }
+
+    public function connectionReset(): void
+    {
+        $this->connectionPool->resetConnection();
     }
 
     /**

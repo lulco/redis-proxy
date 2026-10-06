@@ -2,8 +2,11 @@
 
 namespace RedisProxy;
 
+use RedisProxy\ConnectionFactory\Serializers;
+use RedisProxy\ConnectionPool\MultiWriteConnectionPool;
 use RedisProxy\ConnectionPoolFactory\ConnectionPoolFactory;
 use RedisProxy\ConnectionPoolFactory\MultiConnectionPoolFactory;
+use RedisProxy\ConnectionPoolFactory\MultiWriteConnectionPoolFactory;
 use RedisProxy\ConnectionPoolFactory\SentinelConnectionPoolFactory;
 use RedisProxy\ConnectionPoolFactory\SingleNodeConnectionPoolFactory;
 use RedisProxy\Driver\Driver;
@@ -46,9 +49,16 @@ use RedisProxy\Driver\RedisDriver;
  * @method float zincrby(string $key, float $increment, string $member) Increment or decrement member of key by the given value (decrement when negative value is passed)
  * @method array publish(string $channel, string $message) Posts a message to the given channel
  * @method mixed rawCommand(string $command, mixed ...$params) Run raw command with paramters
+ * @method int xlen(string $key) Returns the number of entries inside a stream
+ * @method array xrange(string $key, string $start, string $end, ?int $count = null) The command returns the stream entries matching a given range of IDs
+ * @method int xdel(string $key, array $ids) Removes the specified entries from a stream
  */
 class RedisProxy
 {
+    public const CONNECT_MODE_CONNECT = 'connect';
+
+    public const CONNECT_MODE_PCONNECT = 'pconnect';
+
     public const DRIVER_REDIS = 'redis';
 
     public const DRIVER_PREDIS = 'predis';
@@ -69,6 +79,8 @@ class RedisProxy
 
     private array $driversOrder;
 
+    private string $optSerializer = Serializers::NONE;
+
     private array $supportedDrivers = [
         self::DRIVER_REDIS,
         self::DRIVER_PREDIS,
@@ -80,24 +92,41 @@ class RedisProxy
      * @param int|null $maxFails 1 = no retries, one attempt (default)
      *                           2 = one retry, two attempts, ...
      */
-    public function __construct(string $host = '127.0.0.1', int $port = 6379, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null)
+    public function __construct(string $host = '127.0.0.1', int $port = 6379, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, string $optSerializer = Serializers::NONE, ?float $operationTimeout = null, string $connectMode = self::CONNECT_MODE_CONNECT)
     {
-        $this->connectionPoolFactory = new SingleNodeConnectionPoolFactory($host, $port, $database, $timeout, true, $retryWait, $maxFails);
+        $this->connectionPoolFactory = new SingleNodeConnectionPoolFactory($host, $port, $database, $timeout, true, $retryWait, $maxFails, $operationTimeout, $connectMode);
         $this->driversOrder = $this->supportedDrivers;
+        $this->optSerializer = $optSerializer;
     }
 
-    public function setSentinelConnectionPool(array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true)
+    public function setSentinelConnectionPool(array $sentinels, string $clusterId, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true, ?float $operationTimeout = null, string $connectMode = self::CONNECT_MODE_CONNECT)
     {
-        $this->connectionPoolFactory = new SentinelConnectionPoolFactory($sentinels, $clusterId, $database, $timeout, $retryWait, $maxFails, $writeToReplicas);
+        $this->connectionPoolFactory = new SentinelConnectionPoolFactory($sentinels, $clusterId, $database, $timeout, $retryWait, $maxFails, $writeToReplicas, $operationTimeout, $connectMode);
     }
 
     /**
      * @param array{host: string, port: int} $master
      * @param array{array{host: string, port: int}} $slaves
      */
-    public function setMultiConnectionPool(array $master, array $slaves, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true): void
+    public function setMultiConnectionPool(array $master, array $slaves, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true, ?float $operationTimeout = null, string $connectMode = self::CONNECT_MODE_CONNECT): void
     {
-        $this->connectionPoolFactory = new MultiConnectionPoolFactory($master, $slaves, $database, $timeout, $retryWait, $maxFails, $writeToReplicas);
+        $this->connectionPoolFactory = new MultiConnectionPoolFactory($master, $slaves, $database, $timeout, $retryWait, $maxFails, $writeToReplicas, $operationTimeout, $connectMode);
+    }
+
+    /**
+     * @param array{array{host: string, port: int}} $masters
+     * @param array{array{host: string, port: int}} $slaves
+     */
+    public function setMultiWriteConnectionPool(array $masters, array $slaves, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true, string $strategy = MultiWriteConnectionPool::STRATEGY_RANDOM, ?float $operationTimeout = null, string $connectMode = self::CONNECT_MODE_CONNECT): void
+    {
+        $this->connectionPoolFactory = new MultiWriteConnectionPoolFactory($masters, $slaves, $database, $timeout, $retryWait, $maxFails, $writeToReplicas, $strategy, $operationTimeout, $connectMode);
+    }
+
+    public function resetConnectionPool(): void
+    {
+        if ($this->driver !== null) {
+            $this->driver->connectionReset();
+        }
     }
 
     /**
@@ -111,11 +140,11 @@ class RedisProxy
 
         foreach ($this->driversOrder as $preferredDriver) {
             if ($preferredDriver === self::DRIVER_REDIS && extension_loaded('redis')) {
-                $this->driver = new RedisDriver($this->connectionPoolFactory);
+                $this->driver = new RedisDriver($this->connectionPoolFactory, $this->optSerializer);
                 return;
             }
             if ($preferredDriver === self::DRIVER_PREDIS && class_exists('Predis\Client')) {
-                $this->driver = new PredisDriver($this->connectionPoolFactory);
+                $this->driver = new PredisDriver($this->connectionPoolFactory, $this->optSerializer);
                 return;
             }
         }
@@ -175,6 +204,7 @@ class RedisProxy
      */
     public function select(int $database): bool
     {
+        $this->init();
         $result = $this->driver->call('select', [$database]);
         return (bool) $result;
     }
@@ -651,7 +681,7 @@ class RedisProxy
      * @return array|boolean|null list of found members, returns null if $iterator is 0 or '0'
      * @throws RedisProxyException
      */
-    public function sscan(string $key, &$iterator, string $pattern = null, int $count = null)
+    public function sscan(string $key, &$iterator, ?string $pattern = null, ?int $count = null)
     {
         if ((string) $iterator === '0') {
             return null;
@@ -670,6 +700,7 @@ class RedisProxy
     public function srem(string $key, ...$members): int
     {
         $members = $this->prepareArguments('srem', ...$members);
+        $this->init();
         return (int) $this->driver->call('srem', [$key, ...$members]);
     }
 
@@ -772,6 +803,7 @@ class RedisProxy
     public function zrem(string $key, ...$members): int
     {
         $members = $this->prepareArguments('zrem', ...$members);
+        $this->init();
         return (int) $this->driver->call('zrem', [$key, ...$members]);
     }
 
@@ -843,6 +875,31 @@ class RedisProxy
         $channels = $this->prepareArguments('subscribe', $channels);
         $this->init();
         return $this->driver->call('subscribe', [...$channels, $callback]);
+    }
+
+    /**
+     * Append a message to a stream.
+     *
+     * @param string $key
+     * @param string $id The ID for the message we want to add. This can be the special value '*'
+     *                            which means Redis will generate the ID that appends the message to the
+     *                            end of the stream. It can also be a value in the form <ms>-* which will
+     *                            generate an ID that appends to the end ot entries with the same <ms> value (if any exist).
+     * @param array $messages
+     * @param int $maxLen If specified Redis will append the new message but trim any number of the
+     *                            oldest messages in the stream until the length is <= $maxlen.
+     * @param bool $isApproximate Used in conjunction with `$maxlen`, this flag tells Redis to trim the stream
+     *                            but in a more efficient way, meaning the trimming may not be exactly to `$maxlen` values.
+     * @param bool $nomkstream If passed as `TRUE`, the stream must exist for Redis to append the message.
+     *
+     * @return string The added message ID
+     *
+     * @throws RedisProxyException
+     */
+    public function xadd(string $key, string $id, array $messages, int $maxLen = 0, bool $isApproximate = false, bool $nomkstream = false): string
+    {
+        $this->init();
+        return $this->driver->call('xadd', [$key, $id, $messages, $maxLen, $isApproximate, $nomkstream]);
     }
 
     /**

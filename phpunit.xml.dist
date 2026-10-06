@@ -1,24 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<phpunit bootstrap="vendor/autoload.php">
-    <php>
-        <env name="REDIS_PROXY_REDIS_HOST" value="localhost"/>
-        <env name="REDIS_PROXY_REDIS_PORT" value="6379"/>
-        <env name="REDIS_PROXY_REDIS_DATABASE" value="0"/>
-        <env name="REDIS_PROXY_REDIS_DATABASE_2" value="1"/>
-    </php>
-    <logging>
-        <log type="coverage-clover" target="build/logs/clover.xml"/>
-        <log type="coverage-text" target="php://stdout" showUncoveredFiles="true" showOnlySummary="true"/>
-    </logging>
-    <testsuites>
-        <testsuite name="Test suite">
-            <directory>tests/</directory>
-        </testsuite>
-    </testsuites>
-    <filter>
-        <whitelist processUncoveredFilesFromWhitelist="true">
-            <directory suffix=".php">src/</directory>
-        </whitelist>
-    </filter>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bootstrap="vendor/autoload.php" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd">
+  <coverage processUncoveredFiles="true">
+    <include>
+      <directory suffix=".php">src/</directory>
+    </include>
+    <report>
+      <clover outputFile="build/logs/clover.xml"/>
+      <text outputFile="php://stdout" showUncoveredFiles="true" showOnlySummary="true"/>
+    </report>
+  </coverage>
+  <php>
+    <env name="REDIS_PROXY_REDIS_HOST" value="127.0.0.1"/>
+    <env name="REDIS_PROXY_REDIS_FAKE_HOST" value="192.0.2.1"/>
+    <env name="REDIS_PROXY_REDIS_PORT" value="6379"/>
+    <env name="REDIS_PROXY_REDIS_DATABASE" value="0"/>
+    <env name="REDIS_PROXY_REDIS_DATABASE_2" value="1"/>
+    <env name="REDIS_PROXY_REDIS_TIMEOUT" value="0.0"/>
+    <env name="REDIS_PROXY_REDIS_OPERATION_TIMEOUT" value="1.0"/>
+  </php>
+  <logging/>
+  <testsuites>
+    <testsuite name="Test suite">
+      <directory>tests/</directory>
+    </testsuite>
+  </testsuites>
 </phpunit>

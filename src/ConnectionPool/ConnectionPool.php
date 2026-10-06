@@ -6,6 +6,8 @@ interface ConnectionPool
 {
     public function getConnection(string $command);
 
+    public function resetConnection(): void;
+
     /**
      * @param int $attempt First attempt is 1
      */

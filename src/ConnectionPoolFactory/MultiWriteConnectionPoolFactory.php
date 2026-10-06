@@ -2,15 +2,15 @@
 
 namespace RedisProxy\ConnectionPoolFactory;
 
-use RedisProxy\ConnectionPool\MultiConnectionPool;
+use RedisProxy\ConnectionPool\MultiWriteConnectionPool;
 use RedisProxy\Driver\Driver;
 
-class MultiConnectionPoolFactory implements ConnectionPoolFactory
+class MultiWriteConnectionPoolFactory implements ConnectionPoolFactory
 {
     /**
-     * @var array{host: string, port: int} $master
+     * @var array{array{host: string, port: int}} $master
      */
-    private array $master;
+    private array $masters;
 
     /**
      * @var array{array{host: string, port: int}} $slaves
@@ -29,15 +29,17 @@ class MultiConnectionPoolFactory implements ConnectionPoolFactory
 
     private bool $writeToReplicas;
 
+    private string $strategy;
+
     private string $connectMode;
 
     /**
-     * @param array{host: string, port: int} $master
+     * @param array{array{host: string, port: int}} $masters
      * @param array{array{host: string, port: int}} $slaves
      */
-    public function __construct(array $master, array $slaves, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true, ?float $operationTimeout = null, string $connectMode = 'connect')
+    public function __construct(array $masters, array $slaves, int $database = 0, float $timeout = 0.0, ?int $retryWait = null, ?int $maxFails = null, bool $writeToReplicas = true, string $strategy = MultiWriteConnectionPool::STRATEGY_RANDOM, ?float $operationTimeout = null, string $connectMode = 'connect')
     {
-        $this->master = $master;
+        $this->masters = $masters;
         $this->slaves = $slaves;
         $this->database = $database;
         $this->timeout = $timeout;
@@ -45,12 +47,13 @@ class MultiConnectionPoolFactory implements ConnectionPoolFactory
         $this->retryWait = $retryWait;
         $this->maxFails = $maxFails;
         $this->writeToReplicas = $writeToReplicas;
+        $this->strategy = $strategy;
         $this->connectMode = $connectMode;
     }
 
-    public function create(Driver $driver): MultiConnectionPool
+    public function create(Driver $driver): MultiWriteConnectionPool
     {
-        $connectionPool = new MultiConnectionPool($driver, $this->master, $this->slaves, $this->database, $this->timeout, $this->operationTimeout, $this->connectMode);
+        $connectionPool = new MultiWriteConnectionPool($driver, $this->masters, $this->slaves, $this->database, $this->timeout, $this->strategy, $this->operationTimeout, $this->connectMode);
         $connectionPool->setWriteToReplicas($this->writeToReplicas);
         if ($this->retryWait) {
             $connectionPool->setRetryWait($this->retryWait);

@@ -22,4 +22,6 @@ interface Driver
      * @throws RedisProxyException ('Invalid DB index');
      */
     public function connectionSelect($connection, int $database): bool;
+
+    public function connectionReset(): void;
 }

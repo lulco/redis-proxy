@@ -47,12 +47,6 @@ class InfoHelper
         'master_repl_offset' => 'replication',
     ];
 
-    /**
-     * @param RedisProxy $redisProxy
-     * @param array $result
-     * @param integer|null $databases
-     * @return array
-     */
     public static function createInfoArray(RedisProxy $redisProxy, array $result, ?int $databases = null): array
     {
         $groupedResult = self::initializeKeyspace($databases);
