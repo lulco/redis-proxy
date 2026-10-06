@@ -4,6 +4,7 @@
 
 ### Added
 - Added support for php 8.4, 8.5, 8.6
+- Added support for rawCommand to PredisDriver
 
 ## [1.9.0] - 2026-03-08
 ### Changed
