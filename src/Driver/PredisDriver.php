@@ -247,4 +247,17 @@ class PredisDriver implements Driver
         }
         return $result;
     }
+
+    /**
+     * @return mixed false pri chybovej odpovedi z Redisu (rovnako ako phpredis)
+     */
+    private function rawCommand(string $command, ...$params)
+    {
+        $error = false;
+        $result = $this->connectionPool->getConnection('rawcommand')->executeRaw([$command, ...$params], $error);
+        if ($error) {
+            return false;
+        }
+        return $result;
+    }
 }
